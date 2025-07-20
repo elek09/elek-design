@@ -1,1 +1,249 @@
-/* You can add global styles to this file, and also import other style files */
+/* --- GLOBAL AND LAYOUT STYLES --- */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#container {
+    min-height: 100%;
+    position: relative;
+}
+
+.footer-size {
+    position: relative;
+    width: 100%;
+}
+
+
+/* --- HEADER STYLES --- */
+.topnav {
+    font-size: 1.2rem;
+    padding: 5px 0;
+    overflow: hidden;
+    max-width: 960px;
+    margin: 0 auto;
+    text-transform: uppercase;
+    font-weight: 400;
+    position: relative;
+    padding-bottom: 0;
+}
+
+.topnav a.options {
+    padding: 40px 20px;
+    padding-bottom: 30px;
+    padding-top: 30px;
+}
+
+.topnav a {
+    float: left;
+    display: block;
+    color: #757575;
+    text-align: center;
+    text-decoration: none;
+}
+
+.topnav a:hover {
+    color: #B8cb70;
+}
+
+.topnav a.active {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    padding: 0 0;
+    padding-right: 50px;
+}
+
+.topnav .icon {
+    display: none;
+    outline: none;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.hambi {
+    width: 50px;
+}
+
+@media screen and (max-width: 945px) {
+    .topnav a:not(:first-child) {
+        display: none;
+    }
+
+    .topnav a.icon {
+        float: right;
+        display: block;
+        padding: 20px 30px;
+    }
+
+    .topnav a.options {
+        padding: 5px 5px;
+        font-size: 1.2rem;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+
+    .topnav.responsive {
+        position: relative;
+    }
+
+    .topnav.responsive .icon {
+        position: absolute;
+        right: 0;
+        top: 0;
+    }
+
+    .topnav.responsive a {
+        float: none;
+        display: block;
+        text-align: left;
+    }
+}
+
+
+/* --- FOOTER STYLES --- */
+.footer {
+    width: 100%;
+    background-color: #212429;
+    color: #B5B5B5;
+    font-family: Arial, Helvetica, sans-serif;
+    list-style-type: none;
+    text-align: center;
+    font-weight: 300;
+    margin: auto;
+    padding-bottom: 25px;
+    padding-top: 10px;
+}
+
+.footer ul {
+    list-style-type: none;
+    font-size: 0.8rem;
+    margin: 0;
+    padding: 0 5px;
+}
+
+.footer span a {
+    text-decoration: none;
+    color: #B5B5B5;
+    font-weight: lighter;
+    text-transform: uppercase;
+    font-size: 1.2rem;
+    padding: 0;
+}
+
+.footer span a:hover {
+    color: #B8cb70;
+}
+
+.footer li {
+    margin: 5px 0;
+}
+
+.footer span#name {
+    color: #B8cb70;
+}
+
+
+/* --- MAIN CONTENT STYLES --- */
+.main {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.main hr {
+    max-width: 100%;
+    height: 3px;
+    background-color: #757575;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.part .sub-head {
+    padding: 2px 0px;
+    margin: 0 auto;
+    color: #757575;
+    text-align: left;
+    text-transform: uppercase;
+    font-weight: lighter;
+}
+
+.can-be-paged {
+    padding: 0;
+    margin: 0;
+}
+
+.menu-list {
+    padding: 5px 0;
+}
+
+.menu-list ul {
+    text-transform: uppercase;
+    text-decoration: none;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 300;
+    color: #757575;
+}
+
+.second ul {
+    font-size: 1.02em;
+}
+
+@media screen and (max-width: 896px) {
+    .second ul {
+        font-size: 1.2em;
+    }
+}
+
+.menu-list a {
+    color: #757575;
+    text-decoration: none;
+}
+
+.menu-list a:hover {
+    color: #B8cb70;
+}
+
+@media screen and (max-width: 996px) {
+    .menu-list ul {
+        font-size: 0.9em;
+    }
+}
+
+@media screen and (max-width: 575px) {
+    .menu-list ul {
+        font-size: 1.2em;
+        padding-left: 5px;
+    }
+}
+
+/* --- CONTACT PAGE AND FORM STYLES --- */
+.contacts {
+    background-color: #323538;
+    width: 100%;
+}
+
+.pictures {
+    max-width: 100%;
+    text-align: center;
+    padding: 15px 0;
+}
+
+.contacts p {
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 300;
+    text-decoration: none;
+    padding: 6px 12px;
+    color: #B5B5B5;
+}
+
+@media screen and (max-width: 770px) {
+    .contacts p {
+        padding-bottom: 0;
+        margin: 0;
+    }
+}

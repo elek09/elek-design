@@ -1,0 +1,65 @@
+<div class="main">
+  <app-carousel
+  [slides]="topCarouselSlides"
+  [autoPlay]="true"
+  [showManualControls]="false"
+  [hasTextOverlay]="true"
+></app-carousel>
+  <hr>
+
+  <div class="part">
+    <h1 class="sub-head" id="Élettér">Élettér</h1>
+  </div>
+  <hr>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-2 menu-list">
+        <ul>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'konyha1')">Konyha »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'nappali1')">Nappali »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'furdoszoba1')">Fürdőszoba »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'haloszoba1')">Hálószoba »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'gardrob1')">Gardrób »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'lepcso1')">Lépcső »</a></li>
+        </ul>
+      </div>
+      <div class="col-sm-10 can-be-paged">
+        <app-carousel 
+        #eletterCarousel 
+        [slides]="eletterSlides"   
+        [showManualControls]="true"
+        [hasTextOverlay]="true"
+        (slideChanged)="onSlideChanged($event)"
+        ></app-carousel>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="part">
+    <h1 class="sub-head" id="Üzlettér">Üzlettér</h1>
+  </div>
+  <hr>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-2 menu-list second">
+        <ul>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', 'iroda1')">Irodaberendezés »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', 'uzlet1')">Üzletberendezés »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', 'kiallitasibutorok1')">Kiállítási bútorok »</a></li>
+        </ul>
+      </div>
+      <div class="col-sm-10 can-be-paged">
+        <app-carousel 
+        #uzletterCarousel 
+        [slides]="uzletterSlides"
+        [showManualControls]="true"
+        [hasTextOverlay]="true"
+        (slideChanged)="onSlideChanged($event)"
+        ></app-carousel>
+      </div>
+    </div>
+  </div>
+
+</div>

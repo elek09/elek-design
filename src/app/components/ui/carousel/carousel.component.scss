@@ -1,0 +1,87 @@
+.carousel-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.carousel__images {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.carousel {
+  height: 100%;
+  width: 100%;
+}
+
+.carousel__track-container {
+  height: 100%;
+  position: relative;
+}
+
+.carousel__track {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  position: relative;
+  height: 100%;
+  display: flex;
+  transition: transform 900ms ease-in-out;
+}
+
+.carousel__slide {
+  min-width: 100%;
+  flex-shrink: 0;
+  position: relative;
+  height: 100%;
+}
+
+.text {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-decoration: underline 2px;
+  color: #B5B5B5;
+  font-size: 40px;
+  padding: 0px 4px 0px 4px;
+  position: absolute;
+  text-transform: uppercase;
+  font-weight: lighter;
+  bottom: 8px;
+  left: 10px;
+  width: auto;
+  text-align: left;
+  background-color: rgb(0, 0, 0, 0.5);
+  z-index: 5;
+}
+
+.carousel_button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.carousel_button img:hover {
+  filter: brightness(0.8);
+}
+
+.carousel__button--left {
+  left: +15px;
+}
+
+.carousel__button--right {
+  right: +15px;
+}
+
+.carousel_button img {
+  width: 30px;
+  height: 40px;
+}

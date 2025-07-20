@@ -1,0 +1,98 @@
+<div class="main">
+  <app-carousel
+    [slides]="topCarouselSlides"
+    [autoPlay]="true"
+    [showManualControls]="false"
+    [hasTextOverlay]="true"
+  ></app-carousel>
+
+  <hr>
+  <div class="part">
+    <h1 class="sub-head" id="Kapcsolat">Kapcsolat</h1>
+  </div>
+  <hr>
+
+  <div class="contacts">
+    <div class="row">
+      <div class="col-sm-6">
+        <p>
+          Elek Imre vagyok, 25 éve foglalkozom egyedi bútorok, design
+                            bútorok tervezésével és
+                            gyártásával. Arra törekszem, hogy munkáimban bármilyen belsőépítészeti kihívásnak eleget
+                            tegyek. A lehető
+                            legmagasabb, professzionális színvonalon. A kreatív megoldások, az egyediség létrehozása
+                            a hivatásom.
+                            <br> <br>
+                            Vállaljuk bármilyen furnéros, felületkezelt egyedi bútor
+                            gyártását, konyha bútor
+                            tervezését és kivitelezését, formabontó belsőépítészeti megoldások, design bútorok
+                            megvalósítását nappaliba,
+                            előszobába, fürdőszobába. Különleges gyerekszoba bútorok készítése. Íves palástú ajtók,
+                            idomok gyártása.
+                            Irodai
+                            design bútor, egyedi üzletberendezés, látványos kiállítási-, rendezvénybútor, stand
+                            tervezése, szerelése.
+        </p>
+      </div>
+      <div class="col-sm-6 pictures">
+        <img src="assets/images/kepek/elek_imre.jpg" alt="">
+        <img src="assets/images/elek_alairas.png" alt="">
+      </div>
+    </div>
+  </div>
+
+  <section class="form">
+    <p class="text-center w-responsive">Van kérdése? Lépjen kapcsolatba velünk!</p>
+    <div class="row">
+      <div class="col-sm-9 mb-md-0 mb-5">
+        <form id="contact-form" action="mailto:fl5ote@inf.elte.hu" method="POST" enctype="text/plain">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="md-form mb-2">
+                <input type="text" id="name" name="name" class="form-control" placeholder="Név">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="md-form mb-2">
+                <input type="email" id="email" name="email" class="form-control" placeholder="Email">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="md-form mb-2">
+                <input type="text" id="subject" name="subject" class="form-control" placeholder="Tárgy">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="md-form mb-2">
+                <textarea id="message" name="message" rows="2" class="form-control md-textarea" placeholder="Üzenet..."></textarea>
+              </div>
+            </div>
+          </div>
+        </form>
+        <div class="text-center">
+          <button class="button" onclick="document.getElementById('contact-form').submit()">
+            Küldés
+          </button>
+        </div>
+      </div>
+
+      <div class="col-sm-3 text-center">
+        <ul class="list-unstyled mb-0">
+          <li>
+            <p>Budapest, 1015, Magyarország</p>
+          </li>
+          <li>
+            <p>+36 20 9243 557</p>
+          </li>
+          <li>
+            <p>info&#64;elekdesign.hu</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
