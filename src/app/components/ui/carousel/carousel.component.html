@@ -2,22 +2,26 @@
   <div class="carousel" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
     <div class="carousel__track-container">
       <ul class="carousel__track" [style.transform]="transformValue">
-        <li *ngFor="let slide of slides; let i = index" class="carousel__slide" [class.current-slide]="i === currentSlideIndex">
-          <img class="carousel__images" [src]="slide.imageUrl" [alt]="slide.title || 'slide ' + i" />
-          <div *ngIf="hasTextOverlay && slide.title" class="text">
-            {{ slide.title }}
-          </div>
-        </li>
+        @for (slide of slides; track slide; let i = $index) {
+          <li class="carousel__slide" [class.current-slide]="i === currentSlideIndex">
+            <img class="carousel__images" [src]="slide.imageUrl" [alt]="slide.title || 'slide ' + i" />
+            @if (hasTextOverlay && slide.title) {
+              <div class="text">
+                {{ slide.title }}
+              </div>
+            }
+          </li>
+        }
       </ul>
     </div>
 
-    <ng-container *ngIf="showManualControls">
+    @if (showManualControls) {
       <button class="carousel_button carousel__button--left" (click)="previousSlide()">
         <img src="assets/images/left.png" alt="baloldal" />
       </button>
       <button class="carousel_button carousel__button--right" (click)="nextSlide()">
         <img src="assets/images/right.png" alt="jobboldal" />
       </button>
-    </ng-container>
+    }
   </div>
 </div>

@@ -1,10 +1,10 @@
 import { Component, Input, OnInit, OnDestroy, HostListener, SimpleChanges, OnChanges, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Slide } from '../../../models/slide.model';
 
 @Component({
   selector: 'app-carousel',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './carousel.component.html',
   styleUrl: './carousel.component.scss'
 })
