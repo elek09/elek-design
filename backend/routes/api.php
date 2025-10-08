@@ -5,6 +5,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 
 Route::prefix('v1')->group(function () {
     // Auth
@@ -33,10 +35,28 @@ Route::prefix('v1')->group(function () {
         Route::get('orders/my', [OrderController::class, 'my']);
     });
 
-    // Admin
+    // Admin Authentication
+    Route::prefix('admin')->group(function () {
+        Route::post('login', [AdminAuthController::class, 'login']);
+        
+        Route::middleware(['auth:sanctum', 'admin.api'])->group(function () {
+            Route::post('logout', [AdminAuthController::class, 'logout']);
+            Route::get('me', [AdminAuthController::class, 'me']);
+            
+            // Gallery management
+            Route::apiResource('gallery', AdminGalleryController::class)->parameters([
+                'gallery' => 'galleryItem'
+            ]);
+            Route::patch('gallery/{galleryItem}/toggle-active', [AdminGalleryController::class, 'toggleActive']);
+            
+            // Orders management
+            Route::get('orders', [OrderController::class, 'index']);
+            Route::put('orders/{order}/status', [OrderController::class, 'updateStatus']);
+        });
+    });
+
+    // Legacy admin routes (to be removed later)
     Route::middleware(['auth:sanctum', 'can:admin'])->group(function () {
-        Route::get('orders', [OrderController::class, 'index']);
-        Route::put('orders/{order}/status', [OrderController::class, 'updateStatus']);
         Route::post('gallery', [GalleryController::class, 'store']);
     });
 });

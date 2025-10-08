@@ -14,9 +14,26 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        // Create main admin user
         User::updateOrCreate(
-            ['email' => 'admin@example.com'],
-            ['name' => 'Admin', 'password' => Hash::make('secret'), 'admin' => true]
+            ['email' => 'admin@elekdesign.hu'],
+            [
+                'name' => 'Elek Design Admin',
+                'password' => Hash::make('ElekAdmin2025!'),
+                'admin' => true,
+                'email_verified_at' => now()
+            ]
+        );
+
+        // Backup admin user
+        User::updateOrCreate(
+            ['email' => 'admin@localhost'],
+            [
+                'name' => 'Local Admin',
+                'password' => Hash::make('password123'),
+                'admin' => true,
+                'email_verified_at' => now()
+            ]
         );
     }
 }
