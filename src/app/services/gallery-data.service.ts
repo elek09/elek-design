@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, of } from 'rxjs';
 import { Slide } from '../models/slide.model';
-import { API_BASE_URL } from '../app.tokens';
+import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
 
 type ApiImageItem = {
   id?: string | number;
@@ -23,6 +23,7 @@ type PaginatedResponse<T> = {
 export class GalleryDataService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly galleryApiUrl = inject(GALLERY_API_BASE_URL);
   private readonly apiOrigin = this.getOrigin(this.baseUrl);
 
   getTopCarouselSlides$() {
@@ -48,7 +49,7 @@ export class GalleryDataService {
   // --- internals ---
 
   private getSlides$(endpoint: string) {
-    const url = this.joinUrl(this.baseUrl, endpoint);
+    const url = this.joinUrl(this.galleryApiUrl, `/${endpoint}`);
     return this.http
       .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
       .pipe(

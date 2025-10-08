@@ -1,0 +1,177 @@
+<div class="admin-dashboard">
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Admin Dashboard</h1>
+                <p *ngIf="currentUser">Welcome back, {{ currentUser.name }}!</p>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-outline" (click)="logout()">
+                    <i class="icon-logout"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading-container">
+        <div class="spinner-large"></div>
+        <p>Loading dashboard...</p>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error && !isLoading" class="error-container">
+        <div class="alert alert-danger">
+            <i class="icon-error"></i>
+            {{ error }}
+            <button class="btn btn-sm btn-primary" (click)="loadDashboardData()">Retry</button>
+        </div>
+    </div>
+
+    <!-- Dashboard content -->
+    <div *ngIf="!isLoading && !error" class="dashboard-content">
+
+        <!-- Stats cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon total">
+                    <i class="icon-gallery"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.totalItems }}</h3>
+                    <p>Total Items</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="icon-eye"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.activeItems }}</h3>
+                    <p>Active Items</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon inactive">
+                    <i class="icon-eye-off"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.inactiveItems }}</h3>
+                    <p>Inactive Items</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon featured">
+                    <i class="icon-star"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.byCategory.featured }}</h3>
+                    <p>Featured</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category breakdown -->
+        <div class="section">
+            <h2>Categories</h2>
+            <div class="category-grid">
+                <div class="category-card">
+                    <h3>{{ stats.byCategory.featured }}</h3>
+                    <p>Featured</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill"
+                            [style.width.%]="(stats.byCategory.featured / stats.totalItems) * 100"></div>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <h3>{{ stats.byCategory.work }}</h3>
+                    <p>Work</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="(stats.byCategory.work / stats.totalItems) * 100">
+                        </div>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <h3>{{ stats.byCategory.ui }}</h3>
+                    <p>UI</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="(stats.byCategory.ui / stats.totalItems) * 100">
+                        </div>
+                    </div>
+                </div>
+                <div class="category-card">
+                    <h3>{{ stats.byCategory.misc }}</h3>
+                    <p>Misc</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" [style.width.%]="(stats.byCategory.misc / stats.totalItems) * 100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent items -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Recent Items</h2>
+                <button class="btn btn-primary" (click)="navigateToGallery()">
+                    View All Gallery
+                </button>
+            </div>
+
+            <div class="recent-items" *ngIf="getRecentItems().length > 0; else noItems">
+                <div class="recent-item" *ngFor="let item of getRecentItems()">
+                    <div class="item-image">
+                        <img [src]="getImageUrl(item.image_path)" [alt]="item.title" />
+                    </div>
+                    <div class="item-content">
+                        <h4>{{ item.title }}</h4>
+                        <p class="item-category">{{ item.category | titlecase }}</p>
+                        <p class="item-date">{{ formatDate(item.created_at) }}</p>
+                    </div>
+                    <div class="item-status">
+                        <span class="status-badge" [class]="item.active ? 'active' : 'inactive'">
+                            {{ item.active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <ng-template #noItems>
+                <div class="empty-state">
+                    <i class="icon-gallery"></i>
+                    <h3>No gallery items yet</h3>
+                    <p>Start by adding some images to your gallery.</p>
+                    <button class="btn btn-primary" (click)="navigateToGallery()">
+                        Add First Item
+                    </button>
+                </div>
+            </ng-template>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <button class="action-btn" (click)="navigateToGallery()">
+                    <i class="icon-plus"></i>
+                    <span>Add New Item</span>
+                </button>
+                <button class="action-btn" routerLink="/admin/gallery">
+                    <i class="icon-gallery"></i>
+                    <span>Manage Gallery</span>
+                </button>
+                <button class="action-btn" (click)="loadDashboardData()">
+                    <i class="icon-refresh"></i>
+                    <span>Refresh Data</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,192 @@
+<div class="admin-gallery">
+    <!-- Header -->
+    <header class="gallery-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="btn-back" (click)="goBack()">
+                    <i class="icon-arrow-left"></i>
+                    Back to Dashboard
+                </button>
+                <h1>Gallery Management</h1>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" (click)="toggleUploadForm()">
+                    <i class="icon-plus"></i>
+                    {{ showUploadForm ? 'Cancel' : 'Add New Item' }}
+                </button>
+                <button class="btn btn-outline" (click)="logout()">
+                    <i class="icon-logout"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Upload Form -->
+    <div class="upload-section" *ngIf="showUploadForm">
+        <div class="upload-form">
+            <h3>Add New Gallery Item</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="title">Title *</label>
+                    <input type="text" id="title" [(ngModel)]="uploadForm.title" class="form-control"
+                        placeholder="Enter image title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" [(ngModel)]="uploadForm.category" class="form-control" required>
+                        <option *ngFor="let category of availableCategories" [value]="category">
+                            {{ category | titlecase }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" [(ngModel)]="uploadForm.description" class="form-control" rows="3"
+                    placeholder="Enter image description (optional)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="image">Image *</label>
+                <input type="file" id="image" (change)="onFileSelected($event)" class="form-control" accept="image/*"
+                    required>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="uploadForm.active">
+                    <span class="checkmark"></span>
+                    Active (visible on website)
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" (click)="onUpload()"
+                    [disabled]="isUploading || !uploadForm.title.trim() || !uploadForm.image">
+                    <span *ngIf="isUploading" class="spinner"></span>
+                    {{ isUploading ? 'Uploading...' : 'Upload Image' }}
+                </button>
+                <button class="btn btn-secondary" (click)="toggleUploadForm()">
+                    Cancel
+                </button>
+            </div>
+
+            <div class="alert alert-danger" *ngIf="uploadError">
+                {{ uploadError }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="filters">
+            <div class="filter-group">
+                <label>Category:</label>
+                <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="filter-select">
+                    <option value="all">All Categories</option>
+                    <option *ngFor="let category of availableCategories" [value]="category">
+                        {{ category | titlecase }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Status:</label>
+                <select [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="filter-select">
+                    <option value="all">All Items</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                </select>
+            </div>
+
+            <div class="filter-group search-group">
+                <label>Search:</label>
+                <input type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()" class="search-input"
+                    placeholder="Search by title or description...">
+            </div>
+        </div>
+
+        <div class="results-info">
+            Showing {{ filteredItems.length }} of {{ galleryItems.length }} items
+        </div>
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="isLoading" class="loading-container">
+        <div class="spinner-large"></div>
+        <p>Loading gallery items...</p>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error && !isLoading" class="error-container">
+        <div class="alert alert-danger">
+            <i class="icon-error"></i>
+            {{ error }}
+            <button class="btn btn-sm btn-primary" (click)="loadGalleryItems()">Retry</button>
+        </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div *ngIf="!isLoading && !error" class="gallery-content">
+        <div class="gallery-grid" *ngIf="filteredItems.length > 0; else noItems">
+            <div class="gallery-item" *ngFor="let item of filteredItems">
+                <div class="item-image">
+                    <img [src]="getImageUrl(item.image_path)" [alt]="item.title" />
+                    <div class="item-overlay">
+                        <div class="overlay-actions">
+                            <button class="action-btn toggle-btn" (click)="toggleItemStatus(item)"
+                                [title]="item.active ? 'Make Inactive' : 'Make Active'">
+                                <i [class]="item.active ? 'icon-eye-off' : 'icon-eye'"></i>
+                            </button>
+                            <button class="action-btn delete-btn" (click)="deleteItem(item)" title="Delete Item">
+                                <i class="icon-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-content">
+                    <div class="item-header">
+                        <h4>{{ item.title }}</h4>
+                        <span class="status-badge" [class]="item.active ? 'active' : 'inactive'">
+                            {{ item.active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
+
+                    <p class="item-category">{{ item.category | titlecase }}</p>
+
+                    <p class="item-description" *ngIf="item.description">
+                        {{ item.description }}
+                    </p>
+
+                    <div class="item-meta">
+                        <small>Created: {{ formatDate(item.created_at) }}</small>
+                        <small *ngIf="item.updated_at !== item.created_at">
+                            Updated: {{ formatDate(item.updated_at) }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ng-template #noItems>
+            <div class="empty-state">
+                <i class="icon-gallery"></i>
+                <h3>No items found</h3>
+                <p *ngIf="selectedCategory !== 'all' || selectedStatus !== 'all' || searchTerm">
+                    Try adjusting your filters or search terms.
+                </p>
+                <p *ngIf="selectedCategory === 'all' && selectedStatus === 'all' && !searchTerm">
+                    Start by adding some images to your gallery.
+                </p>
+                <button class="btn btn-primary" (click)="toggleUploadForm()">
+                    Add First Item
+                </button>
+            </div>
+        </ng-template>
+    </div>
+</div>
