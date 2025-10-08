@@ -49,47 +49,75 @@ export class GalleryDataService {
 
   private getSlides$(endpoint: string) {
     const url = this.joinUrl(this.baseUrl, endpoint);
-    return this.http.get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url).pipe(
-      map(resp => this.unwrap(resp).map(i => this.toSlide(i)).filter((s): s is Slide => !!s)),
-      catchError(() => of<Slide[]>([])) // no local fallback
-    );
+    return this.http
+      .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
+      .pipe(
+        map((resp) =>
+          this.unwrap(resp)
+            .map((i) => this.toSlide(i))
+            .filter((s): s is Slide => !!s)
+            .sort((a, b) => this.sortSlides(a, b))
+        ),
+        catchError(() => of<Slide[]>([])) // no local fallback
+      );
   }
 
-  private unwrap(resp: ApiImageItem[] | PaginatedResponse<ApiImageItem> | unknown): ApiImageItem[] {
+  private unwrap(
+    resp: ApiImageItem[] | PaginatedResponse<ApiImageItem> | unknown
+  ): ApiImageItem[] {
     if (Array.isArray(resp)) return resp;
-    if (resp && typeof resp === 'object' && 'data' in (resp as any) && Array.isArray((resp as any).data)) {
+    if (
+      resp &&
+      typeof resp === 'object' &&
+      'data' in (resp as any) &&
+      Array.isArray((resp as any).data)
+    ) {
       return (resp as PaginatedResponse<ApiImageItem>).data;
     }
     return [];
   }
 
-private toSlide(item: ApiImageItem): Slide | null {
-  const imageUrl = this.resolveImageUrl(item);
-  if (!imageUrl) return null;
+  private toSlide(item: ApiImageItem): Slide | null {
+    const imageUrl = this.resolveImageUrl(item);
+    if (!imageUrl) return null;
 
-  const id =
-    (item.slug && this.slugify(item.slug)) ||
-    this.slugify(item.title ?? item.name) ||
-    (item.id != null ? String(item.id) : undefined);
+    const id =
+      (item.slug && this.slugify(item.slug)) ||
+      this.slugify(item.title ?? item.name) ||
+      (item.id != null ? String(item.id) : undefined);
 
-  return {
-    id,
-    imageUrl,
-    title: item.title ?? item.name
-  };
-}
+    return {
+      id,
+      imageUrl,
+      title: item.title ?? item.name,
+    };
+  }
 
-// Create a slug from title (handles accents, spaces, etc.)
-private slugify(value?: string): string | undefined {
-  if (!value) return undefined;
-  return value
-    .normalize('NFD')                   // split accents
-    .replace(/[\u0300-\u036f]/g, '')   // remove accents
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')       // non-alnum -> hyphen
-    .replace(/^-+|-+$/g, '')           // trim hyphens
-    .replace(/-/g, '');                // optional: remove hyphens to match menu keys
-}
+  // Create a slug from title (handles accents, spaces, etc.)
+  private slugify(value?: string): string | undefined {
+    if (!value) return undefined;
+    return value
+      .normalize('NFD') // split accents
+      .replace(/[\u0300-\u036f]/g, '') // remove accents
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-') // non-alnum -> hyphen
+      .replace(/^-+|-+$/g, '') // trim hyphens
+      .replace(/-/g, ''); // optional: remove hyphens to match menu keys
+  }
+
+  // Sort slides to group by category (title) and then by filename
+  private sortSlides(a: Slide, b: Slide): number {
+    // First, group by title/category
+    const titleA = a.title?.toLowerCase() || '';
+    const titleB = b.title?.toLowerCase() || '';
+
+    if (titleA !== titleB) {
+      return titleA.localeCompare(titleB);
+    }
+
+    // If titles are the same, sort by image URL/filename
+    return a.imageUrl.localeCompare(b.imageUrl);
+  }
 
   private resolveImageUrl(item: ApiImageItem): string | null {
     const raw = item.imageUrl ?? item.url ?? item.image ?? null;
