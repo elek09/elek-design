@@ -7,17 +7,25 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuthController;
 
 Route::prefix('v1')->group(function () {
-    /*
+    // Auth
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
         Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     });
-    */
 
     // Publikus
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/{slug}', [ProductController::class, 'show']);
-    Route::get('gallery', [GalleryController::class, 'index']);
+
+    // Gallery routes
+    Route::prefix('gallery')->group(function () {
+        Route::get('/', [GalleryController::class, 'index']);
+        Route::get('/top', [GalleryController::class, 'top']);
+        Route::get('/eletter', [GalleryController::class, 'eletter']);
+        Route::get('/uzletter', [GalleryController::class, 'uzletter']);
+        Route::get('/wall-cladding', [GalleryController::class, 'wallCladding']);
+        Route::get('/curved-furniture', [GalleryController::class, 'curvedFurniture']);
+    });
 
     // Bejelentkezett
     Route::middleware('auth:sanctum')->group(function () {
