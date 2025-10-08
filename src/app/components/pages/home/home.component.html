@@ -1,6 +1,6 @@
 <div class="main">
   <app-carousel
-  [slides]="topCarouselSlides"
+  [slides]="(topCarouselSlides$ | async) ?? []"
   [autoPlay]="true"
   [showManualControls]="false"
   [hasTextOverlay]="true"
@@ -15,18 +15,18 @@
     <div class="row">
       <div class="col-sm-2 menu-list">
         <ul>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'konyha1')">Konyha »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'nappali1')">Nappali »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'furdoszoba1')">Fürdőszoba »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'haloszoba1')">Hálószoba »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'gardrob1')">Gardrób »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'lepcso1')">Lépcső »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'konyha')">Konyha »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'nappali')">Nappali »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'furdoszoba')">Fürdőszoba »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'haloszoba')">Hálószoba »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'gardrob')">Gardrób »</a></li>
+          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'lepcso')">Lépcső »</a></li>
         </ul>
       </div>
       <div class="col-sm-10 can-be-paged">
         <app-carousel 
-        #eletterCarousel 
-        [slides]="eletterSlides"   
+  #eletterCarousel 
+  [slides]="(eletterSlides$ | async) ?? []"   
         [showManualControls]="true"
         [hasTextOverlay]="true"
         (slideChanged)="onSlideChanged($event)"
@@ -52,8 +52,8 @@
       </div>
       <div class="col-sm-10 can-be-paged">
         <app-carousel 
-        #uzletterCarousel 
-        [slides]="uzletterSlides"
+  #uzletterCarousel 
+  [slides]="(uzletterSlides$ | async) ?? []"
         [showManualControls]="true"
         [hasTextOverlay]="true"
         (slideChanged)="onSlideChanged($event)"

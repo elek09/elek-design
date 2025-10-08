@@ -4,6 +4,7 @@ import { Slide } from '../../../models/slide.model';
 
 @Component({
   selector: 'app-carousel',
+  standalone: true,
   imports: [],
   templateUrl: './carousel.component.html',
   styleUrl: './carousel.component.scss'
@@ -59,13 +60,26 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges{
   }
 
   // Method to be called from a parent component (e.g., side menu)
-  goToSlideById(id: string): void {
-    const slideIndex = this.slides.findIndex(s => s.id === id);
-    if (slideIndex > -1) {
-      this.currentSlideIndex = slideIndex;
+  public goToById(id: string) {
+    if (!this.slides?.length) return;
+    const idx = this.slides.findIndex(s =>
+      s.id === id ||
+      (s.title && this.slugify(s.title) === id)
+    );
+    if (idx >= 0) {
+      this.currentSlideIndex = idx;
       this.updateTransform();
       this.emitSlideChanged();
     }
+  }
+
+  private slugify(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .trim();
   }
   
   private emitSlideChanged(): void {

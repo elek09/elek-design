@@ -1,57 +1,116 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { catchError, map, of } from 'rxjs';
 import { Slide } from '../models/slide.model';
+import { API_BASE_URL } from '../app.tokens';
 
-@Injectable({
-  providedIn: 'root'
-})
+type ApiImageItem = {
+  id?: string | number;
+  slug?: string;
+  title?: string;
+  name?: string;
+  imageUrl?: string;
+  url?: string;
+  image?: string;
+};
+
+type PaginatedResponse<T> = {
+  data: T[];
+  // ...other pagination fields we ignore
+};
+
+@Injectable({ providedIn: 'root' })
 export class GalleryDataService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly apiOrigin = this.getOrigin(this.baseUrl);
 
-  getTopCarouselSlides(): Slide[] {
-    return [
-      { imageUrl: 'assets/images/fokepek/nappali.jpg', title: 'Nappali' },
-      { imageUrl: 'assets/images/fokepek/konyha.jpg', title: 'Konyha' },
-      { imageUrl: 'assets/images/fokepek/3Dfal.jpg', title: '3D fal' },
-      { imageUrl: 'assets/images/fokepek/gardrob.jpg', title: 'Gardrób' },
-      { imageUrl: 'assets/images/fokepek/lepcso.jpg', title: 'Lépcső' },
-      { imageUrl: 'assets/images/fokepek/uzlet.jpg', title: 'Üzlet' }
-    ];
+  getTopCarouselSlides$() {
+    return this.getSlides$('top');
   }
 
-  getEletterSlides(): Slide[] {
-    return [
-      { id: 'konyha1', imageUrl: 'assets/images/kepek/konyha(1).jpg' },
-      { id: 'konyha2', imageUrl: 'assets/images/kepek/konyha(2).jpg' },
-      { id: 'konyha3', imageUrl: 'assets/images/kepek/konyha(3).jpg' },
-      { id: 'nappali1', imageUrl: 'assets/images/kepek/nappali(1).jpg' },
-      { id: 'nappali2', imageUrl: 'assets/images/kepek/nappali(2).jpg' },
-      { id: 'nappali3', imageUrl: 'assets/images/kepek/nappali(3).jpg' },
-      { id: 'furdoszoba1', imageUrl: 'assets/images/kepek/furdoszoba(1).jpg' },
-      { id: 'haloszoba1', imageUrl: 'assets/images/kepek/haloszoba(1).jpg' },
-      { id: 'gardrob1', imageUrl: 'assets/images/kepek/gardrob(1).jpg' },
-      { id: 'lepcso1', imageUrl: 'assets/images/kepek/lepcso(1).jpg' }
-    ];
+  getEletterSlides$() {
+    return this.getSlides$('eletter');
   }
 
-  getUzletterSlides(): Slide[] {
-    return [
-      { id: 'iroda1', imageUrl: 'assets/images/kepek/iroda.jpg' },
-      { id: 'iroda2', imageUrl: 'assets/images/kepek/iroda(2).jpg' },
-      { id: 'uzlet1', imageUrl: 'assets/images/kepek/uzlet.jpg' },
-      { id: 'kiallitasibutorok1', imageUrl: 'assets/images/kepek/kiallitasibutorok.jpg' }
-    ];
+  getUzletterSlides$() {
+    return this.getSlides$('uzletter');
   }
 
-  getWallCladdingSlides(): Slide[] {
-    return [
-        { id: '3Dfalborítás1', imageUrl: 'assets/images/kepek/3Dfal.jpg'},
-        { id: '3Dfalborítás2', imageUrl: 'assets/images/kepek/3d(1).jpg'}
-    ];
+  getWallCladdingSlides$() {
+    return this.getSlides$('wall-cladding');
   }
 
-  getCurvedFurnitureSlides(): Slide[] {
-    return [
-      { id: 'curvedFurniture1', imageUrl: 'assets/images/kepek/ivesbutorok(1).jpg' },
-      { id: 'curvedFurniture2', imageUrl: 'assets/images/kepek/ivesbutorok(2).jpg' },
-    ];
+  getCurvedFurnitureSlides$() {
+    return this.getSlides$('curved-furniture');
+  }
+
+  // --- internals ---
+
+  private getSlides$(endpoint: string) {
+    const url = this.joinUrl(this.baseUrl, endpoint);
+    return this.http.get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url).pipe(
+      map(resp => this.unwrap(resp).map(i => this.toSlide(i)).filter((s): s is Slide => !!s)),
+      catchError(() => of<Slide[]>([])) // no local fallback
+    );
+  }
+
+  private unwrap(resp: ApiImageItem[] | PaginatedResponse<ApiImageItem> | unknown): ApiImageItem[] {
+    if (Array.isArray(resp)) return resp;
+    if (resp && typeof resp === 'object' && 'data' in (resp as any) && Array.isArray((resp as any).data)) {
+      return (resp as PaginatedResponse<ApiImageItem>).data;
+    }
+    return [];
+  }
+
+private toSlide(item: ApiImageItem): Slide | null {
+  const imageUrl = this.resolveImageUrl(item);
+  if (!imageUrl) return null;
+
+  const id =
+    (item.slug && this.slugify(item.slug)) ||
+    this.slugify(item.title ?? item.name) ||
+    (item.id != null ? String(item.id) : undefined);
+
+  return {
+    id,
+    imageUrl,
+    title: item.title ?? item.name
+  };
+}
+
+// Create a slug from title (handles accents, spaces, etc.)
+private slugify(value?: string): string | undefined {
+  if (!value) return undefined;
+  return value
+    .normalize('NFD')                   // split accents
+    .replace(/[\u0300-\u036f]/g, '')   // remove accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')       // non-alnum -> hyphen
+    .replace(/^-+|-+$/g, '')           // trim hyphens
+    .replace(/-/g, '');                // optional: remove hyphens to match menu keys
+}
+
+  private resolveImageUrl(item: ApiImageItem): string | null {
+    const raw = item.imageUrl ?? item.url ?? item.image ?? null;
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) return raw; // absolute
+    const path = raw.startsWith('/') ? raw : `/${raw}`;
+    return this.apiOrigin ? `${this.apiOrigin}${path}` : path;
+  }
+
+  private joinUrl(base: string, path: string): string {
+    const b = base?.endsWith('/') ? base.slice(0, -1) : base;
+    const p = path?.startsWith('/') ? path : `/${path}`;
+    return `${b}${p}`;
+  }
+
+  private getOrigin(base: string): string {
+    try {
+      const u = new URL(base);
+      return `${u.protocol}//${u.host}`;
+    } catch {
+      return '';
+    }
   }
 }
