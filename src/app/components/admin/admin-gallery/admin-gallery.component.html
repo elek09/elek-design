@@ -23,7 +23,7 @@
     </header>
 
     <!-- Upload Form -->
-    <div class="upload-section" *ngIf="showUploadForm">
+    <div class="upload-section" *ngIf="showUploadForm && galleryConfig">
         <div class="upload-form">
             <h3>Add New Gallery Item</h3>
 
@@ -35,10 +35,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="category">Category *</label>
-                    <select id="category" [(ngModel)]="uploadForm.category" class="form-control" required>
-                        <option *ngFor="let category of availableCategories" [value]="category">
-                            {{ category | titlecase }}
+                    <label for="mainCategory">Main Category *</label>
+                    <select id="mainCategory" [(ngModel)]="uploadForm.mainCategory" (change)="onMainCategoryChange()"
+                        class="form-control" required>
+                        <option *ngFor="let cat of galleryConfig.categories" [value]="cat.value">
+                            {{ cat.label }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group" *ngIf="availableSubcategories.length > 0">
+                    <label for="subCategory">Sub-Category</label>
+                    <select id="subCategory" [(ngModel)]="uploadForm.subCategory" class="form-control">
+                        <option *ngFor="let subCat of availableSubcategories" [value]="subCat.value">
+                            {{ subCat.label }}
                         </option>
                     </select>
                 </div>
@@ -58,9 +68,17 @@
 
             <div class="form-group checkbox-group">
                 <label class="checkbox-label">
-                    <input type="checkbox" [(ngModel)]="uploadForm.active">
+                    <input type="checkbox" [(ngModel)]="uploadForm.is_active">
                     <span class="checkmark"></span>
                     Active (visible on website)
+                </label>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="uploadForm.is_featured">
+                    <span class="checkmark"></span>
+                    Featured (shown in homepage carousel)
                 </label>
             </div>
 
@@ -82,18 +100,22 @@
     </div>
 
     <!-- Filters -->
-    <div class="filters-section">
+    <div class="filters-section" *ngIf="galleryConfig">
         <div class="filters">
             <div class="filter-group">
                 <label>Category:</label>
                 <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="filter-select">
                     <option value="all">All Categories</option>
-                    <option *ngFor="let category of availableCategories" [value]="category">
-                        {{ category | titlecase }}
-                    </option>
+                    <ng-container *ngFor="let cat of galleryConfig.categories">
+                        <optgroup [label]="cat.label">
+                            <option [value]="cat.value">{{ cat.label }} (Main)</option>
+                            <option *ngFor="let subCat of cat.subcategories || []" [value]="subCat.value">
+                                &nbsp;&nbsp;&nbsp;{{ subCat.label }}
+                            </option>
+                        </optgroup>
+                    </ng-container>
                 </select>
             </div>
-
             <div class="filter-group">
                 <label>Status:</label>
                 <select [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="filter-select">
@@ -124,69 +146,65 @@
     <!-- Error state -->
     <div *ngIf="error && !isLoading" class="error-container">
         <div class="alert alert-danger">
-            <i class="icon-error"></i>
-            {{ error }}
-            <button class="btn btn-sm btn-primary" (click)="loadGalleryItems()">Retry</button>
+            <p><strong>Error:</strong> {{ error }}</p>
+            <p>Please try refreshing the page. If the problem persists, contact support.</p>
         </div>
     </div>
 
     <!-- Gallery Grid -->
     <div *ngIf="!isLoading && !error" class="gallery-content">
-        <div class="gallery-grid" *ngIf="filteredItems.length > 0; else noItems">
-            <div class="gallery-item" *ngFor="let item of filteredItems">
+        <div class="gallery-grid" *ngIf="filteredItems.length > 0">
+            <div *ngFor="let item of filteredItems" class="gallery-item">
                 <div class="item-image">
-                    <img [src]="getImageUrl(item.image_path)" [alt]="item.title" />
-                    <div class="item-overlay">
-                        <div class="overlay-actions">
-                            <button class="action-btn toggle-btn" (click)="toggleItemStatus(item)"
-                                [title]="item.active ? 'Make Inactive' : 'Make Active'">
-                                <i [class]="item.active ? 'icon-eye-off' : 'icon-eye'"></i>
-                            </button>
-                            <button class="action-btn delete-btn" (click)="deleteItem(item)" title="Delete Item">
-                                <i class="icon-trash"></i>
-                            </button>
-                        </div>
-                    </div>
+                    <img [src]="getImageUrl(item.image_path)" [alt]="item.title">
                 </div>
-
                 <div class="item-content">
                     <div class="item-header">
                         <h4>{{ item.title }}</h4>
-                        <span class="status-badge" [class]="item.active ? 'active' : 'inactive'">
-                            {{ item.active ? 'Active' : 'Inactive' }}
-                        </span>
+                        <div class="item-actions">
+                            <button class="action-btn toggle-btn" [class.active]="item.is_active"
+                                [class.inactive]="!item.is_active" (click)="updateItemStatus(item)"
+                                [title]="item.is_active ? 'Deactivate' : 'Activate'">
+                                <i [class]="item.is_active ? 'icon-eye-off' : 'icon-eye'"></i>
+                                <span>{{ item.is_active ? 'Deactivate' : 'Activate' }}</span>
+                            </button>
+                            <button class="action-btn feature-btn" [class.featured]="item.is_featured"
+                                (click)="updateFeaturedStatus(item)"
+                                [title]="item.is_featured ? 'Unfeature' : 'Feature'">
+                                <i [class]="item.is_featured ? 'icon-star-full' : 'icon-star-empty'"></i>
+                                <span>{{ item.is_featured ? 'Unfeature' : 'Feature' }}</span>
+                            </button>
+                            <button class="action-btn delete-btn" (click)="deleteItem(item.id)" title="Delete Item">
+                                <i class="icon-trash"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
                     </div>
-
-                    <p class="item-category">{{ item.category | titlecase }}</p>
-
-                    <p class="item-description" *ngIf="item.description">
-                        {{ item.description }}
+                    <p class="item-category">
+                        <span class="status-badge" [class.active]="item.is_active" [class.inactive]="!item.is_active">
+                            {{ item.is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                        {{ getCategoryLabel(item.category) }}
                     </p>
-
+                    <p class="item-description">{{ item.description || 'No description available.' }}</p>
                     <div class="item-meta">
-                        <small>Created: {{ formatDate(item.created_at) }}</small>
-                        <small *ngIf="item.updated_at !== item.created_at">
-                            Updated: {{ formatDate(item.updated_at) }}
-                        </small>
+                        <small>Uploaded: {{ formatDate(item.created_at) }}</small>
+                        <small>Updated: {{ formatDate(item.updated_at) }}</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <ng-template #noItems>
-            <div class="empty-state">
-                <i class="icon-gallery"></i>
-                <h3>No items found</h3>
-                <p *ngIf="selectedCategory !== 'all' || selectedStatus !== 'all' || searchTerm">
-                    Try adjusting your filters or search terms.
-                </p>
-                <p *ngIf="selectedCategory === 'all' && selectedStatus === 'all' && !searchTerm">
-                    Start by adding some images to your gallery.
-                </p>
-                <button class="btn btn-primary" (click)="toggleUploadForm()">
-                    Add First Item
-                </button>
-            </div>
-        </ng-template>
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && !error && filteredItems.length === 0" class="empty-state">
+            <i class="icon-inbox"></i>
+            <h3>No Gallery Items Found</h3>
+            <p *ngIf="galleryItems.length > 0">No items match your current filters. Try adjusting your search.</p>
+            <p *ngIf="galleryItems.length === 0">Get started by adding a new gallery item.</p>
+            <button class="btn" (click)="toggleUploadForm()" *ngIf="!showUploadForm">
+                <i class="icon-plus"></i>
+                Add New Item
+            </button>
+        </div>
     </div>
 </div>

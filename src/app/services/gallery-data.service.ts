@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, shareReplay } from 'rxjs';
 import { Slide } from '../models/slide.model';
 import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
 
@@ -12,6 +12,10 @@ type ApiImageItem = {
   imageUrl?: string;
   url?: string;
   image?: string;
+  category?: string;
+  section?: string;
+  is_active?: boolean;
+  is_featured?: boolean;
 };
 
 type PaginatedResponse<T> = {
@@ -26,30 +30,26 @@ export class GalleryDataService {
   private readonly galleryApiUrl = inject(GALLERY_API_BASE_URL);
   private readonly apiOrigin = this.getOrigin(this.baseUrl);
 
-  getTopCarouselSlides$() {
-    return this.getSlides$('top');
+  private slides$: Observable<Slide[]> = this.fetchAndProcessSlides$().pipe(
+    shareReplay(1)
+  );
+
+  getFeaturedSlides$() {
+    return this.slides$.pipe(
+      map((slides) => slides.filter((s) => s.is_featured))
+    );
   }
 
-  getEletterSlides$() {
-    return this.getSlides$('eletter');
-  }
-
-  getUzletterSlides$() {
-    return this.getSlides$('uzletter');
-  }
-
-  getWallCladdingSlides$() {
-    return this.getSlides$('wall-cladding');
-  }
-
-  getCurvedFurnitureSlides$() {
-    return this.getSlides$('curved-furniture');
+  getSlidesByCategory$(category: string) {
+    return this.slides$.pipe(
+      map((slides) => slides.filter((s) => s.section === category))
+    );
   }
 
   // --- internals ---
 
-  private getSlides$(endpoint: string) {
-    const url = this.joinUrl(this.galleryApiUrl, `/${endpoint}`);
+  private fetchAndProcessSlides$() {
+    const url = this.joinUrl(this.galleryApiUrl, '');
     return this.http
       .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
       .pipe(
@@ -57,6 +57,7 @@ export class GalleryDataService {
           this.unwrap(resp)
             .map((i) => this.toSlide(i))
             .filter((s): s is Slide => !!s)
+            .filter((slide) => slide.is_active)
             .sort((a, b) => this.sortSlides(a, b))
         ),
         catchError(() => of<Slide[]>([])) // no local fallback
@@ -91,6 +92,10 @@ export class GalleryDataService {
       id,
       imageUrl,
       title: item.title ?? item.name,
+      category: item.category,
+      section: item.section,
+      is_active: item.is_active,
+      is_featured: item.is_featured,
     };
   }
 

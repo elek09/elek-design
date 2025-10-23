@@ -1,51 +1,130 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminApiService } from '../../../services/admin-api.service';
 import { AuthService } from '../../../services/auth.service';
-import { GalleryItem, GalleryCategory } from '../../../models/admin.models';
+import {
+  GalleryItem,
+  GalleryConfig,
+  GallerySubCategory,
+  GalleryCreateRequest,
+} from '../../../models/admin.models';
+import { ADMIN_API_BASE_URL, GALLERY_API_BASE_URL } from '../../../app.tokens';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-admin-gallery',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './admin-gallery.component.html',
-  styleUrl: './admin-gallery.component.scss',
+  styleUrls: ['./admin-gallery.component.scss'],
 })
-export class AdminGalleryComponent implements OnInit {
-  private readonly adminApiService = inject(AdminApiService);
-  private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
-
-  galleryItems: GalleryItem[] = [];
-  filteredItems: GalleryItem[] = [];
-  availableCategories: GalleryCategory[] = [];
-
-  // Filters
-  selectedCategory: string = 'all';
-  selectedStatus: string = 'all';
-  searchTerm: string = '';
-
-  // States
-  isLoading = true;
-  error = '';
-
-  // Upload form
+export class AdminGalleryComponent implements OnInit, OnDestroy {
+  galleryConfig: GalleryConfig | null = null;
   showUploadForm = false;
   uploadForm = {
     title: '',
-    category: 'featured' as GalleryCategory,
+    mainCategory: '',
+    subCategory: '',
     description: '',
-    active: true,
     image: null as File | null,
+    is_active: true,
+    is_featured: false,
   };
   isUploading = false;
-  uploadError = '';
+  uploadError: string | null = null;
+
+  galleryItems: GalleryItem[] = [];
+  filteredItems: GalleryItem[] = [];
+  isLoading = true;
+  error: string | null = null;
+
+  // Filtering and sorting
+  selectedCategory: string | 'all' = 'all';
+  selectedStatus: 'all' | 'active' | 'inactive' = 'all';
+  searchTerm = '';
+
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private adminApiService: AdminApiService,
+    private authService: AuthService,
+    private router: Router,
+    @Inject(ADMIN_API_BASE_URL) private adminApiBaseUrl: string,
+    @Inject(GALLERY_API_BASE_URL) private galleryApiBaseUrl: string
+  ) {}
 
   ngOnInit(): void {
-    this.loadGalleryItems();
-    this.loadCategories();
+    this.loadConfigAndItems();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadConfigAndItems(): void {
+    this.isLoading = true;
+    this.adminApiService
+      .getGalleryConfig()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (configResponse) => {
+          if (configResponse.success && configResponse.data) {
+            this.galleryConfig = configResponse.data;
+            this.onMainCategoryChange(); // Initialize dropdowns
+            this.loadGalleryItems(); // Now load items
+          } else {
+            this.error = 'Failed to load gallery configuration.';
+            this.isLoading = false;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading config:', error);
+          this.error = 'Failed to load gallery configuration.';
+          this.isLoading = false;
+        },
+      });
+  }
+
+  objectKeys<T extends object>(obj: T): (keyof T)[] {
+    return Object.keys(obj) as (keyof T)[];
+  }
+
+  get availableSubcategories(): GallerySubCategory[] {
+    if (!this.galleryConfig) return [];
+
+    const selectedMain = this.galleryConfig.categories.find(
+      (c) => c.value === this.uploadForm.mainCategory
+    );
+
+    return selectedMain?.subcategories || [];
+  }
+
+  onMainCategoryChange(): void {
+    const subcategories = this.availableSubcategories;
+    this.uploadForm.subCategory =
+      subcategories.length > 0 ? subcategories[0].value : '';
+  }
+
+  getCategoryLabel(categoryValue: string): string {
+    if (!this.galleryConfig) return categoryValue;
+
+    for (const category of this.galleryConfig.categories) {
+      if (category.value === categoryValue) {
+        return category.label;
+      }
+      if (category.subcategories) {
+        for (const sub of category.subcategories) {
+          if (sub.value === categoryValue) {
+            return sub.label;
+          }
+        }
+      }
+    }
+    return categoryValue;
   }
 
   loadGalleryItems(): void {
@@ -54,7 +133,7 @@ export class AdminGalleryComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.galleryItems = response.data;
-          this.applyFilters();
+          this.onFilterChange(); // Use onFilterChange to apply filters
         }
         this.isLoading = false;
       },
@@ -66,42 +145,49 @@ export class AdminGalleryComponent implements OnInit {
     });
   }
 
-  loadCategories(): void {
-    this.adminApiService.getAvailableCategories().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.availableCategories = response.data;
-        }
-      },
-      error: (error) => {
-        console.error('Error loading categories:', error);
-      },
-    });
-  }
-
-  applyFilters(): void {
-    this.filteredItems = this.galleryItems.filter((item) => {
-      const matchesCategory =
-        this.selectedCategory === 'all' ||
-        item.category === this.selectedCategory;
-      const matchesStatus =
-        this.selectedStatus === 'all' ||
-        (this.selectedStatus === 'active' && item.active) ||
-        (this.selectedStatus === 'inactive' && !item.active);
-      const matchesSearch =
-        !this.searchTerm ||
-        item.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        (item.description &&
-          item.description
-            .toLowerCase()
-            .includes(this.searchTerm.toLowerCase()));
-
-      return matchesCategory && matchesStatus && matchesSearch;
-    });
-  }
-
   onFilterChange(): void {
-    this.applyFilters();
+    let items = [...this.galleryItems];
+
+    // Filter by status
+    if (this.selectedStatus !== 'all') {
+      const isActive = this.selectedStatus === 'active';
+      items = items.filter((item) => item.is_active === isActive);
+    }
+
+    // Filter by category
+    if (this.selectedCategory !== 'all') {
+      const selectedCatValue = this.selectedCategory;
+      const mainCategory = this.galleryConfig?.categories.find(
+        (c) => c.value === selectedCatValue
+      );
+
+      items = items.filter((item) => {
+        // Direct match
+        if (item.category === selectedCatValue) return true;
+
+        // Check if item's category is a subcategory of the selected main category
+        if (mainCategory && mainCategory.subcategories) {
+          return mainCategory.subcategories.some(
+            (sub) => sub.value === item.category
+          );
+        }
+
+        return false;
+      });
+    }
+
+    // Filter by search term
+    if (this.searchTerm.trim()) {
+      const searchTermLower = this.searchTerm.toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.title.toLowerCase().includes(searchTermLower) ||
+          (item.description &&
+            item.description.toLowerCase().includes(searchTermLower))
+      );
+    }
+
+    this.filteredItems = items;
   }
 
   toggleUploadForm(): void {
@@ -112,31 +198,33 @@ export class AdminGalleryComponent implements OnInit {
   }
 
   onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.uploadForm.image = input.files[0];
+    const element = event.currentTarget as HTMLInputElement;
+    let fileList: FileList | null = element.files;
+    if (fileList) {
+      this.uploadForm.image = fileList[0];
     }
   }
 
   onUpload(): void {
-    if (!this.uploadForm.image || !this.uploadForm.title.trim()) {
-      this.uploadError =
-        'Please fill in all required fields and select an image.';
+    if (!this.uploadForm.image) {
+      this.uploadError = 'Please select an image to upload.';
       return;
     }
 
     this.isUploading = true;
-    this.uploadError = '';
+    this.uploadError = null;
 
-    const uploadData = {
-      title: this.uploadForm.title.trim(),
-      category: this.uploadForm.category,
-      description: this.uploadForm.description.trim() || undefined,
-      active: this.uploadForm.active,
-      image: this.uploadForm.image,
+    const formValue = this.uploadForm;
+    const request: GalleryCreateRequest = {
+      title: formValue.title.trim(),
+      category: formValue.subCategory || formValue.mainCategory,
+      description: formValue.description.trim(),
+      image: formValue.image!,
+      is_active: formValue.is_active,
+      is_featured: formValue.is_featured,
     };
 
-    this.adminApiService.createGalleryItem(uploadData).subscribe({
+    this.adminApiService.createGalleryItem(request).subscribe({
       next: (response) => {
         if (response.success) {
           this.loadGalleryItems(); // Refresh the list
@@ -157,38 +245,97 @@ export class AdminGalleryComponent implements OnInit {
   resetUploadForm(): void {
     this.uploadForm = {
       title: '',
-      category: 'featured',
+      mainCategory: this.galleryConfig?.categories[0]?.value || '',
+      subCategory: '',
       description: '',
-      active: true,
       image: null,
+      is_active: true,
+      is_featured: false,
     };
-    this.uploadError = '';
+    this.uploadError = null;
+    this.onMainCategoryChange(); // To populate subcategories
   }
 
-  toggleItemStatus(item: GalleryItem): void {
-    const updateData = { active: !item.active };
-
-    this.adminApiService.updateGalleryItem(item.id, updateData).subscribe({
+  updateItemStatus(item: GalleryItem): void {
+    const newStatus = !item.is_active;
+    this.adminApiService.updateGalleryItemStatus(item.id, newStatus).subscribe({
       next: (response) => {
-        if (response.success) {
-          item.active = !item.active;
-          this.applyFilters();
+        const updatedItem = response.data;
+
+        if (updatedItem) {
+          this.updateLocalItem(item.id, updatedItem);
+          console.log(
+            `Item ${item.id} status updated to ${updatedItem.is_active}`
+          );
+        } else {
+          this.handleUpdateError(
+            item,
+            'Status update response did not contain gallery item data.'
+          );
         }
       },
-      error: (error) => {
-        console.error('Error updating item status:', error);
-        alert('Failed to update item status');
+      error: (err) => {
+        this.handleUpdateError(
+          item,
+          `Failed to update status for item "${item.title}". Please try again.`
+        );
+        console.error('Failed to update item status', err);
       },
     });
   }
 
-  deleteItem(item: GalleryItem): void {
+  updateFeaturedStatus(item: GalleryItem): void {
+    const newStatus = !item.is_featured;
+    this.adminApiService.updateFeaturedStatus(item.id, newStatus).subscribe({
+      next: (response) => {
+        const updatedItem = response.data;
+        if (updatedItem) {
+          this.updateLocalItem(item.id, updatedItem);
+          console.log(
+            `Item ${item.id} featured status updated to ${updatedItem.is_featured}`
+          );
+        } else {
+          this.handleUpdateError(
+            item,
+            'Featured status update response did not contain gallery item data.'
+          );
+        }
+      },
+      error: (err) => {
+        this.handleUpdateError(
+          item,
+          `Failed to update featured status for item "${item.title}". Please try again.`
+        );
+        console.error('Failed to update featured status', err);
+      },
+    });
+  }
+
+  private updateLocalItem(id: number, updatedItem: GalleryItem): void {
+    const index = this.galleryItems.findIndex((i) => i.id === id);
+    if (index !== -1) {
+      this.galleryItems[index] = updatedItem;
+    }
+
+    const filteredIndex = this.filteredItems.findIndex((i) => i.id === id);
+    if (filteredIndex !== -1) {
+      this.filteredItems[filteredIndex] = updatedItem;
+    }
+  }
+
+  private handleUpdateError(item: GalleryItem, message: string): void {
+    console.error(message);
+    this.error = message;
+    // Optional: Revert UI changes if needed, though it's better to rely on the updated data from server
+  }
+
+  deleteItem(id: number): void {
     if (
       confirm(
-        `Are you sure you want to delete "${item.title}"? This action cannot be undone.`
+        'Are you sure you want to delete this item? This action cannot be undone.'
       )
     ) {
-      this.adminApiService.deleteGalleryItem(item.id).subscribe({
+      this.adminApiService.deleteGalleryItem(id).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadGalleryItems(); // Refresh the list

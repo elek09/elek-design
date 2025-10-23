@@ -1,36 +1,38 @@
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Slide } from '../../../models/slide.model';
-import { GalleryDataService } from '../../../services/gallery-data.service'; // Import the service
+import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
+import { Slide } from '../../../models/slide.model';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [CommonModule, CarouselComponent],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.scss'
+  styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
   @ViewChild('eletterCarousel') eletterCarousel!: CarouselComponent;
   @ViewChild('uzletterCarousel') uzletterCarousel!: CarouselComponent;
 
-  // Declare empty arrays
-  topCarouselSlides$!: ReturnType<GalleryDataService['getTopCarouselSlides$']>;
-  eletterSlides$!: ReturnType<GalleryDataService['getEletterSlides$']>;
-  uzletterSlides$!: ReturnType<GalleryDataService['getUzletterSlides$']>;
+  private readonly galleryDataService = inject(GalleryDataService);
 
-  // Inject the service in the constructor
-  constructor(private galleryData: GalleryDataService) {}
+  topCarouselSlides$!: Observable<Slide[]>;
+  eletterSlides$!: Observable<Slide[]>;
+  uzletterSlides$!: Observable<Slide[]>;
 
   ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryData.getTopCarouselSlides$();
-    this.eletterSlides$ = this.galleryData.getEletterSlides$();
-    this.uzletterSlides$ = this.galleryData.getUzletterSlides$();
+    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
+    this.eletterSlides$ =
+      this.galleryDataService.getSlidesByCategory$('eletter');
+    this.uzletterSlides$ =
+      this.galleryDataService.getSlidesByCategory$('uzletter');
   }
 
   onMenuClick(section: 'eletter' | 'uzletter', key: string) {
-    const target = section === 'eletter' ? this.eletterCarousel : this.uzletterCarousel;
+    const target =
+      section === 'eletter' ? this.eletterCarousel : this.uzletterCarousel;
     target?.goToById(key);
   }
 

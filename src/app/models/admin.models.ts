@@ -8,10 +8,11 @@ export interface User {
 export interface GalleryItem {
   id: number;
   title: string;
-  category: 'featured' | 'work' | 'ui' | 'misc';
-  description: string | null;
+  description?: string;
+  category: string;
   image_path: string;
-  active: boolean;
+  is_active: boolean;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -35,18 +36,33 @@ export interface ApiResponse<T = any> {
 
 export interface GalleryCreateRequest {
   title: string;
-  category: string;
   description?: string;
+  category: string;
   image: File;
-  active: boolean;
+  is_active: boolean;
+  is_featured: boolean;
 }
 
 export interface GalleryUpdateRequest {
   title?: string;
-  category?: string;
   description?: string;
+  category?: string;
   image?: File;
-  active?: boolean;
+  is_active?: boolean;
+  is_featured?: boolean;
 }
 
-export type GalleryCategory = 'featured' | 'work' | 'ui' | 'misc';
+export interface GallerySubCategory {
+  label: string;
+  value: string;
+}
+
+export interface GalleryCategory {
+  label: string;
+  value: string;
+  subcategories?: GallerySubCategory[];
+}
+
+export interface GalleryConfig {
+  categories: GalleryCategory[];
+}

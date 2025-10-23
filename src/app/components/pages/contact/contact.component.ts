@@ -1,21 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Slide } from '../../../models/slide.model';
 import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-contact',
+  standalone: true,
   imports: [CommonModule, CarouselComponent],
   templateUrl: './contact.component.html',
-  styleUrl: './contact.component.scss'
+  styleUrl: './contact.component.scss',
 })
-export class ContactComponent {
-  protected topCarouselSlides$!: ReturnType<GalleryDataService['getTopCarouselSlides$']>;
+export class ContactComponent implements OnInit {
+  private readonly galleryDataService = inject(GalleryDataService);
 
-  constructor(private galleryData: GalleryDataService) {}
+  protected topCarouselSlides$!: Observable<Slide[]>;
 
   ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryData.getTopCarouselSlides$();
+    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
   }
 }

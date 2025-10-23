@@ -1,23 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Slide } from '../../../models/slide.model';
 import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-curved-furniture',
+  standalone: true,
   imports: [CommonModule, CarouselComponent],
   templateUrl: './curved-furniture.component.html',
-  styleUrl: './curved-furniture.component.scss'
+  styleUrl: './curved-furniture.component.scss',
 })
 export class CurvedFurnitureComponent implements OnInit {
-  protected topCarouselSlides$!: ReturnType<GalleryDataService['getTopCarouselSlides$']>;
-  protected curvedFurnitureSlides$!: ReturnType<GalleryDataService['getCurvedFurnitureSlides$']>;
+  private readonly galleryDataService = inject(GalleryDataService);
 
-  constructor(private galleryData: GalleryDataService) {}
+  protected topCarouselSlides$!: Observable<Slide[]>;
+  protected curvedFurnitureSlides$!: Observable<Slide[]>;
 
   ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryData.getTopCarouselSlides$();
-    this.curvedFurnitureSlides$ = this.galleryData.getCurvedFurnitureSlides$();
+    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
+    this.curvedFurnitureSlides$ =
+      this.galleryDataService.getSlidesByCategory$('curved-furniture');
   }
 }
