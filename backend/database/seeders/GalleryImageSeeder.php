@@ -2,114 +2,108 @@
 
 namespace Database\Seeders;
 
+use App\Models\GalleryItem;
 use Illuminate\Database\Seeder;
-use Illuminate\Http\File;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Models\GalleryItem;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 class GalleryImageSeeder extends Seeder
 {
-    public function run(): void
+    public function run()
     {
-        $src = base_path('database/seeders/_sample/gallery');
-        if (!is_dir($src)) {
-            $this->command->warn("Missing: $src");
+        $this->command->info('--- Wiping old gallery data and files ---');
+        Storage::disk('public')->deleteDirectory('gallery');
+        Storage::disk('public')->makeDirectory('gallery');
+        DB::table('gallery_items')->truncate();
+
+        $this->processImages();
+    }
+
+    private function processImages()
+    {
+        $sourcePath = database_path('seeders/_sample/gallery');
+
+        if (!File::exists($sourcePath)) {
+            $this->command->error('Source image directory not found: ' . $sourcePath);
             return;
         }
 
-        $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'JPG', 'JPEG', 'PNG', 'WEBP', 'ico', 'ICO'];
-        $uiKeepOriginal = ['hamburger.png', 'left.png', 'right.png', 'elekdesign_logo.jpg', 'designicon.ico'];
+        $allFiles = collect(File::files($sourcePath));
 
-        $it = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($src, \FilesystemIterator::SKIP_DOTS)
-        );
-
-        foreach ($it as $fi) {
-            if (!$fi->isFile())
-                continue;
-
-            $basename = $fi->getFilename();
-            $ext = $fi->getExtension();
-            if (!in_array($ext, $allowedExt, true))
-                continue;
-
-            $fullpath = $fi->getPathname();
-            $parent = basename($fi->getPath());
-
-            // Kategória a mappa szerint
-            $category = match (Str::lower($parent)) {
-                'fokepek' => 'featured',
-                'kepek' => 'work',
-                default => 'misc',
-            };
-
-            // UI fájlok változatlan névvel, külön kategóriába
-            if (in_array($basename, $uiKeepOriginal, true)) {
-                $target = 'gallery/ui/' . $basename;
-                // ha már megvan, ne duplázzuk
-                if (!Storage::disk('public')->exists($target)) {
-                    Storage::disk('public')->putFileAs('gallery/ui', new File($fullpath), $basename);
-                }
-                GalleryItem::updateOrCreate(
-                    ['image_path' => $target],
-                    ['title' => pathinfo($basename, PATHINFO_FILENAME), 'category' => 'ui', 'active' => true]
-                );
-                $this->command->info("UI: $target");
-                continue;
-            }
-
-            // --- Fotók: egyszerű alapnév + (index) ---
-            $nameNoExt = pathinfo($basename, PATHINFO_FILENAME);
-
-            // ha a végén (n) van, vedd le a sorszámot az "alap" meghatározásához
-            $base = preg_replace('/\(\d+\)$/', '', $nameNoExt);
-
-            // normalizáld: ascii, kisbetű, csak a-z0-9 és zárójel marad
-            $base = Str::ascii($base);
-            $base = strtolower($base);
-            $base = preg_replace('/[^a-z0-9\(\)]+/', '', $base);
-            $base = trim($base);
-            if ($base === '')
-                $base = 'kep';
-
-            // találj szabad nevet: base.ext, base(1).ext, base(2).ext...
-            $finalName = $this->nextFreeName($base, $ext, $category);
-
-            $targetDir = "gallery/{$category}";
-            $storedPath = $targetDir . '/' . $finalName;
-
-            if (!Storage::disk('public')->exists($storedPath)) {
-                Storage::disk('public')->putFileAs($targetDir, new File($fullpath), $finalName);
-            }
-
-            GalleryItem::updateOrCreate(
-                ['image_path' => $storedPath],
-                ['title' => $nameNoExt, 'category' => $category, 'active' => true]
-            );
-
-            $this->command->info("OK: $storedPath");
+        if ($allFiles->isEmpty()) {
+            $this->command->warn('No source images found in the gallery directory.');
+            return;
         }
 
-        $this->command->info('Gallery seeding finished.');
+        $this->command->info("--- Found {$allFiles->count()} total images. Processing... ---");
+        $progressBar = $this->command->getOutput()->createProgressBar($allFiles->count());
+        $progressBar->start();
+
+        foreach ($allFiles as $file) {
+            $filename = $file->getFilename();
+            $baseName = Str::lower($file->getFilenameWithoutExtension());
+            
+            $is_featured = str_starts_with($baseName, 'featured_');
+            if ($is_featured) {
+                $baseName = substr($baseName, 9); // "featured_" length
+            }
+            
+            $category = $this->findCategoryByKeyword($baseName);
+
+            // If no category can be determined, it's a utility file.
+            if ($category === null) {
+                // Copy to the root of the public gallery folder.
+                $destination = Storage::disk('public')->path('gallery/' . $filename);
+                File::copy($file->getPathname(), $destination);
+            } else {
+                // It's a content file, process and add to database.
+                $title = Str::headline(str_replace(['(1)','(2)','(3)'], '', $baseName));
+                $categorySlug = Str::slug($category);
+                $titleSlug = Str::slug($title);
+                $extension = $file->getExtension();
+                
+                $newFilename = "{$titleSlug}-" . time() . rand(10, 99) . ".{$extension}";
+                $destinationDirectory = "gallery/{$categorySlug}";
+                $newPath = "{$destinationDirectory}/{$newFilename}";
+
+                Storage::disk('public')->makeDirectory($destinationDirectory);
+                File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
+
+                GalleryItem::create([
+                    'title' => $title,
+                    'category' => $category,
+                    'description' => "Automatikus leírás: {$title}",
+                    'image_path' => $newPath,
+                    'is_active' => true,
+                    'is_featured' => $is_featured,
+                ]);
+            }
+            
+            $progressBar->advance();
+        }
+
+        $progressBar->finish();
+        $this->command->info("\n--- Gallery processing complete! ---");
     }
 
-    private function nextFreeName(string $base, string $ext, string $category): string
+    private function findCategoryByKeyword(string $filename): ?string
     {
-        $ext = ltrim($ext, '.');
-        $targetDir = "gallery/{$category}";
+        $keywordMap = [
+            'konyha' => 'konyha', 'nappali' => 'nappali', 'furdoszoba' => 'furdoszoba',
+            'haloszoba' => 'haloszoba', 'gardrob' => 'gardrob', 'lepcso' => 'lepcso',
+            'iroda' => 'iroda-berendezes', 'uzlet' => 'uzlet-berendezes',
+            'kiallitasibutorok' => 'kiallitasi-butorok', '3d' => '3d-falboritas',
+            '3dfal' => '3d-falboritas', 'ivesbutorok' => 'ives-butorok', 'ives' => 'ives-butorok',
+        ];
 
-        // első próbálkozás: "base.ext"
-        $candidate = "{$base}.{$ext}";
-        $i = 1;
-
-        while (Storage::disk('public')->exists($targetDir . '/' . $candidate)) {
-            $candidate = "{$base}({$i}).{$ext}";
-            $i++;
+        foreach ($keywordMap as $keyword => $category) {
+            if (str_starts_with($filename, $keyword)) {
+                return $category;
+            }
         }
 
-        return $candidate;
+        return null;
     }
 }

@@ -16,7 +16,7 @@ return new class extends Migration {
             $t->string('category')->nullable();
             $t->text('description')->nullable();
             $t->string('image_path');
-            $t->boolean('active')->default(true);
+            $t->boolean('is_active')->default(true);
             $t->timestamps();
         });
 

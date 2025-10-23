@@ -13,7 +13,7 @@ class GalleryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = GalleryItem::query()->where('active', true);
+        $query = GalleryItem::query()->where('is_active', true);
         if ($category = $request->query('category')) {
             $query->where('category', $category);
         }
@@ -24,7 +24,7 @@ class GalleryController extends Controller
 
     public function top(Request $request)
     {
-        $query = GalleryItem::query()->where('active', true)->where('category', 'featured');
+        $query = GalleryItem::query()->where('is_active', true)->where('is_featured', true);
         return $this->paginateAndMap($query, 24);
     }
 
@@ -58,7 +58,7 @@ class GalleryController extends Controller
 
     private function queryByTitleNeedles(array $needles)
     {
-        $q = GalleryItem::query()->where('active', true);
+        $q = GalleryItem::query()->where('is_active', true);
         $q->where(function ($sub) use ($needles) {
             foreach ($needles as $n) {
                 $sub->orWhere('title', 'like', "%{$n}%")
@@ -86,6 +86,8 @@ class GalleryController extends Controller
                 'url' => $url,
                 'thumb_url' => $thumbUrl,
                 'order' => $order,
+                'is_featured' => $item->is_featured,
+                'is_active' => $item->is_active,
             ];
         });
     }

@@ -44,10 +44,12 @@ Route::prefix('v1')->group(function () {
             Route::get('me', [AdminAuthController::class, 'me']);
             
             // Gallery management
+            Route::get('gallery/config', [AdminGalleryController::class, 'config']);
             Route::apiResource('gallery', AdminGalleryController::class)->parameters([
                 'gallery' => 'galleryItem'
             ]);
-            Route::patch('gallery/{galleryItem}/toggle-active', [AdminGalleryController::class, 'toggleActive']);
+            Route::put('gallery/{galleryItem}/status', [AdminGalleryController::class, 'updateStatus']);
+            Route::put('gallery/{galleryItem}/featured', [AdminGalleryController::class, 'updateFeaturedStatus']);
             
             // Orders management
             Route::get('orders', [OrderController::class, 'index']);
