@@ -4,6 +4,10 @@ import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
 import { Slide } from '../../../models/slide.model';
 import { Observable } from 'rxjs';
+import {
+  eletterCategories,
+  uzletterCategories,
+} from '../../../models/gallery-categories';
 
 @Component({
   selector: 'app-home',
@@ -21,6 +25,9 @@ export class HomeComponent implements OnInit {
   topCarouselSlides$!: Observable<Slide[]>;
   eletterSlides$!: Observable<Slide[]>;
   uzletterSlides$!: Observable<Slide[]>;
+
+  public readonly eletterCategories = eletterCategories;
+  public readonly uzletterCategories = uzletterCategories;
 
   ngOnInit(): void {
     this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();

@@ -11,12 +11,9 @@
     <div class="row">
       <div class="col-sm-2 menu-list">
         <ul>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'konyha')">Konyha »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'nappali')">Nappali »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'furdoszoba')">Fürdőszoba »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'haloszoba')">Hálószoba »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'gardrob')">Gardrób »</a></li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', 'lepcso')">Lépcső »</a></li>
+          <li *ngFor="let category of eletterCategories">
+            <a href="#" (click)="$event.preventDefault(); onMenuClick('eletter', category.id)">{{ category.name }} »</a>
+          </li>
         </ul>
       </div>
       <div class="col-sm-10 can-be-paged">
@@ -36,12 +33,10 @@
     <div class="row">
       <div class="col-sm-2 menu-list second">
         <ul>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', 'iroda')">Irodaberendezés »</a>
+          <li *ngFor="let category of uzletterCategories">
+            <a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', category.id)">{{ category.name }}
+              »</a>
           </li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', 'uzlet')">Üzletberendezés »</a>
-          </li>
-          <li><a href="#" (click)="$event.preventDefault(); onMenuClick('uzletter', 'kiallitasibutorok')">Kiállítási
-              bútorok »</a></li>
         </ul>
       </div>
       <div class="col-sm-10 can-be-paged">

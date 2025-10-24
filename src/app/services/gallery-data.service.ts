@@ -3,6 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, shareReplay } from 'rxjs';
 import { Slide } from '../models/slide.model';
 import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
+import {
+  eletterCategories,
+  uzletterCategories,
+} from '../models/gallery-categories';
 
 type ApiImageItem = {
   id?: string | number;
@@ -113,15 +117,29 @@ export class GalleryDataService {
 
   // Sort slides to group by category (title) and then by filename
   private sortSlides(a: Slide, b: Slide): number {
-    // First, group by title/category
+    const categoryOrder = [
+      ...eletterCategories.map((c) => c.id),
+      ...uzletterCategories.map((c) => c.id),
+    ];
+
+    const getOrder = (category?: string) => {
+      const index = category ? categoryOrder.indexOf(category) : -1;
+      return index === -1 ? Infinity : index;
+    };
+
+    const orderA = getOrder(a.category);
+    const orderB = getOrder(b.category);
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
     const titleA = a.title?.toLowerCase() || '';
     const titleB = b.title?.toLowerCase() || '';
-
     if (titleA !== titleB) {
       return titleA.localeCompare(titleB);
     }
 
-    // If titles are the same, sort by image URL/filename
     return a.imageUrl.localeCompare(b.imageUrl);
   }
 
