@@ -1,4 +1,14 @@
-import { Component, Input, OnInit, OnDestroy, HostListener, SimpleChanges, OnChanges, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnInit,
+  OnDestroy,
+  HostListener,
+  SimpleChanges,
+  OnChanges,
+  Output,
+  EventEmitter,
+} from '@angular/core';
 
 import { Slide } from '../../../models/slide.model';
 
@@ -7,9 +17,9 @@ import { Slide } from '../../../models/slide.model';
   standalone: true,
   imports: [],
   templateUrl: './carousel.component.html',
-  styleUrl: './carousel.component.scss'
+  styleUrl: './carousel.component.scss',
 })
-export class CarouselComponent implements OnInit, OnDestroy, OnChanges{
+export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
   // --- INPUTS: How we configure the carousel from the outside ---
   @Input() slides: Slide[] = [];
   @Input() showManualControls: boolean = true;
@@ -54,7 +64,8 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges{
   }
 
   previousSlide(): void {
-    this.currentSlideIndex = (this.currentSlideIndex - 1 + this.slides.length) % this.slides.length;
+    this.currentSlideIndex =
+      (this.currentSlideIndex - 1 + this.slides.length) % this.slides.length;
     this.updateTransform();
     this.emitSlideChanged();
   }
@@ -62,9 +73,11 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges{
   // Method to be called from a parent component (e.g., side menu)
   public goToById(id: string) {
     if (!this.slides?.length) return;
-    const idx = this.slides.findIndex(s =>
-      s.id === id ||
-      (s.title && this.slugify(s.title) === id)
+    const idx = this.slides.findIndex(
+      (s) =>
+        s.id === id ||
+        s.category === id ||
+        (s.title && this.slugify(s.title) === id)
     );
     if (idx >= 0) {
       this.currentSlideIndex = idx;
@@ -81,7 +94,7 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges{
       .replace(/[^a-z0-9]+/g, '')
       .trim();
   }
-  
+
   private emitSlideChanged(): void {
     const currentSlide = this.slides[this.currentSlideIndex];
     if (currentSlide && currentSlide.id) {
@@ -105,7 +118,10 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges{
 
   private startAutoPlay(): void {
     if (this.autoPlay && !this.intervalId) {
-      this.intervalId = window.setInterval(() => this.nextSlide(), this.autoPlayInterval);
+      this.intervalId = window.setInterval(
+        () => this.nextSlide(),
+        this.autoPlayInterval
+      );
     }
   }
 

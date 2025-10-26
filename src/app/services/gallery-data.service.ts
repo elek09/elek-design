@@ -1,12 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of, shareReplay } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  map,
+  of,
+  shareReplay,
+  combineLatest,
+} from 'rxjs';
 import { Slide } from '../models/slide.model';
 import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
-import {
-  eletterCategories,
-  uzletterCategories,
-} from '../models/gallery-categories';
+// Static category lists are no longer used for ordering; we sort by dynamic CategoryService data
+import { CategoryService } from './category.service';
+import { Category } from '../models/category.model';
 
 type ApiImageItem = {
   id?: string | number;
@@ -33,6 +39,7 @@ export class GalleryDataService {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly galleryApiUrl = inject(GALLERY_API_BASE_URL);
   private readonly apiOrigin = this.getOrigin(this.baseUrl);
+  private readonly categoryService = inject(CategoryService);
 
   private slides$: Observable<Slide[]> = this.fetchAndProcessSlides$().pipe(
     shareReplay(1)
@@ -44,9 +51,46 @@ export class GalleryDataService {
     );
   }
 
-  getSlidesByCategory$(category: string) {
-    return this.slides$.pipe(
-      map((slides) => slides.filter((s) => s.section === category))
+  getSlidesByCategory$(section: string) {
+    return combineLatest([
+      this.slides$,
+      this.categoryService.getCategories(),
+    ]).pipe(
+      map(([slides, categories]) => {
+        const sectionOf = this.buildSectionResolver(categories);
+        const normalized = slides
+          .map((s) => ({ ...s, section: s.section || sectionOf(s.category) }))
+          .filter((s) => s.section === section);
+
+        // Build dynamic order for this section from backend categories' subcategory order
+        const sectionCategory = (categories || []).find(
+          (c) => String(c.type) === section
+        );
+        const subOrder: string[] = Array.isArray(sectionCategory?.subcategories)
+          ? (sectionCategory!.subcategories as any[]).map((sc) => {
+              if (typeof sc === 'string') return this.slugify(sc)!;
+              const name = sc?.name ?? String(sc?.id ?? '');
+              const rawId = sc?.id ?? name;
+              return this.slugify(String(rawId))!;
+            })
+          : [];
+
+        const orderIndex = (cat?: string) => {
+          if (!cat) return Number.POSITIVE_INFINITY;
+          const idx = subOrder.indexOf(cat);
+          return idx === -1 ? Number.POSITIVE_INFINITY : idx;
+        };
+
+        return normalized.sort((a, b) => {
+          const ai = orderIndex(a.category);
+          const bi = orderIndex(b.category);
+          if (ai !== bi) return ai - bi;
+          const at = a.title?.toLowerCase() || '';
+          const bt = b.title?.toLowerCase() || '';
+          if (at !== bt) return at.localeCompare(bt);
+          return a.imageUrl.localeCompare(b.imageUrl);
+        });
+      })
     );
   }
 
@@ -62,7 +106,6 @@ export class GalleryDataService {
             .map((i) => this.toSlide(i))
             .filter((s): s is Slide => !!s)
             .filter((slide) => slide.is_active)
-            .sort((a, b) => this.sortSlides(a, b))
         ),
         catchError(() => of<Slide[]>([])) // no local fallback
       );
@@ -92,12 +135,14 @@ export class GalleryDataService {
       this.slugify(item.title ?? item.name) ||
       (item.id != null ? String(item.id) : undefined);
 
+    const categoryId = item.category ? this.slugify(item.category) : undefined;
+
     return {
       id,
       imageUrl,
       title: item.title ?? item.name,
-      category: item.category,
-      section: item.section,
+      category: categoryId,
+      section: item.section, // may be undefined; we'll derive it if needed
       is_active: item.is_active,
       is_featured: item.is_featured,
     };
@@ -111,36 +156,36 @@ export class GalleryDataService {
       .replace(/[\u0300-\u036f]/g, '') // remove accents
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-') // non-alnum -> hyphen
-      .replace(/^-+|-+$/g, '') // trim hyphens
-      .replace(/-/g, ''); // optional: remove hyphens to match menu keys
+      .replace(/^-+|-+$/g, ''); // trim hyphens
   }
 
-  // Sort slides to group by category (title) and then by filename
-  private sortSlides(a: Slide, b: Slide): number {
-    const categoryOrder = [
-      ...eletterCategories.map((c) => c.id),
-      ...uzletterCategories.map((c) => c.id),
-    ];
+  // Sorting now happens in getSlidesByCategory$ using dynamic category order
 
-    const getOrder = (category?: string) => {
-      const index = category ? categoryOrder.indexOf(category) : -1;
-      return index === -1 ? Infinity : index;
+  // Build a resolver that maps a slide.category (subcategory id or main type)
+  // to its parent section (e.g., 'eletter' | 'uzletter' | custom type)
+  private buildSectionResolver(categories: Category[]) {
+    const subToType = new Map<string, string>();
+    const typeSet = new Set<string>();
+    for (const c of categories || []) {
+      const type = String(c.type);
+      typeSet.add(type);
+      const subs = Array.isArray(c.subcategories)
+        ? (c.subcategories as any[])
+        : [];
+      for (const s of subs) {
+        const name = typeof s === 'string' ? s : s?.name ?? String(s?.id ?? '');
+        const id =
+          (typeof s === 'string' ? this.slugify(name) : s?.id) ||
+          this.slugify(name);
+        if (id) subToType.set(id, type);
+      }
+    }
+    return (categoryId?: string) => {
+      if (!categoryId) return undefined;
+      const key = this.slugify(categoryId) || categoryId;
+      if (typeSet.has(key)) return key; // already a main type
+      return subToType.get(key);
     };
-
-    const orderA = getOrder(a.category);
-    const orderB = getOrder(b.category);
-
-    if (orderA !== orderB) {
-      return orderA - orderB;
-    }
-
-    const titleA = a.title?.toLowerCase() || '';
-    const titleB = b.title?.toLowerCase() || '';
-    if (titleA !== titleB) {
-      return titleA.localeCompare(titleB);
-    }
-
-    return a.imageUrl.localeCompare(b.imageUrl);
   }
 
   private resolveImageUrl(item: ApiImageItem): string | null {

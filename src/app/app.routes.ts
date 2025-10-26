@@ -8,6 +8,7 @@ import { AdminLoginComponent } from './components/admin/admin-login/admin-login.
 import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
 import { AdminGalleryComponent } from './components/admin/admin-gallery/admin-gallery.component';
 import { authGuard } from './guards/auth.guard';
+import { CategoryManagerComponent } from './components/admin/category-manager/category-manager.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -25,6 +26,11 @@ export const routes: Routes = [
   {
     path: 'admin/gallery',
     component: AdminGalleryComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'admin/category-manager',
+    component: CategoryManagerComponent,
     canActivate: [authGuard],
   },
   { path: 'admin', redirectTo: 'admin/dashboard', pathMatch: 'full' },

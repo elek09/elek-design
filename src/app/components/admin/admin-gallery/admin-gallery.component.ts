@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApiService } from '../../../services/admin-api.service';
 import { AuthService } from '../../../services/auth.service';
 import {
@@ -12,7 +12,9 @@ import {
 } from '../../../models/admin.models';
 import { ADMIN_API_BASE_URL, GALLERY_API_BASE_URL } from '../../../app.tokens';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
+import { CategoryService } from '../../../services/category.service';
+import { Category } from '../../../models/category.model';
 
 @Component({
   selector: 'app-admin-gallery',
@@ -52,6 +54,8 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     private adminApiService: AdminApiService,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
+    private categoryService: CategoryService,
     @Inject(ADMIN_API_BASE_URL) private adminApiBaseUrl: string,
     @Inject(GALLERY_API_BASE_URL) private galleryApiBaseUrl: string
   ) {}
@@ -67,26 +71,89 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   loadConfigAndItems(): void {
     this.isLoading = true;
-    this.adminApiService
-      .getGalleryConfig()
-      .pipe(takeUntil(this.destroy$))
+    // Build gallery config dynamically from CategoryService to reflect latest admin-managed categories
+    this.categoryService
+      .getCategories()
+      .pipe(
+        map((categories: Category[]) => this.buildGalleryConfig(categories)),
+        takeUntil(this.destroy$)
+      )
       .subscribe({
-        next: (configResponse) => {
-          if (configResponse.success && configResponse.data) {
-            this.galleryConfig = configResponse.data;
-            this.onMainCategoryChange(); // Initialize dropdowns
-            this.loadGalleryItems(); // Now load items
-          } else {
-            this.error = 'Failed to load gallery configuration.';
-            this.isLoading = false;
+        next: (config) => {
+          this.galleryConfig = config;
+          // Initialize from query params if provided
+          const qp = this.route.snapshot.queryParamMap;
+          const main = qp.get('mainCategory') || qp.get('main') || '';
+          const sub = qp.get('subCategory') || qp.get('sub') || '';
+
+          // Set main category
+          const mainExists = !!this.galleryConfig.categories.find(
+            (c) => c.value === main
+          );
+          this.uploadForm.mainCategory = mainExists
+            ? main!
+            : this.galleryConfig.categories[0]?.value || '';
+
+          // Initialize subcategory default first
+          this.onMainCategoryChange();
+
+          // If subcategory in params and exists under selected main, set it
+          const subExists = !!this.availableSubcategories.find(
+            (s) => s.value === sub
+          );
+          if (sub && subExists) {
+            this.uploadForm.subCategory = sub;
           }
+
+          // If any param provided, open the upload form automatically
+          if (mainExists || subExists) {
+            this.showUploadForm = true;
+          }
+
+          this.loadGalleryItems();
         },
         error: (error) => {
-          console.error('Error loading config:', error);
+          console.error('Error loading categories for config:', error);
           this.error = 'Failed to load gallery configuration.';
           this.isLoading = false;
         },
       });
+  }
+
+  private buildGalleryConfig(categories: Category[]): GalleryConfig {
+    const mapped = (categories || []).map((c) => ({
+      label: c.name,
+      value: String(c.type),
+      subcategories: this.normalizeSubcategories(c.subcategories).map((s) => ({
+        label: s.name,
+        value: s.id,
+      })),
+    }));
+    return { categories: mapped };
+  }
+
+  private normalizeSubcategories(
+    subs: Category['subcategories']
+  ): Array<{ id: string; name: string }> {
+    if (!Array.isArray(subs)) return [];
+    return (subs as any[]).map((s: any) => {
+      if (typeof s === 'string') return { id: this.slugify(s), name: s };
+      const name = s?.name ?? String(s?.id ?? '');
+      const rawId = s?.id ?? name;
+      const id = this.slugify(String(rawId));
+      return { id, name };
+    });
+  }
+
+  private slugify(value: string): string {
+    return (value || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
   objectKeys<T extends object>(obj: T): (keyof T)[] {
@@ -206,6 +273,30 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   }
 
   onUpload(): void {
+    // Basic client-side validation aligned with common backend rules
+    if (!this.uploadForm.title.trim()) {
+      this.uploadError = 'Please enter a title.';
+      return;
+    }
+    // Require a subcategory when available for the selected main category
+    const subs = this.availableSubcategories;
+    if (!this.uploadForm.mainCategory) {
+      this.uploadError = 'Please select a main category.';
+      return;
+    }
+    if (subs.length > 0 && !this.uploadForm.subCategory) {
+      this.uploadError = 'Please select a subcategory under the chosen main category.';
+      return;
+    }
+    // Validate the chosen subcategory actually belongs to the selected main category
+    if (
+      this.uploadForm.subCategory &&
+      subs.length > 0 &&
+      !subs.some((s) => s.value === this.uploadForm.subCategory)
+    ) {
+      this.uploadError = 'The selected subcategory is not valid for the chosen main category.';
+      return;
+    }
     if (!this.uploadForm.image) {
       this.uploadError = 'Please select an image to upload.';
       return;
@@ -215,9 +306,11 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     this.uploadError = null;
 
     const formValue = this.uploadForm;
+    const categoryValue = formValue.subCategory || formValue.mainCategory;
+    const normalizedCategory = this.slugify(categoryValue) || categoryValue;
     const request: GalleryCreateRequest = {
       title: formValue.title.trim(),
-      category: formValue.subCategory || formValue.mainCategory,
+      category: normalizedCategory,
       description: formValue.description.trim(),
       image: formValue.image!,
       is_active: formValue.is_active,
@@ -235,8 +328,27 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Upload error:', error);
-        this.uploadError =
-          error.error?.message || 'Failed to upload image. Please try again.';
+        if (error?.error) {
+          console.error('Upload error details:', error.error);
+        }
+        // Prefer detailed backend validation errors when present
+        const backendErrors = error?.error?.errors;
+        if (backendErrors && typeof backendErrors === 'object') {
+          const messages = Object.entries(backendErrors)
+            .flatMap(([field, errs]) =>
+              Array.isArray(errs)
+                ? errs.map((e) => `${field}: ${e}`)
+                : [`${field}: ${String(errs)}`]
+            )
+            .join('\n');
+          this.uploadError =
+            messages ||
+            error.error?.message ||
+            'Failed to upload image. Please try again.';
+        } else {
+          this.uploadError =
+            error.error?.message || 'Failed to upload image. Please try again.';
+        }
         this.isUploading = false;
       },
     });

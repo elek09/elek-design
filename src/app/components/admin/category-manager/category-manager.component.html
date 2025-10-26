@@ -1,0 +1,80 @@
+<div class="category-manager-container">
+    <h2>Category Management</h2>
+
+    <!-- List of existing categories -->
+    <div class="category-list">
+        <h3>Existing Categories</h3>
+        <ul>
+            <li *ngFor="let category of categories" (click)="selectCategory(category)">
+                {{ category.name }} ({{ category.type }})
+            </li>
+        </ul>
+    </div>
+
+    <!-- Form for creating a new category -->
+    <div class="category-form">
+        <h3>Create New Category</h3>
+        <input [(ngModel)]="newCategory.name" placeholder="Category Name" />
+        <input [(ngModel)]="newCategory.type" (ngModelChange)="onNewTypeInput()"
+            placeholder="Unique type (slug, e.g. egyeb)" />
+        <small>Type must be unique and will be used as identifier (e.g., eletter, uzletter, egyeb).</small>
+        <div class="alert alert-warning" *ngIf="isCreateTypeTaken">
+            This type already exists. Please choose a different one.
+        </div>
+        <button (click)="saveCategory(newCategory)"
+            [disabled]="!newCategory.name || !newCategory.type || isCreateTypeTaken">
+            Create Category
+        </button>
+    </div>
+
+    <!-- Form for editing a selected category -->
+    <div *ngIf="selectedCategory" class="category-edit-form">
+        <h3>Editing: {{ selectedCategory.name }}</h3>
+        <input [(ngModel)]="selectedCategory.name" placeholder="Category Name" />
+        <input [ngModel]="selectedCategory.type" (ngModelChange)="onEditTypeInput($event)"
+            placeholder="Unique type (slug)" />
+        <div class="alert alert-warning" *ngIf="isEditTypeTaken">
+            Another category already has this type. Types must be unique.
+        </div>
+
+        <h4>Subcategories</h4>
+        <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
+            <li *ngFor="let sub of selectedSubcategories; let i = index" cdkDrag>
+                <div class="subcategory-row" cdkDragHandle>
+                    <div class="field">
+                        <label>Name</label>
+                        <input [ngModel]="sub.name" (ngModelChange)="updateSubName(i, $event)" />
+                    </div>
+                    <div class="field">
+                        <label>Id (slug)</label>
+                        <input [ngModel]="sub.id" (ngModelChange)="updateSubId(i, $event)" />
+                    </div>
+                    <div class="subcategory-actions">
+                        <a [routerLink]="['/admin/gallery']"
+                            [queryParams]="{ mainCategory: selectedCategory.type, subCategory: sub.id }"
+                            class="btn btn-sm">Add Item</a>
+                        <button (click)="removeSubcategory(i)">Remove</button>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        <div class="alert alert-warning" *ngIf="hasDuplicateSubIds">
+            Duplicate subcategory IDs detected. Please ensure each subcategory has a unique slug.
+        </div>
+
+        <input [(ngModel)]="newSubcategoryName" placeholder="New Subcategory Name" />
+        <button (click)="addSubcategory()">Add Subcategory</button>
+
+        <hr />
+        <button (click)="saveCategory(selectedCategory)" [disabled]="isSaveDisabled">
+            Save Changes
+        </button>
+        <button (click)="deleteCategory(selectedCategory._id || selectedCategory.id)">Delete Category</button>
+        <a [routerLink]="['/admin/gallery']" [queryParams]="{ mainCategory: selectedCategory.type }" class="btn">Add
+            Item to {{ selectedCategory.name }}</a>
+        <button (click)="resetForm()">Cancel</button>
+    </div>
+    <div class="alert alert-danger" *ngIf="lastError" style="margin-top: 1rem;">
+        {{ lastError }}
+    </div>
+</div>

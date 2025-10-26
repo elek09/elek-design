@@ -1,6 +1,10 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withFetch,
+  withInterceptors,
+} from '@angular/common/http';
 import {
   API_BASE_URL,
   ADMIN_API_BASE_URL,
@@ -8,6 +12,7 @@ import {
 } from './app.tokens';
 
 import { routes } from './app.routes';
+import { authInterceptor } from './services/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,7 +24,7 @@ export const appConfig: ApplicationConfig = {
         scrollPositionRestoration: 'enabled',
       })
     ),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     { provide: API_BASE_URL, useValue: 'http://127.0.0.1:8000' },
     {
       provide: ADMIN_API_BASE_URL,
