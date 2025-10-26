@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Models\Category;
 
 class GalleryController extends Controller
 {
@@ -34,8 +35,10 @@ class GalleryController extends Controller
         try {
             $validated = $request->validated();
 
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
+            // Accept either 'image' or 'file' input name
+            $hasUpload = $request->hasFile('image') || $request->hasFile('file');
+            if ($hasUpload) {
+                $image = $request->file('image') ?? $request->file('file');
                 $categorySlug = Str::slug($validated['category']);
                 $titleSlug = Str::slug($validated['title']);
                 $timestamp = now()->timestamp;
@@ -88,27 +91,31 @@ class GalleryController extends Controller
     public function update(Request $request, GalleryItem $galleryItem)
     {
         try {
-            $validCategories = [
-                'featured', 'eletter', 'konyha', 'nappali', 'furdoszoba', 'haloszoba', 
-                'gardrob', 'lepcso', 'uzletter', 'iroda-berendezes', 'uzlet-berendezes', 
-                'kiallitasi-butorok', '3d-falboritas', 'ives-butorok'
-            ];
+            // Build dynamic category list from DB
+            $types = Category::query()->pluck('type')->all();
+            $subs = Category::query()
+                ->pluck('subcategories')
+                ->filter()
+                ->flatMap(function ($arr) { return collect($arr)->pluck('id'); })
+                ->filter()->unique()->values()->all();
+            $validCategories = array_values(array_unique(array_merge($types, $subs, ['featured', 'egyeb'])));
 
             $validated = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
                 'category' => ['sometimes', 'required', 'string', Rule::in($validCategories)],
                 'description' => 'nullable|string|max:1000',
                 'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'file' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'is_active' => 'sometimes|required|boolean',
                 'is_featured' => 'sometimes|required|boolean',
             ]);
 
-            if ($request->hasFile('image')) {
+            if ($request->hasFile('image') || $request->hasFile('file')) {
                 if ($galleryItem->image_path && Storage::disk('public')->exists($galleryItem->image_path)) {
                     Storage::disk('public')->delete($galleryItem->image_path);
                 }
 
-                $image = $request->file('image');
+                $image = $request->file('image') ?? $request->file('file');
                 $category = $validated['category'] ?? $galleryItem->category;
                 $title = $validated['title'] ?? $galleryItem->title;
 
@@ -197,40 +204,29 @@ class GalleryController extends Controller
      */
     public function config()
     {
-        $categories = [
-            [
-                'label' => 'Élettér',
-                'value' => 'eletter',
-                'subcategories' => [
-                    ['label' => 'Konyha', 'value' => 'konyha'],
-                    ['label' => 'Nappali', 'value' => 'nappali'],
-                    ['label' => 'Fürdőszoba', 'value' => 'furdoszoba'],
-                    ['label' => 'Hálószoba', 'value' => 'haloszoba'],
-                    ['label' => 'Gardrób', 'value' => 'gardrob'],
-                    ['label' => 'Lépcső', 'value' => 'lepcso'],
-                ]
-            ],
-            [
-                'label' => 'Üzlettér',
-                'value' => 'uzletter',
-                'subcategories' => [
-                    ['label' => 'Iroda Berendezés', 'value' => 'iroda-berendezes'],
-                    ['label' => 'Üzlet Berendezés', 'value' => 'uzlet-berendezes'],
-                    ['label' => 'Kiállítási Bútorok', 'value' => 'kiallitasi-butorok'],
-                ]
-            ],
-            [
-                'label' => '3D Falborítás',
-                'value' => '3d-falboritas'
-            ],
-            [
-                'label' => 'Íves Bútorok',
-                'value' => 'ives-butorok'
-            ],
-            [
-                'label' => 'Egyéb', // <-- ADDED
-                'value' => 'egyeb'   // <-- ADDED
-            ],
+        // Build categories dynamically from DB for the admin UI
+        $categories = [];
+        $dbCats = Category::orderBy('name')->get();
+        foreach ($dbCats as $cat) {
+            $entry = [
+                'label' => $cat->name,
+                'value' => $cat->type,
+            ];
+            if (is_array($cat->subcategories) && count($cat->subcategories)) {
+                $entry['subcategories'] = collect($cat->subcategories)
+                    ->map(function ($s) {
+                        return [
+                            'label' => $s['name'] ?? $s['id'],
+                            'value' => $s['id'] ?? Str::slug($s['name'] ?? '')
+                        ];
+                    })->values()->all();
+            }
+            $categories[] = $entry;
+        }
+        // Add "Egyéb" static option at the end
+        $categories[] = [
+            'label' => 'Egyéb',
+            'value' => 'egyeb'
         ];
 
         return response()->json([

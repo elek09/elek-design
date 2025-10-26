@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\GalleryItem;
 use Illuminate\Support\Str;
+use App\Models\Category;
 
 class GalleryController extends Controller
 {
@@ -30,42 +31,43 @@ class GalleryController extends Controller
 
     public function eletter(Request $request)
     {
-        $needles = ['nappali', 'konyha', 'furdoszoba', 'haloszoba', 'gardrob'];
-        $query = $this->queryByTitleNeedles($needles);
+        // Items whose category equals the main type 'eletter' OR any of its subcategory ids
+        [$typeToSection, $subToType] = $this->buildCategoryMaps();
+        $subIds = array_keys(array_filter($subToType, fn($t) => $t === 'eletter'));
+        $query = GalleryItem::query()->where('is_active', true)
+            ->where(function ($q) use ($subIds) {
+                $q->where('category', 'eletter')
+                  ->orWhereIn('category', $subIds);
+            });
         return $this->paginateAndMap($query, 24);
     }
 
     public function uzletter(Request $request)
     {
-        $needles = ['iroda', 'uzlet', 'kiallitas'];
-        $query = $this->queryByTitleNeedles($needles);
+        [$typeToSection, $subToType] = $this->buildCategoryMaps();
+        $subIds = array_keys(array_filter($subToType, fn($t) => $t === 'uzletter'));
+        $query = GalleryItem::query()->where('is_active', true)
+            ->where(function ($q) use ($subIds) {
+                $q->where('category', 'uzletter')
+                  ->orWhereIn('category', $subIds);
+            });
         return $this->paginateAndMap($query, 24);
     }
 
     public function wallCladding(Request $request)
     {
-        $needles = ['3dfal', '3d', 'fal'];
-        $query = $this->queryByTitleNeedles($needles);
+        // Map Hungarian type '3d-falboritas' to section 'wall-cladding'
+        $query = GalleryItem::query()->where('is_active', true)
+            ->where('category', '3d-falboritas');
         return $this->paginateAndMap($query, 24);
     }
 
     public function curvedFurniture(Request $request)
     {
-        $needles = ['ivesbutorok', 'ives'];
-        $query = $this->queryByTitleNeedles($needles);
+        // Map Hungarian type 'ives-butorok' to section 'curved-furniture'
+        $query = GalleryItem::query()->where('is_active', true)
+            ->where('category', 'ives-butorok');
         return $this->paginateAndMap($query, 24);
-    }
-
-    private function queryByTitleNeedles(array $needles)
-    {
-        $q = GalleryItem::query()->where('is_active', true);
-        $q->where(function ($sub) use ($needles) {
-            foreach ($needles as $n) {
-                $sub->orWhere('title', 'like', "%{$n}%")
-                    ->orWhere('image_path', 'like', "%{$n}%");
-            }
-        });
-        return $q;
     }
 
     private function paginateAndMap($query, int $perPage = 24)
@@ -104,28 +106,45 @@ class GalleryController extends Controller
         return $base ?: 'item';
     }
 
-    /** Infer section and subcategory from title/image_path keywords. */
+    /** Infer section and subcategory primarily from the item's category using DB categories; fallback to keywords. */
     private function detectSectionAndSubcategory(GalleryItem $item): array
     {
-        $hay = strtolower(($item->title ?? '') . ' ' . ($item->image_path ?? ''));
+        $category = (string) ($item->category ?? '');
+        [$typeToSection, $subToType] = $this->buildCategoryMaps();
 
+        if ($category !== '') {
+            // If category matches a main type
+            if (isset($typeToSection[$category])) {
+                $section = $typeToSection[$category];
+                $sub = null;
+                return [$section, $sub];
+            }
+            // If category matches a subcategory id, resolve its parent type, then map to section
+            if (isset($subToType[$category])) {
+                $parentType = $subToType[$category];
+                $section = $typeToSection[$parentType] ?? $parentType;
+                return [$section, $category];
+            }
+        }
+
+        // Fallback: derive from title/path keywords
+        $hay = strtolower(($item->title ?? '') . ' ' . ($item->image_path ?? ''));
         $in = fn(array $needles) => collect($needles)->first(fn($n) => str_contains($hay, $n));
 
-        if ($hit = $in(['nappali', 'konyha', 'furdoszoba', 'haloszoba', 'gardrob'])) {
+        if ($hit = $in(['nappali', 'konyha', 'furdoszoba', 'haloszoba', 'gardrob', 'lepcso'])) {
             return ['eletter', $this->normalizeKey($hit)];
         }
         if ($hit = $in(['iroda', 'uzlet', 'kiallitas'])) {
             return ['uzletter', $this->normalizeKey($hit)];
         }
         if ($hit = $in(['3dfal', '3d', 'fal'])) {
-            // prefer 3dfal subcategory where possible
             $sub = str_contains($hay, '3dfal') ? '3dfal' : $this->normalizeKey($hit);
             return ['wall-cladding', $sub];
         }
         if ($hit = $in(['ivesbutorok', 'ives'])) {
             return ['curved-furniture', 'ivesbutorok'];
         }
-        return ['unknown', 'misc'];
+        return ['unknown', null];
     }
 
     private function normalizeKey(string $s): string
@@ -154,9 +173,38 @@ class GalleryController extends Controller
     private function buildUrls(string $imagePath): array
     {
         $url = asset('storage/' . ltrim($imagePath, '/'));
-        // If later you generate thumbs under e.g. gallery/_thumbs/, adjust below.
         $thumb = $url; // placeholder until thumbnail pipeline exists
         return [$url, $thumb];
+    }
+
+    /** Build maps from DB categories: type->section and subId->parentType. */
+    private function buildCategoryMaps(): array
+    {
+        $typeToSection = [];
+        $subToType = [];
+        $mapTypeToSection = function (string $type): string {
+            return match ($type) {
+                'eletter' => 'eletter',
+                'uzletter' => 'uzletter',
+                '3d-falboritas' => 'wall-cladding',
+                'ives-butorok' => 'curved-furniture',
+                default => $type,
+            };
+        };
+
+        $cats = Category::all();
+        foreach ($cats as $cat) {
+            $type = (string) $cat->type;
+            $typeToSection[$type] = $mapTypeToSection($type);
+            if (is_array($cat->subcategories)) {
+                foreach ($cat->subcategories as $sub) {
+                    if (!empty($sub['id'])) {
+                        $subToType[(string) $sub['id']] = $type;
+                    }
+                }
+            }
+        }
+        return [$typeToSection, $subToType];
     }
 
     /**
@@ -189,7 +237,7 @@ class GalleryController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // ...
     }
 
     /**
@@ -197,7 +245,7 @@ class GalleryController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // ...
     }
 
     /**
@@ -205,6 +253,6 @@ class GalleryController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // ...
     }
 }

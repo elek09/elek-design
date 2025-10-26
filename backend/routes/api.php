@@ -7,6 +7,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 
 Route::prefix('v1')->group(function () {
     // Auth
@@ -18,6 +20,9 @@ Route::prefix('v1')->group(function () {
     // Publikus
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/{slug}', [ProductController::class, 'show']);
+
+    // Public Category route
+    Route::get('categories', [AdminCategoryController::class, 'index']);
 
     // Gallery routes
     Route::prefix('gallery')->group(function () {
@@ -42,6 +47,11 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['auth:sanctum', 'admin.api'])->group(function () {
             Route::post('logout', [AdminAuthController::class, 'logout']);
             Route::get('me', [AdminAuthController::class, 'me']);
+
+            // Page management
+            Route::post('pages', [PageController::class, 'store']);
+            Route::put('pages/{page}', [PageController::class, 'update']);
+            Route::delete('pages/{page}', [PageController::class, 'destroy']);
             
             // Gallery management
             Route::get('gallery/config', [AdminGalleryController::class, 'config']);
@@ -54,6 +64,9 @@ Route::prefix('v1')->group(function () {
             // Orders management
             Route::get('orders', [OrderController::class, 'index']);
             Route::put('orders/{order}/status', [OrderController::class, 'updateStatus']);
+
+            // Category management
+            Route::apiResource('categories', AdminCategoryController::class)->except(['index']);
         });
     });
 
