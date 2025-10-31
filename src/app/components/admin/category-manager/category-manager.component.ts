@@ -23,6 +23,7 @@ export class CategoryManagerComponent implements OnInit {
   newCategory: Category = { name: '', type: '', subcategories: [] };
   newSubcategoryName: string = '';
   lastError = '';
+  orderDirty = false;
 
   constructor(private categoryService: CategoryService) {}
 
@@ -31,8 +32,12 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   loadCategories(): void {
-    this.categoryService.getCategories().subscribe((data) => {
-      this.categories = data;
+    // Load admin categories to include nav_order and allow reordering
+    this.categoryService.getAdminCategories().subscribe((data) => {
+      this.categories = [...(data || [])].sort(
+        (a, b) => (a.nav_order ?? Number.MAX_SAFE_INTEGER) - (b.nav_order ?? Number.MAX_SAFE_INTEGER)
+      );
+      this.orderDirty = false;
     });
   }
 
@@ -149,6 +154,30 @@ export class CategoryManagerComponent implements OnInit {
     const arr = (this.selectedCategory.subcategories || []) as any[];
     moveItemInArray(arr, event.previousIndex, event.currentIndex);
     this.selectedCategory.subcategories = arr as any;
+  }
+
+  // Drag & Drop reordering for categories (controls header order)
+  dropCategory(event: CdkDragDrop<Category[]>): void {
+    moveItemInArray(this.categories, event.previousIndex, event.currentIndex);
+    // Update nav_order locally to reflect new order (1-based)
+    this.categories.forEach((c, idx) => (c.nav_order = idx + 1));
+    this.orderDirty = true;
+  }
+
+  saveCategoryOrder(): void {
+    if (!this.orderDirty) return;
+    // Ensure nav_order is sequential before save
+    this.categories.forEach((c, idx) => (c.nav_order = idx + 1));
+    this.categoryService.saveCategoryOrder(this.categories).subscribe({
+      next: () => {
+        this.orderDirty = false;
+        this.loadCategories();
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'Reorder failed';
+        this.lastError = msg;
+      },
+    });
   }
 
   // Validation helpers

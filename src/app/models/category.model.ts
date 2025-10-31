@@ -6,4 +6,6 @@ export interface Category {
   // 'eletter', 'uzletter', or a new custom type (unique identifier/slug)
   type: 'eletter' | 'uzletter' | string;
   subcategories: { id?: string; name: string }[] | string[];
+  // Controls header navigation order; lower comes first
+  nav_order?: number;
 }

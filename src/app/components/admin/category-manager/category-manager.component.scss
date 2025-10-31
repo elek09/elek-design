@@ -29,6 +29,12 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
+    .hint {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0 0 0.75rem 0;
+    }
+
     ul {
       list-style: none;
       padding: 0;
@@ -37,9 +43,9 @@
       overflow-y: auto;
 
       li {
-        padding: 0.75rem 1rem;
+        padding: 0.25rem 0.25rem;
         border-radius: 6px;
-        cursor: pointer;
+        cursor: move;
         transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
         border-bottom: 1px solid #f0f0f0;
 
@@ -52,9 +58,31 @@
           color: white;
           font-weight: bold;
         }
+
+        .category-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .handle {
+          color: #888;
+          cursor: grab;
+          user-select: none;
+        }
+
+        .name {
+          flex: 1;
+        }
       }
     }
   }
+    button {
+      margin-top: 0.75rem;
+    }
 
   .category-form,
   .category-edit-form {

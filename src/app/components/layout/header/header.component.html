@@ -1,13 +1,33 @@
-<div class="topnav" [class.responsive]="isMenuOpen" id="myTopnav">
-    <a routerLink="/" class="active">
-      <img src="assets/images/elekdesign_logo.jpg" alt="Elek Design Logo">
+<div class="header-bg">
+  <div class="topnav" [class.responsive]="isMenuOpen" id="myTopnav" aria-label="Main navigation">
+    <ng-container *ngIf="headerConfig$ | async as header">
+      <!-- Logo / Home link -->
+      <a [routerLink]="header.logoRouterLink || '/'" class="active" aria-label="Home">
+        <img [src]="header.logoUrl" alt="Elek Design Logo" />
+      </a>
+
+      <!-- Navigation items -->
+      <ng-container *ngFor="let item of header.items">
+        <a *ngIf="!item.externalUrl"
+           [routerLink]="item.routerLink || '/'"
+           [fragment]="item.fragment || undefined"
+           class="options"
+           [ngClass]="item.class || null">
+          {{ item.label }}
+        </a>
+        <a *ngIf="item.externalUrl"
+           [href]="item.externalUrl"
+           target="_blank" rel="noopener"
+           class="options"
+           [ngClass]="item.class || null">
+          {{ item.label }}
+        </a>
+      </ng-container>
+    </ng-container>
+
+    <!-- Mobile menu toggle -->
+    <a href="javascript:void(0);" class="icon" (click)="toggleMenu()" aria-label="Toggle menu">
+      <img class="hambi" src="assets/images/hamburger.png" alt="Menu" />
     </a>
-    <a routerLink="/" fragment="Élettér" class="options">Élettér</a>
-    <a routerLink="/" fragment="Üzlettér" class="options">Üzlettér</a>
-    <a routerLink="/3d-falboritas" fragment="3d-falboritás" class="options">3D falborítás</a>
-    <a routerLink="/ives-butorok" fragment="ives-butorok" class="options">Íves bútorok</a>
-    <a routerLink="/kapcsolat" class="options">Kapcsolat</a>
-    <a href="javascript:void(0);" class="icon" (click)="toggleMenu()">
-      <img class="hambi" src="assets/images/hamburger.png" alt="Menu">
-    </a>
+  </div>
 </div>

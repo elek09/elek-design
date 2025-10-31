@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, of, forkJoin } from 'rxjs';
 import { Category } from '../models/category.model';
 import { API_BASE_URL } from '../app.tokens';
 import {
@@ -52,6 +52,17 @@ export class CategoryService {
     return this.categories$;
   }
 
+  // Uses the ADMIN URL - includes admin-only fields like nav_order
+  getAdminCategories(): Observable<Category[]> {
+    return this.http
+      .get<Category[] | { data: Category[] }>(this.adminApiUrl)
+      .pipe(
+        map((res) => (Array.isArray(res) ? res : res?.data ?? [])),
+        // If GET is not allowed on admin endpoint (405) or any error, fall back to public categories
+        catchError(() => this.getCategories())
+      );
+  }
+
   // Uses the ADMIN URL
   saveCategory(category: Category): Observable<Category> {
     if (category._id) {
@@ -65,6 +76,14 @@ export class CategoryService {
         .post<Category>(this.adminApiUrl, category)
         .pipe(tap(() => this.refresh$.next()));
     }
+  }
+
+  // Bulk persist nav_order for a list of categories (PUT full objects to be safe)
+  saveCategoryOrder(categories: Category[]): Observable<any> {
+    const calls = categories
+      .filter((c) => c._id != null)
+      .map((c) => this.http.put(`${this.adminApiUrl}/${c._id}`, c));
+    return forkJoin(calls).pipe(tap(() => this.refresh$.next()));
   }
 
   // Uses the ADMIN URL

@@ -4,11 +4,17 @@
     <!-- List of existing categories -->
     <div class="category-list">
         <h3>Existing Categories</h3>
-        <ul>
-            <li *ngFor="let category of categories" (click)="selectCategory(category)">
-                {{ category.name }} ({{ category.type }})
+        <p class="hint">Drag to change header navigation order. Logo and Kapcsolat are fixed.</p>
+        <ul cdkDropList (cdkDropListDropped)="dropCategory($event)">
+            <li *ngFor="let category of categories; let i = index" cdkDrag>
+                <div class="category-row" (click)="selectCategory(category)">
+                    <span class="handle" cdkDragHandle title="Drag to reorder">☰</span>
+                    <span class="name">{{ i + 1 }}. {{ category.name }}</span>
+                    <span class="type">({{ category.type }})</span>
+                </div>
             </li>
         </ul>
+        <button (click)="saveCategoryOrder()" [disabled]="!orderDirty">Save Order</button>
     </div>
 
     <!-- Form for creating a new category -->
