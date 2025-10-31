@@ -13,9 +13,11 @@ class Category extends Model
         'name',
         'type',
         'subcategories',
+        'nav_order',
     ];
 
     protected $casts = [
         'subcategories' => 'array',
+        'nav_order' => 'integer',
     ];
 }

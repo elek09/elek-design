@@ -17,7 +17,11 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        return CategoryResource::collection(Category::orderBy('name')->get());
+        $categories = Category::orderByRaw('CASE WHEN nav_order IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('nav_order')
+            ->orderBy('name')
+            ->get();
+        return CategoryResource::collection($categories);
     }
 
     /**
@@ -32,6 +36,7 @@ class CategoryController extends Controller
         $validated = Validator::make($input, [
             'name' => 'required|string|max:255',
             'type' => 'required|string|unique:categories,type|max:255',
+            'nav_order' => 'nullable|integer|min:0|max:1000',
             'subcategories' => 'nullable|array',
             'subcategories.*.id' => 'required_with:subcategories|string',
             'subcategories.*.name' => 'required_with:subcategories|string',
@@ -62,6 +67,7 @@ class CategoryController extends Controller
         $validated = Validator::make($input, [
             'name' => 'required|string|max:255',
             'type' => ['required', 'string', 'max:255', Rule::unique('categories')->ignore($category->id)],
+            'nav_order' => 'nullable|integer|min:0|max:1000',
             'subcategories' => 'nullable|array',
             'subcategories.*.id' => 'required_with:subcategories|string',
             'subcategories.*.name' => 'required_with:subcategories|string',

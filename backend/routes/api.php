@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\NavigationController;
 
 Route::prefix('v1')->group(function () {
     // Auth
@@ -23,6 +24,10 @@ Route::prefix('v1')->group(function () {
 
     // Public Category route
     Route::get('categories', [AdminCategoryController::class, 'index']);
+    // Public header navigation config
+    Route::get('navigation/header', [NavigationController::class, 'header']);
+    // Alias for clients calling /api/v1/header
+    Route::get('header', [NavigationController::class, 'header']);
 
     // Gallery routes
     Route::prefix('gallery')->group(function () {
@@ -32,6 +37,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/uzletter', [GalleryController::class, 'uzletter']);
         Route::get('/wall-cladding', [GalleryController::class, 'wallCladding']);
         Route::get('/curved-furniture', [GalleryController::class, 'curvedFurniture']);
+        // Dynamic, DB-driven section route (e.g., eletter, uzletter, wall-cladding, curved-furniture)
+        Route::get('/section/{section}', [GalleryController::class, 'section']);
     });
 
     // Bejelentkezett

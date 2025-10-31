@@ -50,36 +50,29 @@ class GalleryImageSeeder extends Seeder
                 $baseName = substr($baseName, 9); // "featured_" length
             }
             
-            $category = $this->findCategoryByKeyword($baseName);
+            $category = $this->findCategoryByKeyword($baseName) ?? 'egyeb';
 
-            // If no category can be determined, it's a utility file.
-            if ($category === null) {
-                // Copy to the root of the public gallery folder.
-                $destination = Storage::disk('public')->path('gallery/' . $filename);
-                File::copy($file->getPathname(), $destination);
-            } else {
-                // It's a content file, process and add to database.
-                $title = Str::headline(str_replace(['(1)','(2)','(3)'], '', $baseName));
-                $categorySlug = Str::slug($category);
-                $titleSlug = Str::slug($title);
-                $extension = $file->getExtension();
-                
-                $newFilename = "{$titleSlug}-" . time() . rand(10, 99) . ".{$extension}";
-                $destinationDirectory = "gallery/{$categorySlug}";
-                $newPath = "{$destinationDirectory}/{$newFilename}";
+            // Treat every file as a gallery content item; uncategorized files go under 'egyeb'
+            $title = Str::headline(str_replace(['(1)','(2)','(3)'], '', $baseName));
+            $categorySlug = Str::slug($category);
+            $titleSlug = Str::slug($title);
+            $extension = $file->getExtension();
 
-                Storage::disk('public')->makeDirectory($destinationDirectory);
-                File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
+            $newFilename = "{$titleSlug}-" . time() . rand(10, 99) . ".{$extension}";
+            $destinationDirectory = "gallery/{$categorySlug}";
+            $newPath = "{$destinationDirectory}/{$newFilename}";
 
-                GalleryItem::create([
-                    'title' => $title,
-                    'category' => $category,
-                    'description' => "Automatikus leírás: {$title}",
-                    'image_path' => $newPath,
-                    'is_active' => true,
-                    'is_featured' => $is_featured,
-                ]);
-            }
+            Storage::disk('public')->makeDirectory($destinationDirectory);
+            File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
+
+            GalleryItem::create([
+                'title' => $title,
+                'category' => $category,
+                'description' => "Automatikus leírás: {$title}",
+                'image_path' => $newPath,
+                'is_active' => true,
+                'is_featured' => $is_featured,
+            ]);
             
             $progressBar->advance();
         }
@@ -96,6 +89,9 @@ class GalleryImageSeeder extends Seeder
             'iroda' => 'iroda-berendezes', 'uzlet' => 'uzlet-berendezes',
             'kiallitasibutorok' => 'kiallitasi-butorok', '3d' => '3d-falboritas',
             '3dfal' => '3d-falboritas', 'ivesbutorok' => 'ives-butorok', 'ives' => 'ives-butorok',
+            // Common utility or branding assets -> 'egyeb'
+            'elekdesign_logo' => 'egyeb', 'elekdesign-logo' => 'egyeb', 'logo' => 'egyeb',
+            'elek_imre' => 'egyeb', 'elekimre' => 'egyeb',
         ];
 
         foreach ($keywordMap as $keyword => $category) {

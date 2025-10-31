@@ -17,6 +17,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Élettér',
                 'type' => 'eletter',
+                'nav_order' => 1,
                 'subcategories' => [
                     ['id' => 'konyha', 'name' => 'Konyha'],
                     ['id' => 'nappali', 'name' => 'Nappali'],
@@ -29,6 +30,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Üzlettér',
                 'type' => 'uzletter',
+                'nav_order' => 2,
                 'subcategories' => [
                     ['id' => 'iroda-berendezes', 'name' => 'Iroda Berendezés'],
                     ['id' => 'uzlet-berendezes', 'name' => 'Üzlet Berendezés'],
@@ -38,11 +40,13 @@ class CategorySeeder extends Seeder
             [
                 'name' => '3D Falborítás',
                 'type' => '3d-falboritas',
+                'nav_order' => 3,
                 'subcategories' => []
             ],
             [
                 'name' => 'Íves Bútorok',
                 'type' => 'ives-butorok',
+                'nav_order' => 4,
                 'subcategories' => []
             ],
         ];
