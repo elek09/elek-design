@@ -41,9 +41,9 @@
 }
 
 .text {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   text-decoration: underline 2px;
-  color: #B5B5B5;
+  color: #b5b5b5;
   font-size: 40px;
   padding: 0px 4px 0px 4px;
   position: absolute;
@@ -61,16 +61,36 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 30px;
-  height: 40px;
+  width: 40px;
+  height: 48px;
   border: 0;
   background: transparent;
   cursor: pointer;
   z-index: 10;
+  color: #757575; /* match site text color */
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.carousel_button img:hover {
-  filter: brightness(0.8);
+/* Ensure no background/border appears on interaction */
+.carousel_button:hover,
+.carousel_button:active,
+.carousel_button:focus,
+.carousel_button:focus-visible {
+  background: transparent;
+  border: none;
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  color: #b8cb70; /* match hover color of text */
+}
+
+/* Remove Firefox inner focus ring */
+.carousel_button::-moz-focus-inner {
+  border: 0 !important;
 }
 
 .carousel__button--left {
@@ -81,7 +101,10 @@
   right: +15px;
 }
 
-.carousel_button img {
-  width: 30px;
+/* Style Material icon inside the buttons */
+.carousel_button .mat-icon {
+  font-size: 40px;
+  width: 40px;
   height: 40px;
+  line-height: 1;
 }

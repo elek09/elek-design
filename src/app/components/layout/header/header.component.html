@@ -1,33 +1,26 @@
 <div class="header-bg">
   <div class="topnav" [class.responsive]="isMenuOpen" id="myTopnav" aria-label="Main navigation">
-    <ng-container *ngIf="headerConfig$ | async as header">
-      <!-- Logo / Home link -->
-      <a [routerLink]="header.logoRouterLink || '/'" class="active" aria-label="Home">
-        <img [src]="header.logoUrl" alt="Elek Design Logo" />
-      </a>
+    @if (headerConfig$ | async; as header) {
+    <!-- Logo / Home link -->
+    <a class="logo-link" routerLink="/" routerLinkActive="active" #rlaLogo="routerLinkActive" aria-label="Home"
+      [attr.aria-current]="rlaLogo.isActive ? 'page' : null">
+      <img class="logo-img" [src]="header.logoUrl" alt="Elek Design Logo" loading="lazy" decoding="async" />
+    </a>
 
-      <!-- Navigation items -->
-      <ng-container *ngFor="let item of header.items">
-        <a *ngIf="!item.externalUrl"
-           [routerLink]="item.routerLink || '/'"
-           [fragment]="item.fragment || undefined"
-           class="options"
-           [ngClass]="item.class || null">
-          {{ item.label }}
-        </a>
-        <a *ngIf="item.externalUrl"
-           [href]="item.externalUrl"
-           target="_blank" rel="noopener"
-           class="options"
-           [ngClass]="item.class || null">
-          {{ item.label }}
-        </a>
-      </ng-container>
-    </ng-container>
+    <!-- Navigation items -->
+    @for (item of header.items; track trackByNavItem($index, item)) {
+    <a [routerLink]="item.routerLink" [routerLinkActiveOptions]="{ exact: true }"
+      [fragment]="item.fragment || undefined" class="options" routerLinkActive="active" #rla="routerLinkActive"
+      [ngClass]="item.class || null" [attr.aria-current]="rla.isActive ? 'page' : null">
+      {{ item.label }}
+    </a>
+    }
+    }
 
     <!-- Mobile menu toggle -->
-    <a href="javascript:void(0);" class="icon" (click)="toggleMenu()" aria-label="Toggle menu">
-      <img class="hambi" src="assets/images/hamburger.png" alt="Menu" />
-    </a>
+    <button type="button" class="icon" (click)="toggleMenu()" aria-label="Toggle menu" [attr.aria-expanded]="isMenuOpen"
+      aria-controls="myTopnav">
+      <mat-icon>menu</mat-icon>
+    </button>
   </div>
 </div>

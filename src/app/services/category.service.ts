@@ -11,13 +11,12 @@ import {
   switchMap,
   tap,
 } from 'rxjs/operators';
+import { BootstrapService } from './bootstrap.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CategoryService {
-  // URL for public, read-only operations
-  private publicApiUrl: string;
   // URL for admin, write operations
   private adminApiUrl: string;
   // Shared observable cache and refresh trigger
@@ -26,23 +25,16 @@ export class CategoryService {
 
   constructor(
     private http: HttpClient,
-    @Inject(API_BASE_URL) private baseUrl: string
+    @Inject(API_BASE_URL) private baseUrl: string,
+    private bootstrap: BootstrapService
   ) {
-    // Set up both URLs
-    this.publicApiUrl = `${this.baseUrl}/api/v1/categories`;
+    // Set up admin URL
     this.adminApiUrl = `${this.baseUrl}/api/v1/admin/categories`;
 
     // Build cached categories stream similar to gallery items approach
     this.categories$ = this.refresh$.pipe(
       startWith(void 0),
-      switchMap(() =>
-        this.http
-          .get<Category[] | { data: Category[] }>(this.publicApiUrl)
-          .pipe(
-            map((res) => (Array.isArray(res) ? res : res?.data ?? [])),
-            catchError(() => of([] as Category[]))
-          )
-      ),
+      switchMap(() => this.bootstrap.getCategories$()),
       shareReplay(1)
     );
   }
@@ -69,12 +61,20 @@ export class CategoryService {
       // Update existing category
       return this.http
         .put<Category>(`${this.adminApiUrl}/${category._id}`, category)
-        .pipe(tap(() => this.refresh$.next()));
+        .pipe(
+          tap(() => {
+            this.refresh$.next();
+            this.bootstrap.refresh();
+          })
+        );
     } else {
       // Create new category
-      return this.http
-        .post<Category>(this.adminApiUrl, category)
-        .pipe(tap(() => this.refresh$.next()));
+      return this.http.post<Category>(this.adminApiUrl, category).pipe(
+        tap(() => {
+          this.refresh$.next();
+          this.bootstrap.refresh();
+        })
+      );
     }
   }
 
@@ -83,13 +83,21 @@ export class CategoryService {
     const calls = categories
       .filter((c) => c._id != null)
       .map((c) => this.http.put(`${this.adminApiUrl}/${c._id}`, c));
-    return forkJoin(calls).pipe(tap(() => this.refresh$.next()));
+    return forkJoin(calls).pipe(
+      tap(() => {
+        this.refresh$.next();
+        this.bootstrap.refresh();
+      })
+    );
   }
 
   // Uses the ADMIN URL
   deleteCategory(id: string | number): Observable<any> {
-    return this.http
-      .delete(`${this.adminApiUrl}/${id}`)
-      .pipe(tap(() => this.refresh$.next()));
+    return this.http.delete(`${this.adminApiUrl}/${id}`).pipe(
+      tap(() => {
+        this.refresh$.next();
+        this.bootstrap.refresh();
+      })
+    );
   }
 }

@@ -6,28 +6,31 @@
         <h3>Existing Categories</h3>
         <p class="hint">Drag to change header navigation order. Logo and Kapcsolat are fixed.</p>
         <ul cdkDropList (cdkDropListDropped)="dropCategory($event)">
-            <li *ngFor="let category of categories; let i = index" cdkDrag>
+            <li *ngFor="let category of categories; let i = index; trackBy: trackByCategory" cdkDrag>
                 <div class="category-row" (click)="selectCategory(category)">
-                    <span class="handle" cdkDragHandle title="Drag to reorder">☰</span>
+                    <mat-icon class="handle" cdkDragHandle title="Drag to reorder">drag_indicator</mat-icon>
                     <span class="name">{{ i + 1 }}. {{ category.name }}</span>
                     <span class="type">({{ category.type }})</span>
                 </div>
             </li>
         </ul>
-        <button (click)="saveCategoryOrder()" [disabled]="!orderDirty">Save Order</button>
+        <button mat-raised-button color="primary" (click)="saveCategoryOrder()" [disabled]="!orderDirty">Save Order</button>
     </div>
 
     <!-- Form for creating a new category -->
     <div class="category-form">
         <h3>Create New Category</h3>
-        <input [(ngModel)]="newCategory.name" placeholder="Category Name" />
-        <input [(ngModel)]="newCategory.type" (ngModelChange)="onNewTypeInput()"
-            placeholder="Unique type (slug, e.g. egyeb)" />
+        <mat-form-field appearance="fill">
+            <mat-label>Category Name</mat-label>
+            <input matInput [(ngModel)]="newCategory.name" />
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+            <mat-label>Unique type (slug, e.g. egyeb)</mat-label>
+            <input matInput [(ngModel)]="newCategory.type" (ngModelChange)="onNewTypeInput()" />
+        </mat-form-field>
         <small>Type must be unique and will be used as identifier (e.g., eletter, uzletter, egyeb).</small>
-        <div class="alert alert-warning" *ngIf="isCreateTypeTaken">
-            This type already exists. Please choose a different one.
-        </div>
-        <button (click)="saveCategory(newCategory)"
+        <p class="warn" *ngIf="isCreateTypeTaken">This type already exists. Please choose a different one.</p>
+        <button mat-raised-button color="primary" (click)="saveCategory(newCategory)"
             [disabled]="!newCategory.name || !newCategory.type || isCreateTypeTaken">
             Create Category
         </button>
@@ -36,51 +39,67 @@
     <!-- Form for editing a selected category -->
     <div *ngIf="selectedCategory" class="category-edit-form">
         <h3>Editing: {{ selectedCategory.name }}</h3>
-        <input [(ngModel)]="selectedCategory.name" placeholder="Category Name" />
-        <input [ngModel]="selectedCategory.type" (ngModelChange)="onEditTypeInput($event)"
-            placeholder="Unique type (slug)" />
-        <div class="alert alert-warning" *ngIf="isEditTypeTaken">
-            Another category already has this type. Types must be unique.
-        </div>
+        <mat-form-field appearance="fill">
+            <mat-label>Category Name</mat-label>
+            <input matInput [(ngModel)]="selectedCategory.name" />
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+            <mat-label>Unique type (slug)</mat-label>
+            <input matInput [ngModel]="selectedCategory.type" (ngModelChange)="onEditTypeInput($event)" />
+        </mat-form-field>
+        <p class="warn" *ngIf="isEditTypeTaken">Another category already has this type. Types must be unique.</p>
 
         <h4>Subcategories</h4>
         <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
-            <li *ngFor="let sub of selectedSubcategories; let i = index" cdkDrag>
+            <li *ngFor="let sub of selectedSubcategories; let i = index; trackBy: trackBySub" cdkDrag>
                 <div class="subcategory-row" cdkDragHandle>
                     <div class="field">
-                        <label>Name</label>
-                        <input [ngModel]="sub.name" (ngModelChange)="updateSubName(i, $event)" />
+                        <mat-form-field appearance="fill">
+                            <mat-label>Name</mat-label>
+                            <input matInput [ngModel]="sub.name" (ngModelChange)="updateSubName(i, $event)" />
+                        </mat-form-field>
                     </div>
                     <div class="field">
-                        <label>Id (slug)</label>
-                        <input [ngModel]="sub.id" (ngModelChange)="updateSubId(i, $event)" />
+                        <mat-form-field appearance="fill">
+                            <mat-label>Id (slug)</mat-label>
+                            <input matInput [ngModel]="sub.id" (ngModelChange)="updateSubId(i, $event)" />
+                        </mat-form-field>
                     </div>
                     <div class="subcategory-actions">
-                        <a [routerLink]="['/admin/gallery']"
-                            [queryParams]="{ mainCategory: selectedCategory.type, subCategory: sub.id }"
-                            class="btn btn-sm">Add Item</a>
-                        <button (click)="removeSubcategory(i)">Remove</button>
+                        <a mat-stroked-button color="primary" [routerLink]="['/admin/gallery']"
+                            [queryParams]="{ mainCategory: selectedCategory.type, subCategory: sub.id }">
+                            <mat-icon>add</mat-icon>
+                            Add Item
+                        </a>
+                        <button mat-stroked-button color="warn" (click)="removeSubcategory(i)">Remove</button>
                     </div>
                 </div>
             </li>
         </ul>
-        <div class="alert alert-warning" *ngIf="hasDuplicateSubIds">
+        <p class="warn" *ngIf="hasDuplicateSubIds">
             Duplicate subcategory IDs detected. Please ensure each subcategory has a unique slug.
-        </div>
+        </p>
 
-        <input [(ngModel)]="newSubcategoryName" placeholder="New Subcategory Name" />
-        <button (click)="addSubcategory()">Add Subcategory</button>
+        <mat-form-field appearance="fill">
+            <mat-label>New Subcategory Name</mat-label>
+            <input matInput [(ngModel)]="newSubcategoryName" />
+        </mat-form-field>
+        <button mat-stroked-button color="primary" (click)="addSubcategory()">Add Subcategory</button>
 
         <hr />
-        <button (click)="saveCategory(selectedCategory)" [disabled]="isSaveDisabled">
-            Save Changes
-        </button>
-        <button (click)="deleteCategory(selectedCategory._id || selectedCategory.id)">Delete Category</button>
-        <a [routerLink]="['/admin/gallery']" [queryParams]="{ mainCategory: selectedCategory.type }" class="btn">Add
-            Item to {{ selectedCategory.name }}</a>
-        <button (click)="resetForm()">Cancel</button>
+        <div class="form-actions">
+            <button mat-raised-button color="primary" (click)="saveCategory(selectedCategory)" [disabled]="isSaveDisabled">
+                Save Changes
+            </button>
+            <button mat-stroked-button color="warn" (click)="deleteCategory(selectedCategory._id || selectedCategory.id)">Delete Category</button>
+            <a mat-stroked-button color="primary" [routerLink]="['/admin/gallery']" [queryParams]="{ mainCategory: selectedCategory.type }">
+                <mat-icon>add</mat-icon>
+                Add Item to {{ selectedCategory.name }}
+            </a>
+            <button mat-button (click)="resetForm()">Cancel</button>
+        </div>
     </div>
-    <div class="alert alert-danger" *ngIf="lastError" style="margin-top: 1rem;">
+    <p class="danger" *ngIf="lastError" style="margin-top: 1rem;">
         {{ lastError }}
-    </div>
+    </p>
 </div>

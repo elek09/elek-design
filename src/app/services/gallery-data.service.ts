@@ -13,6 +13,9 @@ import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
 // Static category lists are no longer used for ordering; we sort by dynamic CategoryService data
 import { CategoryService } from './category.service';
 import { Category } from '../models/category.model';
+import { BootstrapService } from './bootstrap.service';
+import { getOrigin, resolveToAbsolute } from '../utils/url.utils';
+import { slugify } from '../utils/slug.utils';
 
 type ApiImageItem = {
   id?: string | number;
@@ -38,78 +41,81 @@ export class GalleryDataService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly galleryApiUrl = inject(GALLERY_API_BASE_URL);
-  private readonly apiOrigin = this.getOrigin(this.baseUrl);
+  private readonly apiOrigin = getOrigin(this.baseUrl);
+  private readonly bootstrap = inject(BootstrapService);
   private readonly categoryService = inject(CategoryService);
-
-  private slides$: Observable<Slide[]> = this.fetchAndProcessSlides$().pipe(
-    shareReplay(1)
-  );
+  private sectionCache = new Map<string, Observable<Slide[]>>();
 
   getFeaturedSlides$() {
-    return this.slides$.pipe(
-      map((slides) => slides.filter((s) => s.is_featured))
-    );
+    return this.bootstrap.getFeaturedSlides$();
   }
 
   getSlidesByCategory$(section: string) {
+    // Cache per-section HTTP to align with backend endpoint /section/{section}
+    const key = section.toLowerCase();
+    if (!this.sectionCache.has(key)) {
+      const url = this.joinUrl(this.galleryApiUrl, `/section/${key}`);
+      const section$ = this.http
+        .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
+        .pipe(
+          map((resp) =>
+            this.unwrap(resp)
+              .map((i) => this.toSlide({ ...i, section: key }))
+              .filter((s): s is Slide => !!s)
+              .filter((slide) => slide.is_active)
+          ),
+          catchError(() => of<Slide[]>([])),
+          shareReplay(1)
+        );
+      this.sectionCache.set(key, section$);
+    }
+
     return combineLatest([
-      this.slides$,
+      this.sectionCache.get(key)!,
       this.categoryService.getCategories(),
     ]).pipe(
-      map(([slides, categories]) => {
-        const sectionOf = this.buildSectionResolver(categories);
-        const normalized = slides
-          .map((s) => ({ ...s, section: s.section || sectionOf(s.category) }))
-          .filter((s) => s.section === section);
-
-        // Build dynamic order for this section from backend categories' subcategory order
-        const sectionCategory = (categories || []).find(
-          (c) => String(c.type) === section
-        );
-        const subOrder: string[] = Array.isArray(sectionCategory?.subcategories)
-          ? (sectionCategory!.subcategories as any[]).map((sc) => {
-              if (typeof sc === 'string') return this.slugify(sc)!;
-              const name = sc?.name ?? String(sc?.id ?? '');
-              const rawId = sc?.id ?? name;
-              return this.slugify(String(rawId))!;
-            })
-          : [];
-
-        const orderIndex = (cat?: string) => {
-          if (!cat) return Number.POSITIVE_INFINITY;
-          const idx = subOrder.indexOf(cat);
-          return idx === -1 ? Number.POSITIVE_INFINITY : idx;
-        };
-
-        return normalized.sort((a, b) => {
-          const ai = orderIndex(a.category);
-          const bi = orderIndex(b.category);
-          if (ai !== bi) return ai - bi;
-          const at = a.title?.toLowerCase() || '';
-          const bt = b.title?.toLowerCase() || '';
-          if (at !== bt) return at.localeCompare(bt);
-          return a.imageUrl.localeCompare(b.imageUrl);
-        });
-      })
+      map(([slides, categories]) =>
+        this.sortByDynamicSubcategoryOrder(slides, categories, key)
+      )
     );
+  }
+
+  private sortByDynamicSubcategoryOrder(
+    slides: Slide[],
+    categories: Category[],
+    section: string
+  ): Slide[] {
+    const sectionCategory = (categories || []).find(
+      (c) => String(c.type) === section
+    );
+    const subOrder: string[] = Array.isArray(sectionCategory?.subcategories)
+      ? (sectionCategory!.subcategories as any[]).map((sc) => {
+          // Prefer backend-provided id; fall back to slugify only for legacy string entries
+          if (typeof sc === 'string') return slugify(sc)!;
+          return String(sc?.id ?? '').trim();
+        })
+      : [];
+
+    const orderIndex = (cat?: string) => {
+      if (!cat) return Number.POSITIVE_INFINITY;
+      const idx = subOrder.indexOf(cat);
+      return idx === -1 ? Number.POSITIVE_INFINITY : idx;
+    };
+
+    return [...slides].sort((a, b) => {
+      const ai = orderIndex(a.category);
+      const bi = orderIndex(b.category);
+      if (ai !== bi) return ai - bi;
+      const at = a.title?.toLowerCase() || '';
+      const bt = b.title?.toLowerCase() || '';
+      if (at !== bt) return at.localeCompare(bt);
+      return a.imageUrl.localeCompare(b.imageUrl);
+    });
   }
 
   // --- internals ---
 
-  private fetchAndProcessSlides$() {
-    const url = this.joinUrl(this.galleryApiUrl, '');
-    return this.http
-      .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
-      .pipe(
-        map((resp) =>
-          this.unwrap(resp)
-            .map((i) => this.toSlide(i))
-            .filter((s): s is Slide => !!s)
-            .filter((slide) => slide.is_active)
-        ),
-        catchError(() => of<Slide[]>([])) // no local fallback
-      );
-  }
+  // removed root gallery fetch; we rely on per-section endpoints and bootstrap featured
 
   private unwrap(
     resp: ApiImageItem[] | PaginatedResponse<ApiImageItem> | unknown
@@ -130,16 +136,19 @@ export class GalleryDataService {
     const imageUrl = this.resolveImageUrl(item);
     if (!imageUrl) return null;
 
+    // Prefer backend-provided slug/id/category as-is; only fallback to slugify(title) for legacy data
     const id =
-      (item.slug && this.slugify(item.slug)) ||
-      this.slugify(item.title ?? item.name) ||
-      (item.id != null ? String(item.id) : undefined);
+      item.slug?.toString().trim() ||
+      undefined ||
+      (item.id != null ? String(item.id) : undefined) ||
+      (item.title || item.name ? slugify(item.title ?? item.name)! : undefined);
 
-    const categoryId = item.category ? this.slugify(item.category) : undefined;
+    const categoryId = item.category?.toString().trim() || undefined;
 
     return {
       id,
       imageUrl,
+      thumbUrl: this.resolveThumbUrl(item),
       title: item.title ?? item.name,
       category: categoryId,
       section: item.section, // may be undefined; we'll derive it if needed
@@ -148,52 +157,20 @@ export class GalleryDataService {
     };
   }
 
-  // Create a slug from title (handles accents, spaces, etc.)
-  private slugify(value?: string): string | undefined {
-    if (!value) return undefined;
-    return value
-      .normalize('NFD') // split accents
-      .replace(/[\u0300-\u036f]/g, '') // remove accents
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-') // non-alnum -> hyphen
-      .replace(/^-+|-+$/g, ''); // trim hyphens
-  }
-
   // Sorting now happens in getSlidesByCategory$ using dynamic category order
 
-  // Build a resolver that maps a slide.category (subcategory id or main type)
-  // to its parent section (e.g., 'eletter' | 'uzletter' | custom type)
-  private buildSectionResolver(categories: Category[]) {
-    const subToType = new Map<string, string>();
-    const typeSet = new Set<string>();
-    for (const c of categories || []) {
-      const type = String(c.type);
-      typeSet.add(type);
-      const subs = Array.isArray(c.subcategories)
-        ? (c.subcategories as any[])
-        : [];
-      for (const s of subs) {
-        const name = typeof s === 'string' ? s : s?.name ?? String(s?.id ?? '');
-        const id =
-          (typeof s === 'string' ? this.slugify(name) : s?.id) ||
-          this.slugify(name);
-        if (id) subToType.set(id, type);
-      }
-    }
-    return (categoryId?: string) => {
-      if (!categoryId) return undefined;
-      const key = this.slugify(categoryId) || categoryId;
-      if (typeSet.has(key)) return key; // already a main type
-      return subToType.get(key);
-    };
-  }
+  // Previously had a buildSectionResolver; no longer needed with canonical ids from backend
 
   private resolveImageUrl(item: ApiImageItem): string | null {
-    const raw = item.imageUrl ?? item.url ?? item.image ?? null;
+    const raw = item.url ?? (item as any).imageUrl ?? item.image ?? null;
     if (!raw) return null;
-    if (/^https?:\/\//i.test(raw)) return raw; // absolute
-    const path = raw.startsWith('/') ? raw : `/${raw}`;
-    return this.apiOrigin ? `${this.apiOrigin}${path}` : path;
+    return resolveToAbsolute(this.apiOrigin, raw);
+  }
+  private resolveThumbUrl(item: ApiImageItem): string | undefined {
+    const raw = (item as any).thumb_url as string | undefined;
+    if (!raw) return undefined;
+    const abs = resolveToAbsolute(this.apiOrigin, raw);
+    return abs || undefined;
   }
 
   private joinUrl(base: string, path: string): string {
@@ -202,12 +179,5 @@ export class GalleryDataService {
     return `${b}${p}`;
   }
 
-  private getOrigin(base: string): string {
-    try {
-      const u = new URL(base);
-      return `${u.protocol}//${u.host}`;
-    } catch {
-      return '';
-    }
-  }
+  // origin helper moved to utils
 }

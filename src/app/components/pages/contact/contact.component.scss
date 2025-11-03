@@ -1,51 +1,98 @@
+/* Top section container */
+.contacts {
+  background-color: #323538;
+  width: 100%;
+}
+
+/* Layout for top section (about + pictures) */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr; /* give pictures a bit more space */
+  gap: 16px;
+  align-items: start;
+}
+
+.about p {
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 300;
+  padding: 6px 12px;
+  color: #b5b5b5;
+}
+
+.pictures {
+  max-width: 100%;
+  text-align: center;
+  padding: 15px 0;
+}
+
+.pictures img {
+  width: 100%;
+  max-width: 560px; /* make pics a bit bigger, but keep reasonable cap */
+  height: auto;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+@media screen and (max-width: 770px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form section */
 .form {
-    margin-top: 2rem;
-    padding: 1rem;
+  margin-top: 2rem;
+  padding: 1rem 0;
 }
 
-.md-form {
-    position: relative;
-    margin-bottom: 1.5rem;
+.form-intro {
+  text-align: center;
+  color: #b5b5b5;
 }
 
-.form-control {
-    display: block;
-    width: 100%;
-    height: calc(1.5em + .75rem + 2px);
-    padding: .375rem .75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #495057;
-    background-color: #fff;
-    background-clip: padding-box;
-    border: 1px solid #ced4da;
-    border-radius: .25rem;
-    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+.form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
 }
 
-.form-control:focus {
-    color: #495057;
-    background-color: #fff;
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 .2rem rgba(0,123,255,.25);
+@media screen and (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-textarea.form-control {
-    height: auto;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.button {
-    cursor: pointer;
-    padding: 10px 25px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
+.form-row .full-width {
+  grid-column: 1 / -1;
 }
 
-.button:hover {
-    background-color: #555;
+@media screen and (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actions {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.contact-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.contact-info li p {
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 300;
+  color: #b5b5b5;
 }

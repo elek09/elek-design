@@ -9,8 +9,8 @@
                 }
             </div>
             <div class="header-right">
-                <button class="btn btn-outline" (click)="logout()">
-                    <i class="icon-logout"></i>
+                <button mat-stroked-button color="primary" (click)="logout()">
+                    <mat-icon>logout</mat-icon>
                     Logout
                 </button>
             </div>
@@ -20,7 +20,7 @@
     <!-- Loading state -->
     @if (isLoading) {
     <div class="loading-container">
-        <div class="spinner-large"></div>
+        <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
         <p>Loading dashboard...</p>
     </div>
     }
@@ -44,7 +44,7 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon total">
-                    <i class="icon-gallery"></i>
+                    <mat-icon>photo_library</mat-icon>
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.totalItems }}</h3>
@@ -54,7 +54,7 @@
 
             <div class="stat-card">
                 <div class="stat-icon active">
-                    <i class="icon-eye"></i>
+                    <mat-icon>visibility</mat-icon>
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.activeItems }}</h3>
@@ -64,7 +64,7 @@
 
             <div class="stat-card">
                 <div class="stat-icon inactive">
-                    <i class="icon-eye-off"></i>
+                    <mat-icon>visibility_off</mat-icon>
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.inactiveItems }}</h3>
@@ -74,7 +74,7 @@
 
             <div class="stat-card">
                 <div class="stat-icon featured">
-                    <i class="icon-star"></i>
+                    <mat-icon>star</mat-icon>
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.byCategory['featured'] }}</h3>
@@ -104,9 +104,7 @@
         <div class="section">
             <div class="section-header">
                 <h2>Recent Items</h2>
-                <button class="btn btn-primary" (click)="navigateToGallery()">
-                    View All Gallery
-                </button>
+                <button mat-raised-button color="primary" (click)="navigateToGallery()">View All Gallery</button>
             </div>
 
             @if (getRecentItems().length > 0) {
@@ -131,12 +129,10 @@
             </div>
             } @else {
             <div class="empty-state">
-                <i class="icon-gallery"></i>
+                <mat-icon>photo_library</mat-icon>
                 <h3>No gallery items yet</h3>
                 <p>Start by adding some images to your gallery.</p>
-                <button class="btn btn-primary" (click)="navigateToGallery()">
-                    Add First Item
-                </button>
+                <button mat-raised-button color="primary" (click)="navigateToGallery()">Add First Item</button>
             </div>
             }
         </div>
@@ -145,16 +141,16 @@
         <div class="section">
             <h2>Quick Actions</h2>
             <div class="quick-actions">
-                <button class="action-btn" (click)="navigateToGallery()">
-                    <i class="icon-plus"></i>
+                <button mat-stroked-button color="primary" (click)="navigateToGallery()">
+                    <mat-icon>add</mat-icon>
                     <span>Manage Gallery</span>
                 </button>
-                <button class="action-btn" routerLink="/admin/category-manager">
-                    <i class="fas fa-sitemap"></i>
+                <button mat-stroked-button color="primary" routerLink="/admin/category-manager">
+                    <mat-icon>category</mat-icon>
                     <span>Manage Categories</span>
                 </button>
-                <button class="action-btn" (click)="loadDashboardData()">
-                    <i class="icon-refresh"></i>
+                <button mat-stroked-button color="primary" (click)="loadDashboardData()">
+                    <mat-icon>refresh</mat-icon>
                     <span>Refresh Data</span>
                 </button>
             </div>

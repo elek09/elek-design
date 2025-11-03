@@ -1,4 +1,8 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  APP_INITIALIZER,
+  provideZoneChangeDetection,
+} from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import {
   provideHttpClient,
@@ -13,6 +17,8 @@ import {
 
 import { routes } from './app.routes';
 import { authInterceptor } from './services/auth.interceptor';
+import { BootstrapService } from './services/bootstrap.service';
+import { firstValueFrom, take } from 'rxjs';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +31,13 @@ export const appConfig: ApplicationConfig = {
       })
     ),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [BootstrapService],
+      useFactory: (bootstrap: BootstrapService) => () =>
+        firstValueFrom(bootstrap.getBootstrap$().pipe(take(1))),
+    },
     { provide: API_BASE_URL, useValue: 'http://127.0.0.1:8000' },
     {
       provide: ADMIN_API_BASE_URL,

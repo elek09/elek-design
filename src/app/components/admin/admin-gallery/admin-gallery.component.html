@@ -3,19 +3,19 @@
     <header class="gallery-header">
         <div class="header-content">
             <div class="header-left">
-                <button class="btn-back" (click)="goBack()">
-                    <i class="icon-arrow-left"></i>
+                <button class="btn-back" mat-stroked-button color="primary" (click)="goBack()">
+                    <mat-icon>arrow_back</mat-icon>
                     Back to Dashboard
                 </button>
                 <h1>Gallery Management</h1>
             </div>
             <div class="header-right">
-                <button class="btn btn-primary" (click)="toggleUploadForm()">
-                    <i class="icon-plus"></i>
+                <button mat-raised-button color="primary" class="btn btn-primary" (click)="toggleUploadForm()">
+                    <mat-icon>add</mat-icon>
                     {{ showUploadForm ? 'Cancel' : 'Add New Item' }}
                 </button>
-                <button class="btn btn-outline" (click)="logout()">
-                    <i class="icon-logout"></i>
+                <button mat-stroked-button color="primary" class="btn btn-outline" (click)="logout()">
+                    <mat-icon>logout</mat-icon>
                     Logout
                 </button>
             </div>
@@ -29,66 +29,72 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="title">Title *</label>
-                    <input type="text" id="title" [(ngModel)]="uploadForm.title" class="form-control"
-                        placeholder="Enter image title" required>
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>Title *</mat-label>
+                        <input matInput type="text" id="title" [(ngModel)]="uploadForm.title"
+                            placeholder="Enter image title" required>
+                    </mat-form-field>
                 </div>
 
                 <div class="form-group">
-                    <label for="mainCategory">Main Category *</label>
-                    <select id="mainCategory" [(ngModel)]="uploadForm.mainCategory" (change)="onMainCategoryChange()"
-                        class="form-control" required>
-                        <option *ngFor="let cat of galleryConfig.categories" [value]="cat.value">
-                            {{ cat.label }}
-                        </option>
-                    </select>
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>Main Category *</mat-label>
+                        <mat-select id="mainCategory" [(ngModel)]="uploadForm.mainCategory"
+                            (selectionChange)="onMainCategoryChange()" required>
+                            <mat-option *ngFor="let cat of galleryConfig.categories" [value]="cat.value">
+                                {{ cat.label }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
                 </div>
 
                 <div class="form-group" *ngIf="availableSubcategories.length > 0">
-                    <label for="subCategory">Sub-Category</label>
-                    <select id="subCategory" [(ngModel)]="uploadForm.subCategory" class="form-control">
-                        <option *ngFor="let subCat of availableSubcategories" [value]="subCat.value">
-                            {{ subCat.label }}
-                        </option>
-                    </select>
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>Sub-Category</mat-label>
+                        <mat-select id="subCategory" [(ngModel)]="uploadForm.subCategory">
+                            <mat-option *ngFor="let subCat of availableSubcategories" [value]="subCat.value">
+                                {{ subCat.label }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" [(ngModel)]="uploadForm.description" class="form-control" rows="3"
-                    placeholder="Enter image description (optional)"></textarea>
+                <mat-form-field appearance="fill" class="w-100">
+                    <mat-label>Description</mat-label>
+                    <textarea matInput id="description" [(ngModel)]="uploadForm.description" rows="3"
+                        placeholder="Enter image description (optional)"></textarea>
+                </mat-form-field>
             </div>
 
-            <div class="form-group">
-                <label for="image">Image *</label>
-                <input type="file" id="image" (change)="onFileSelected($event)" class="form-control" accept="image/*"
-                    required>
+            <div class="form-group file-group">
+                <mat-label>Image *</mat-label>
+                <div class="file-row">
+                    <input #fileInput type="file" id="image" (change)="onFileSelected($event)" accept="image/*" hidden>
+                    <button type="button" mat-stroked-button color="primary" (click)="fileInput.click()">
+                        <mat-icon>upload_file</mat-icon>
+                        Choose Image
+                    </button>
+                    <span class="file-name" *ngIf="uploadForm.image as img">{{ img.name }}</span>
+                </div>
             </div>
 
             <div class="form-group checkbox-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" [(ngModel)]="uploadForm.is_active">
-                    <span class="checkmark"></span>
-                    Active (visible on website)
-                </label>
+                <mat-checkbox [(ngModel)]="uploadForm.is_active">Active (visible on website)</mat-checkbox>
             </div>
 
             <div class="form-group checkbox-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" [(ngModel)]="uploadForm.is_featured">
-                    <span class="checkmark"></span>
-                    Featured (shown in homepage carousel)
-                </label>
+                <mat-checkbox [(ngModel)]="uploadForm.is_featured">Featured (shown in homepage carousel)</mat-checkbox>
             </div>
 
             <div class="form-actions">
-                <button class="btn btn-primary" (click)="onUpload()"
+                <button mat-raised-button color="primary" class="btn btn-primary" (click)="onUpload()"
                     [disabled]="isUploading || !uploadForm.title.trim() || !uploadForm.image">
-                    <span *ngIf="isUploading" class="spinner"></span>
-                    {{ isUploading ? 'Uploading...' : 'Upload Image' }}
+                    <mat-progress-spinner *ngIf="isUploading" mode="indeterminate" diameter="18"></mat-progress-spinner>
+                    <span>{{ isUploading ? 'Uploading...' : 'Upload Image' }}</span>
                 </button>
-                <button class="btn btn-secondary" (click)="toggleUploadForm()">
+                <button mat-stroked-button color="primary" class="btn btn-secondary" (click)="toggleUploadForm()">
                     Cancel
                 </button>
             </div>
@@ -103,32 +109,38 @@
     <div class="filters-section" *ngIf="galleryConfig">
         <div class="filters">
             <div class="filter-group">
-                <label>Category:</label>
-                <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="filter-select">
-                    <option value="all">All Categories</option>
-                    <ng-container *ngFor="let cat of galleryConfig.categories">
-                        <optgroup [label]="cat.label">
-                            <option [value]="cat.value">{{ cat.label }} (Main)</option>
-                            <option *ngFor="let subCat of cat.subcategories || []" [value]="subCat.value">
-                                &nbsp;&nbsp;&nbsp;{{ subCat.label }}
-                            </option>
-                        </optgroup>
-                    </ng-container>
-                </select>
+                <mat-form-field appearance="outline">
+                    <mat-label>Category</mat-label>
+                    <mat-select [(ngModel)]="selectedCategory" (selectionChange)="onFilterChange()">
+                        <mat-option value="all">All Categories</mat-option>
+                        <ng-container *ngFor="let cat of galleryConfig.categories">
+                            <mat-optgroup [label]="cat.label">
+                                <mat-option [value]="cat.value">{{ cat.label }} (Main)</mat-option>
+                                <mat-option *ngFor="let subCat of cat.subcategories || []" [value]="subCat.value">
+                                    {{ subCat.label }}
+                                </mat-option>
+                            </mat-optgroup>
+                        </ng-container>
+                    </mat-select>
+                </mat-form-field>
             </div>
             <div class="filter-group">
-                <label>Status:</label>
-                <select [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="filter-select">
-                    <option value="all">All Items</option>
-                    <option value="active">Active Only</option>
-                    <option value="inactive">Inactive Only</option>
-                </select>
+                <mat-form-field appearance="outline">
+                    <mat-label>Status</mat-label>
+                    <mat-select [(ngModel)]="selectedStatus" (selectionChange)="onFilterChange()">
+                        <mat-option value="all">All Items</mat-option>
+                        <mat-option value="active">Active Only</mat-option>
+                        <mat-option value="inactive">Inactive Only</mat-option>
+                    </mat-select>
+                </mat-form-field>
             </div>
 
             <div class="filter-group search-group">
-                <label>Search:</label>
-                <input type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()" class="search-input"
-                    placeholder="Search by title or description...">
+                <mat-form-field appearance="outline" class="search-field">
+                    <mat-label>Search</mat-label>
+                    <input matInput type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()"
+                        placeholder="Search by title or description...">
+                </mat-form-field>
             </div>
         </div>
 
@@ -139,7 +151,7 @@
 
     <!-- Loading state -->
     <div *ngIf="isLoading" class="loading-container">
-        <div class="spinner-large"></div>
+        <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
         <p>Loading gallery items...</p>
     </div>
 
@@ -162,20 +174,21 @@
                     <div class="item-header">
                         <h4>{{ item.title }}</h4>
                         <div class="item-actions">
-                            <button class="action-btn toggle-btn" [class.active]="item.is_active"
-                                [class.inactive]="!item.is_active" (click)="updateItemStatus(item)"
-                                [title]="item.is_active ? 'Deactivate' : 'Activate'">
-                                <i [class]="item.is_active ? 'icon-eye-off' : 'icon-eye'"></i>
+                            <button mat-stroked-button color="primary" class="action-btn toggle-btn"
+                                [class.active]="item.is_active" [class.inactive]="!item.is_active"
+                                (click)="updateItemStatus(item)" [title]="item.is_active ? 'Deactivate' : 'Activate'">
+                                <mat-icon>{{ item.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
                                 <span>{{ item.is_active ? 'Deactivate' : 'Activate' }}</span>
                             </button>
-                            <button class="action-btn feature-btn" [class.featured]="item.is_featured"
-                                (click)="updateFeaturedStatus(item)"
+                            <button mat-stroked-button color="primary" class="action-btn feature-btn"
+                                [class.featured]="item.is_featured" (click)="updateFeaturedStatus(item)"
                                 [title]="item.is_featured ? 'Unfeature' : 'Feature'">
-                                <i [class]="item.is_featured ? 'icon-star-full' : 'icon-star-empty'"></i>
+                                <mat-icon>{{ item.is_featured ? 'star' : 'star_border' }}</mat-icon>
                                 <span>{{ item.is_featured ? 'Unfeature' : 'Feature' }}</span>
                             </button>
-                            <button class="action-btn delete-btn" (click)="deleteItem(item.id)" title="Delete Item">
-                                <i class="icon-trash"></i>
+                            <button mat-stroked-button color="warn" class="action-btn delete-btn"
+                                (click)="deleteItem(item.id)" title="Delete Item">
+                                <mat-icon>delete</mat-icon>
                                 <span>Delete</span>
                             </button>
                         </div>
@@ -197,12 +210,12 @@
 
         <!-- Empty State -->
         <div *ngIf="!isLoading && !error && filteredItems.length === 0" class="empty-state">
-            <i class="icon-inbox"></i>
+            <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>
             <h3>No Gallery Items Found</h3>
             <p *ngIf="galleryItems.length > 0">No items match your current filters. Try adjusting your search.</p>
             <p *ngIf="galleryItems.length === 0">Get started by adding a new gallery item.</p>
-            <button class="btn" (click)="toggleUploadForm()" *ngIf="!showUploadForm">
-                <i class="icon-plus"></i>
+            <button mat-raised-button color="primary" class="btn" (click)="toggleUploadForm()" *ngIf="!showUploadForm">
+                <mat-icon>add</mat-icon>
                 Add New Item
             </button>
         </div>

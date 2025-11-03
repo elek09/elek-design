@@ -21,6 +21,6 @@ export class CurvedFurnitureComponent implements OnInit {
   ngOnInit(): void {
     this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
     this.curvedFurnitureSlides$ =
-      this.galleryDataService.getSlidesByCategory$('curved-furniture');
+      this.galleryDataService.getSlidesByCategory$('ives-butorok');
   }
 }

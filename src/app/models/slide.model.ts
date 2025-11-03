@@ -1,6 +1,7 @@
 export interface Slide {
   id?: string;
   imageUrl: string;
+  thumbUrl?: string;
   title?: string;
   category?: string;
   section?: string;

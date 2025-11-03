@@ -21,6 +21,6 @@ export class WallCladdingComponent implements OnInit {
   ngOnInit(): void {
     this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
     this.wallCladdingSlides$ =
-      this.galleryDataService.getSlidesByCategory$('wall-cladding');
+      this.galleryDataService.getSlidesByCategory$('3d-falboritas');
   }
 }

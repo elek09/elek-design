@@ -1,1 +1,169 @@
-/* Intentionally left blank: header uses global styles from styles.scss */
+/* --- HEADER STYLES --- */
+.topnav {
+  font-size: 1.2rem;
+  padding: 10px 0;
+  overflow: hidden;
+  max-width: 960px;
+  margin: 0 auto;
+  text-transform: uppercase;
+  font-weight: 400;
+  position: relative;
+}
+
+.topnav a.options {
+  padding: 40px 20px;
+  padding-bottom: 30px;
+  padding-top: 30px;
+}
+
+.topnav a {
+  float: left;
+  display: block;
+  color: #757575;
+  text-align: center;
+  text-decoration: none;
+}
+
+.topnav a:hover {
+  color: #b8cb70;
+}
+
+.topnav a.active {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  padding: 0 0;
+  padding-right: 50px;
+  color: #b8cb70; /* keep hover color when active */
+}
+
+.topnav a.options.active {
+  padding: 0 20px;
+}
+
+.topnav .icon {
+  display: none;
+  outline: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  background: transparent;
+  border: none;
+  color: #757575; /* same color as text */
+  box-shadow: none;
+}
+
+.hambi {
+  width: 50px;
+}
+
+/* Size and color the Material icon inside the hamburger button */
+.topnav .icon .mat-icon {
+  font-size: 48px; /* bigger icon */
+  width: 48px;
+  height: 48px;
+  line-height: 1;
+}
+
+/* Remove background/border on interaction and match hover color */
+.topnav .icon:hover,
+.topnav .icon:active,
+.topnav .icon:focus,
+.topnav .icon:focus-visible {
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  color: #b8cb70; /* match hover color */
+}
+
+@media screen and (max-width: 945px) {
+  .topnav a:not(:first-child) {
+    display: none;
+  }
+
+  /* Reserve space on the right for the hamburger and fix header height */
+  .topnav {
+    min-height: 64px;
+    padding-right: 72px; /* prevent overlap between logo and hamburger */
+    padding-top: 0;
+    padding-bottom: 0; /* remove vertical padding so centering is exact */
+  }
+
+  .topnav .icon {
+    position: absolute;
+    right: 0;
+    top: 0; /* pin to top of header row to avoid jumping when menu expands */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 64px;
+    padding: 0 16px; /* stable padding while positioned absolutely */
+    z-index: 20; /* keep above menu items */
+  }
+
+  .topnav a.options {
+    padding: 5px 5px;
+    font-size: 1.2rem;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  }
+
+  .topnav.responsive {
+    position: relative;
+  }
+
+  /* Keep the same positioning when menu is open */
+  .topnav.responsive .icon {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+
+  .topnav.responsive a {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+}
+
+/* Component-scoped tweaks for header layout */
+
+.topnav {
+  .logo-link {
+    display: block;
+    padding-right: 50px; /* keep gap between logo and first menu item */
+    line-height: 0; /* remove extra line height around image */
+  }
+
+  .logo-img {
+    display: block;
+    height: 88px; /* a bit bigger logo */
+    width: auto;
+  }
+
+  /* Align nav titles vertically with the logo */
+  a.options {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 88px; /* match logo height */
+  }
+}
+
+@media screen and (max-width: 945px) {
+  .topnav {
+    .logo-link {
+      padding-right: 0; /* tighter on small screens */
+    }
+
+    .logo-img {
+      height: 64px; /* bigger logo for mobile */
+    }
+
+    a.options {
+      line-height: 64px; /* match mobile logo height */
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    a.options.active {
+      /* Match mobile horizontal padding of inactive state */
+      padding: 0 5px;
+    }
+  }
+}

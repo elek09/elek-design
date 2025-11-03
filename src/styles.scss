@@ -1,4 +1,25 @@
-/* --- GLOBAL AND LAYOUT STYLES --- */
+/* Consistent box model across the app */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.material-icons,
+.mat-icon.material-icons {
+  font-family: "Material Icons";
+  font-weight: normal;
+  font-style: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
 
 html,
 body {
@@ -16,87 +37,6 @@ body {
 .footer-size {
   position: relative;
   width: 100%;
-}
-
-/* --- HEADER STYLES --- */
-.topnav {
-  font-size: 1.2rem;
-  padding: 5px 0;
-  overflow: hidden;
-  max-width: 960px;
-  margin: 0 auto;
-  text-transform: uppercase;
-  font-weight: 400;
-  position: relative;
-  padding-bottom: 0;
-}
-
-.topnav a.options {
-  padding: 40px 20px;
-  padding-bottom: 30px;
-  padding-top: 30px;
-}
-
-.topnav a {
-  float: left;
-  display: block;
-  color: #757575;
-  text-align: center;
-  text-decoration: none;
-}
-
-.topnav a:hover {
-  color: #b8cb70;
-}
-
-.topnav a.active {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  padding: 0 0;
-  padding-right: 50px;
-}
-
-.topnav .icon {
-  display: none;
-  outline: none;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-}
-
-.hambi {
-  width: 50px;
-}
-
-@media screen and (max-width: 945px) {
-  .topnav a:not(:first-child) {
-    display: none;
-  }
-
-  .topnav a.icon {
-    float: right;
-    display: block;
-    padding: 20px 30px;
-  }
-
-  .topnav a.options {
-    padding: 5px 5px;
-    font-size: 1.2rem;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  }
-
-  .topnav.responsive {
-    position: relative;
-  }
-
-  .topnav.responsive .icon {
-    position: absolute;
-    right: 0;
-    top: 0;
-  }
-
-  .topnav.responsive a {
-    float: none;
-    display: block;
-    text-align: left;
-  }
 }
 
 /* --- FOOTER STYLES --- */
@@ -145,6 +85,13 @@ body {
 .main {
   max-width: 960px;
   margin: 0 auto;
+  padding: 0 10px; /* add small side padding on narrow screens */
+}
+
+/* Make images responsive by default */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 .main hr {
@@ -218,29 +165,4 @@ body {
 }
 
 /* --- CONTACT PAGE AND FORM STYLES --- */
-.contacts {
-  background-color: #323538;
-  width: 100%;
-}
-
-.pictures {
-  max-width: 100%;
-  text-align: center;
-  padding: 15px 0;
-}
-
-.contacts p {
-  text-align: left;
-  font-size: 1rem;
-  font-weight: 300;
-  text-decoration: none;
-  padding: 6px 12px;
-  color: #b5b5b5;
-}
-
-@media screen and (max-width: 770px) {
-  .contacts p {
-    padding-bottom: 0;
-    margin: 0;
-  }
-}
+/* Moved contact-specific styles into contact.component.scss */

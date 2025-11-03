@@ -11,11 +11,12 @@ import {
 } from '@angular/core';
 
 import { Slide } from '../../../models/slide.model';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-carousel',
   standalone: true,
-  imports: [],
+  imports: [MatIconModule],
   templateUrl: './carousel.component.html',
   styleUrl: './carousel.component.scss',
 })
@@ -73,12 +74,7 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
   // Method to be called from a parent component (e.g., side menu)
   public goToById(id: string) {
     if (!this.slides?.length) return;
-    const idx = this.slides.findIndex(
-      (s) =>
-        s.id === id ||
-        s.category === id ||
-        (s.title && this.slugify(s.title) === id)
-    );
+    const idx = this.slides.findIndex((s) => s.id === id || s.category === id);
     if (idx >= 0) {
       this.currentSlideIndex = idx;
       this.updateTransform();
@@ -86,19 +82,12 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  private slugify(value: string): string {
-    return value
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '')
-      .trim();
-  }
-
   private emitSlideChanged(): void {
     const currentSlide = this.slides[this.currentSlideIndex];
-    if (currentSlide && currentSlide.id) {
-      this.slideChanged.emit(currentSlide.id);
+    if (currentSlide) {
+      // Emit subcategory id when available so parent menus can stay in sync
+      const key = currentSlide.category || currentSlide.id || '';
+      this.slideChanged.emit(String(key));
     }
   }
 

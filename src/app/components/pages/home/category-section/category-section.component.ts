@@ -18,14 +18,17 @@ export class CategorySectionComponent {
   @Input() slides$!: Observable<Slide[]>;
 
   @ViewChild('carousel') carousel!: CarouselComponent;
+  selectedSubId: string | null = null;
 
   onMenuClick(key: string) {
+    this.selectedSubId = key;
     this.carousel?.goToById(key);
   }
 
   onSlideChanged(slideId: string) {
     // preserve hash navigation like the original component
     history.replaceState(null, '', `#${slideId}`);
+    this.selectedSubId = slideId;
   }
 
   // Normalize subcategories so template bindings are safe
@@ -35,23 +38,11 @@ export class CategorySectionComponent {
     if (!Array.isArray(subs)) return [];
     return subs.map((s: any) => {
       if (typeof s === 'string') {
-        return { id: this.slugify(s), name: s };
+        return { id: s, name: s };
       }
       const name = s?.name ?? String(s?.id ?? '');
-      const rawId = s?.id ?? name;
-      const id = this.slugify(String(rawId));
+      const id = String(s?.id ?? '').trim();
       return { id, name };
     });
-  }
-
-  private slugify(value: string): string {
-    return (value || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
   }
 }

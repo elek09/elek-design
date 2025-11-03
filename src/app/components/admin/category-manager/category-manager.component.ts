@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import {
@@ -9,11 +9,27 @@ import {
 } from '@angular/cdk/drag-drop';
 import { Category } from '../../../models/category.model';
 import { CategoryService } from '../../../services/category.service';
+import { slugify } from '../../../utils/slug.utils';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-category-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, DragDropModule],
+  imports: [
+    CommonModule,
+    NgIf,
+    NgFor,
+    FormsModule,
+    RouterModule,
+    DragDropModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+  ],
   templateUrl: './category-manager.component.html',
   styleUrls: ['./category-manager.component.scss'],
 })
@@ -35,7 +51,9 @@ export class CategoryManagerComponent implements OnInit {
     // Load admin categories to include nav_order and allow reordering
     this.categoryService.getAdminCategories().subscribe((data) => {
       this.categories = [...(data || [])].sort(
-        (a, b) => (a.nav_order ?? Number.MAX_SAFE_INTEGER) - (b.nav_order ?? Number.MAX_SAFE_INTEGER)
+        (a, b) =>
+          (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
+          (b.nav_order ?? Number.MAX_SAFE_INTEGER)
       );
       this.orderDirty = false;
     });
@@ -48,10 +66,10 @@ export class CategoryManagerComponent implements OnInit {
     if (Array.isArray(copy.subcategories)) {
       copy.subcategories = copy.subcategories.map((s: any) => {
         if (typeof s === 'string') {
-          return { id: this.slugify(s), name: s };
+          return { id: slugify(s)!, name: s };
         }
         return {
-          id: s.id ?? this.slugify(s.name ?? ''),
+          id: s.id ?? slugify(s.name ?? '')!,
           name: s.name ?? String(s.id ?? ''),
         };
       });
@@ -96,7 +114,7 @@ export class CategoryManagerComponent implements OnInit {
     if (this.selectedCategory && this.newSubcategoryName.trim()) {
       const name = this.newSubcategoryName.trim();
       const newSub = {
-        id: this.slugify(name),
+        id: slugify(name)!,
         name,
       };
       const arr = (this.selectedCategory.subcategories || []) as Array<{
@@ -123,12 +141,12 @@ export class CategoryManagerComponent implements OnInit {
     const existing = arr[index];
     if (typeof existing === 'string') {
       // convert to object if string
-      arr[index] = { id: this.slugify(name), name };
+      arr[index] = { id: slugify(name)!, name };
     } else {
       existing.name = name;
       // Auto-sync id with name if user hasn't manually set a custom id (basic heuristic)
-      if (!existing.id || existing.id === this.slugify(existing.name)) {
-        existing.id = this.slugify(name);
+      if (!existing.id || existing.id === slugify(existing.name)) {
+        existing.id = slugify(name)!;
       }
     }
     this.selectedCategory.subcategories = arr as any;
@@ -138,7 +156,7 @@ export class CategoryManagerComponent implements OnInit {
     if (!this.selectedCategory) return;
     const arr = (this.selectedCategory.subcategories || []) as Array<any>;
     const existing = arr[index];
-    const newId = this.slugify(value || '');
+    const newId = slugify(value || '')!;
     if (typeof existing === 'string') {
       // convert to object if string
       arr[index] = { id: newId, name: existing };
@@ -180,17 +198,20 @@ export class CategoryManagerComponent implements OnInit {
     });
   }
 
+  // TrackBy helpers to reduce DOM churn
+  trackByCategory = (_: number, c: Category) => c._id ?? c.id ?? c.type;
+  trackBySub = (_: number, s: { id?: string; name: string }) =>
+    s.id ?? s.name ?? _;
+
   // Validation helpers
   get hasDuplicateSubIds(): boolean {
     if (!this.selectedCategory) return false;
     const arr = (this.selectedCategory.subcategories || []) as Array<any>;
     const ids = arr
       .map((s) =>
-        typeof s === 'string'
-          ? this.slugify(s)
-          : this.slugify(s?.id ?? s?.name ?? '')
+        typeof s === 'string' ? slugify(s) : slugify(s?.id ?? s?.name ?? '')
       )
-      .filter((id) => !!id);
+      .filter((id): id is string => !!id);
     const set = new Set<string>();
     for (const id of ids) {
       if (set.has(id)) return true;
@@ -209,26 +230,15 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   // UI helpers
-  slugify(value: string): string {
-    return (value || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
   onNewTypeInput(): void {
     if (this.newCategory?.type) {
-      this.newCategory.type = this.slugify(String(this.newCategory.type));
+      this.newCategory.type = slugify(String(this.newCategory.type))!;
     }
   }
 
   onEditTypeInput(value: string): void {
     if (this.selectedCategory) {
-      this.selectedCategory.type = this.slugify(value || '');
+      this.selectedCategory.type = slugify(value || '')!;
     }
   }
 
@@ -251,7 +261,7 @@ export class CategoryManagerComponent implements OnInit {
     if (!this.selectedCategory) return [];
     const arr = (this.selectedCategory.subcategories || []) as Array<any>;
     return arr.map((s: any) =>
-      typeof s === 'string' ? { id: this.slugify(s), name: s } : s
+      typeof s === 'string' ? { id: slugify(s)!, name: s } : s
     );
   }
 }

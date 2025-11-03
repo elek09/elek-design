@@ -1,22 +1,24 @@
-<ng-container *ngFor="let category of categories$ | async">
-    <div class="part">
-        <h1 class="sub-head" [id]="category.name">{{ category.name }}</h1>
+@for (category of (categories$ | async) ?? []; track category?.id ?? category?.name ?? $index) {
+<div class="part">
+    <h1 class="sub-head" [id]="category.name">{{ category.name }}</h1>
+</div>
+<hr />
+<div class="category-layout">
+    <aside class="menu-list" [ngClass]="{ second: sectionType === 'uzletter' }">
+        <ul>
+            @for (subCategory of normalizeSubcategories(category.subcategories); track subCategory.id) {
+            <li>
+                <a href="#" (click)="$event.preventDefault(); onMenuClick(subCategory.id)"
+                    [class.active]="selectedSubId === subCategory.id">
+                    {{ subCategory.name }} »
+                </a>
+            </li>
+            }
+        </ul>
+    </aside>
+    <div class="content can-be-paged">
+        <app-carousel #carousel [slides]="(slides$ | async) ?? []" [showManualControls]="true" [hasTextOverlay]="false"
+            (slideChanged)="onSlideChanged($event)"></app-carousel>
     </div>
-    <hr />
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-2 menu-list" [ngClass]="{ second: sectionType === 'uzletter' }">
-                <ul>
-                    <li *ngFor="let subCategory of normalizeSubcategories(category.subcategories)">
-                        <a href="#" (click)="$event.preventDefault(); onMenuClick(subCategory.id)">{{ subCategory.name
-                            }} »</a>
-                    </li>
-                </ul>
-            </div>
-            <div class="col-sm-10 can-be-paged">
-                <app-carousel #carousel [slides]="(slides$ | async) ?? []" [showManualControls]="true"
-                    [hasTextOverlay]="false" (slideChanged)="onSlideChanged($event)"></app-carousel>
-            </div>
-        </div>
-    </div>
-</ng-container>
+</div>
+}

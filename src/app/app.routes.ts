@@ -12,6 +12,9 @@ import { CategoryManagerComponent } from './components/admin/category-manager/ca
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
+  // Hungarian section routes now have dedicated paths
+  { path: 'eletter', component: HomeComponent },
+  { path: 'uzletter', component: HomeComponent },
   { path: 'kapcsolat', component: ContactComponent },
   { path: '3d-falboritas', component: WallCladdingComponent },
   { path: 'ives-butorok', component: CurvedFurnitureComponent },

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApiService } from '../../../services/admin-api.service';
@@ -15,11 +15,30 @@ import { Subject } from 'rxjs';
 import { map, takeUntil } from 'rxjs/operators';
 import { CategoryService } from '../../../services/category.service';
 import { Category } from '../../../models/category.model';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-admin-gallery',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    NgIf,
+    NgFor,
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatCheckboxModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './admin-gallery.component.html',
   styleUrls: ['./admin-gallery.component.scss'],
 })
@@ -137,23 +156,11 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   ): Array<{ id: string; name: string }> {
     if (!Array.isArray(subs)) return [];
     return (subs as any[]).map((s: any) => {
-      if (typeof s === 'string') return { id: this.slugify(s), name: s };
+      if (typeof s === 'string') return { id: s, name: s };
       const name = s?.name ?? String(s?.id ?? '');
-      const rawId = s?.id ?? name;
-      const id = this.slugify(String(rawId));
+      const id = String(s?.id ?? '').trim();
       return { id, name };
     });
-  }
-
-  private slugify(value: string): string {
-    return (value || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
   }
 
   objectKeys<T extends object>(obj: T): (keyof T)[] {
@@ -285,7 +292,8 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       return;
     }
     if (subs.length > 0 && !this.uploadForm.subCategory) {
-      this.uploadError = 'Please select a subcategory under the chosen main category.';
+      this.uploadError =
+        'Please select a subcategory under the chosen main category.';
       return;
     }
     // Validate the chosen subcategory actually belongs to the selected main category
@@ -294,7 +302,8 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       subs.length > 0 &&
       !subs.some((s) => s.value === this.uploadForm.subCategory)
     ) {
-      this.uploadError = 'The selected subcategory is not valid for the chosen main category.';
+      this.uploadError =
+        'The selected subcategory is not valid for the chosen main category.';
       return;
     }
     if (!this.uploadForm.image) {
@@ -307,7 +316,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
     const formValue = this.uploadForm;
     const categoryValue = formValue.subCategory || formValue.mainCategory;
-    const normalizedCategory = this.slugify(categoryValue) || categoryValue;
+    const normalizedCategory = categoryValue; // already canonical from backend config
     const request: GalleryCreateRequest = {
       title: formValue.title.trim(),
       category: normalizedCategory,
