@@ -45,7 +45,7 @@ class CategoryController extends Controller
 
     $category = Category::create($validated);
     // Invalidate cached bootstrap payload so public site reflects changes
-    Cache::forget('bootstrap:v1');
+    Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
 
     return (new AdminCategoryResource($category))->response()->setStatusCode(201);
     }
@@ -78,7 +78,7 @@ class CategoryController extends Controller
 
     $category->update($validated);
     // Invalidate cached bootstrap payload so public site reflects changes
-    Cache::forget('bootstrap:v1');
+    Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
 
     return new AdminCategoryResource($category);
     }
@@ -90,7 +90,7 @@ class CategoryController extends Controller
     {
     $category->delete();
     // Invalidate cached bootstrap payload so public site reflects changes
-    Cache::forget('bootstrap:v1');
+    Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
 
         return response()->noContent();
     }

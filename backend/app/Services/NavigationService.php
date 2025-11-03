@@ -25,7 +25,7 @@ class NavigationService
             'label' => 'Logo',
             'route' => '/',
             'is_logo' => true,
-            'image_url' => asset(config('navigation.logo_image_path')),
+            'image_url' => asset('images/elek-design-logo.jpg'),
             'order' => 0,
         ];
 
