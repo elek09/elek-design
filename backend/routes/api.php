@@ -9,36 +9,46 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Models\Category;
+use App\Http\Resources\CategoryResource as PublicCategoryResource;
 use App\Http\Controllers\NavigationController;
+use App\Http\Controllers\CartController;
 
 Route::prefix('v1')->group(function () {
     // Auth
     Route::prefix('auth')->group(function () {
+        Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
         Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     });
 
-    // Publikus
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/{slug}', [ProductController::class, 'show']);
 
-    // Public Category route
-    Route::get('categories', [AdminCategoryController::class, 'index']);
-    // Public header navigation config
-    Route::get('navigation/header', [NavigationController::class, 'header']);
-    // Alias for clients calling /api/v1/header
-    Route::get('header', [NavigationController::class, 'header']);
+    Route::get('categories', [NavigationController::class, 'getCategories']);
+
+    // Bootstrap: consolidated startup payload (header, categories, featured)
+    Route::get('bootstrap', \App\Http\Controllers\BootstrapController::class);
 
     // Gallery routes
     Route::prefix('gallery')->group(function () {
         Route::get('/', [GalleryController::class, 'index']);
         Route::get('/top', [GalleryController::class, 'top']);
-        Route::get('/eletter', [GalleryController::class, 'eletter']);
-        Route::get('/uzletter', [GalleryController::class, 'uzletter']);
-        Route::get('/wall-cladding', [GalleryController::class, 'wallCladding']);
-        Route::get('/curved-furniture', [GalleryController::class, 'curvedFurniture']);
-        // Dynamic, DB-driven section route (e.g., eletter, uzletter, wall-cladding, curved-furniture)
+        // Dynamic, DB-driven section route (e.g., eletter, uzletter, 3d-falboritas, ives-butorok)
         Route::get('/section/{section}', [GalleryController::class, 'section']);
+    });
+
+    // Cart (session-based, guest-friendly). Attach session middleware only to these routes.
+    Route::prefix('cart')->middleware([
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+    ])->group(function () {
+        Route::get('/', [CartController::class, 'index']);
+        Route::post('items', [CartController::class, 'add']);
+        Route::put('items/{productId}', [CartController::class, 'update']);
+        Route::delete('items/{productId}', [CartController::class, 'remove']);
+        Route::delete('/', [CartController::class, 'clear']);
+        Route::post('checkout', [CartController::class, 'checkout']);
     });
 
     // Bejelentkezett
@@ -72,13 +82,9 @@ Route::prefix('v1')->group(function () {
             Route::get('orders', [OrderController::class, 'index']);
             Route::put('orders/{order}/status', [OrderController::class, 'updateStatus']);
 
-            // Category management
-            Route::apiResource('categories', AdminCategoryController::class)->except(['index']);
+            // Category management (include index for admin UI)
+            Route::get('categories', [AdminCategoryController::class, 'index']);
+            Route::apiResource('categories', AdminCategoryController::class)->except(['create', 'edit']);
         });
-    });
-
-    // Legacy admin routes (to be removed later)
-    Route::middleware(['auth:sanctum', 'can:admin'])->group(function () {
-        Route::post('gallery', [GalleryController::class, 'store']);
     });
 });

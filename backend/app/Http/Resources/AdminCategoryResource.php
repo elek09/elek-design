@@ -5,10 +5,11 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CategoryResource extends JsonResource
+class AdminCategoryResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
+     * Includes both id and _id for admin UI compatibility.
      *
      * @return array<string, mixed>
      */
@@ -16,6 +17,7 @@ class CategoryResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            '_id' => $this->id,
             'name' => $this->name,
             'type' => $this->type,
             'nav_order' => $this->nav_order,

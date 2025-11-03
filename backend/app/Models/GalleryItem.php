@@ -21,4 +21,15 @@ class GalleryItem extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
+
+    // Scopes for common filters
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
+    }
 }

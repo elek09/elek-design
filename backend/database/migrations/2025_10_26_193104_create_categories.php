@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('type')->unique();
             $table->json('subcategories')->nullable();
+            $table->integer('nav_order')->nullable();
             $table->timestamps();
+            $table->index('nav_order');
         });
     }
 

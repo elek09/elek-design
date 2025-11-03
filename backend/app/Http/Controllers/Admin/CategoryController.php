@@ -7,8 +7,9 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use App\Http\Resources\CategoryResource;
+use App\Http\Resources\AdminCategoryResource;
 
 class CategoryController extends Controller
 {
@@ -21,7 +22,7 @@ class CategoryController extends Controller
             ->orderBy('nav_order')
             ->orderBy('name')
             ->get();
-        return CategoryResource::collection($categories);
+    return AdminCategoryResource::collection($categories);
     }
 
     /**
@@ -42,9 +43,11 @@ class CategoryController extends Controller
             'subcategories.*.name' => 'required_with:subcategories|string',
         ])->validate();
 
-        $category = Category::create($validated);
+    $category = Category::create($validated);
+    // Invalidate cached bootstrap payload so public site reflects changes
+    Cache::forget('bootstrap:v1');
 
-        return (new CategoryResource($category))->response()->setStatusCode(201);
+    return (new AdminCategoryResource($category))->response()->setStatusCode(201);
     }
 
     /**
@@ -52,7 +55,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        return new CategoryResource($category);
+    return new AdminCategoryResource($category);
     }
 
     /**
@@ -73,9 +76,11 @@ class CategoryController extends Controller
             'subcategories.*.name' => 'required_with:subcategories|string',
         ])->validate();
 
-        $category->update($validated);
+    $category->update($validated);
+    // Invalidate cached bootstrap payload so public site reflects changes
+    Cache::forget('bootstrap:v1');
 
-        return new CategoryResource($category);
+    return new AdminCategoryResource($category);
     }
 
     /**
@@ -83,7 +88,9 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        $category->delete();
+    $category->delete();
+    // Invalidate cached bootstrap payload so public site reflects changes
+    Cache::forget('bootstrap:v1');
 
         return response()->noContent();
     }

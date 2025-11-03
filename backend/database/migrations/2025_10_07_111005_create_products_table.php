@@ -17,7 +17,7 @@ return new class extends Migration {
             $t->text('description')->nullable();
             $t->decimal('price', 12, 2)->nullable();
             $t->json('options')->nullable();
-            $t->boolean('active')->default(true);
+            $t->boolean('is_active')->default(true);
             $t->timestamps();
         });
     }

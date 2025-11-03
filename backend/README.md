@@ -9,3 +9,23 @@ php artisan serve
 "email": "admin@elekdesign.hu",
 "password": "ElekAdmin2025!"
 }
+
+## Database
+
+The schema is designed to be simple, data-driven, and cache-friendly:
+
+-   Users include an `admin` boolean flag (default false) to separate public users from administrators.
+-   Products use `is_active` (boolean) to control catalog visibility without deleting content.
+-   Gallery items use both `is_active` (for visibility) and `is_featured` (for curated “Top” selections on the homepage and Bootstrap payload).
+-   Categories store a Hungarian `type` (stable identifier), human-friendly `name`, an optional JSON `subcategories` array, and `nav_order` to define header order. The presence of subcategories also drives whether a header item is exposed as a homepage fragment or a route.
+
+The API exposes a single canonical gallery listing route by section:
+
+-   `GET /api/v1/gallery/section/{section}?page=1` (e.g., `eletter`, `uzletter`, `3d-falboritas`, `ives-butorok`)
+-   `GET /api/v1/gallery/top` returns featured items.
+-   `GET /api/v1/bootstrap` returns the consolidated startup payload (header, categories, featured) and is cached for 5 minutes.
+
+Notes:
+
+-   All media URLs in the API are absolute (built via `asset()`), so frontends can pass them through without origin handling.
+-   Migrations were squashed so that base “create” migrations reflect the final schema (with `is_active`, `is_featured`, and `nav_order` included). Follow-up migrations remain guarded no-ops for compatibility and narrative.

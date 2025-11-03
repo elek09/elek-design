@@ -17,6 +17,7 @@ return new class extends Migration {
             $t->text('description')->nullable();
             $t->string('image_path');
             $t->boolean('is_active')->default(true);
+            $t->boolean('is_featured')->default(false);
             $t->timestamps();
         });
 
