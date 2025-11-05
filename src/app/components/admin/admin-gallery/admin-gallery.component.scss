@@ -3,88 +3,7 @@
   background: #f8f9fa;
 }
 
-.gallery-header {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  padding: 20px 0;
-
-  .header-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-
-      .btn-back {
-        background: none;
-        border: none;
-        color: #666;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 5px;
-        transition: all 0.3s ease;
-
-        &:hover {
-          background: #f8f9fa;
-          color: #333;
-        }
-      }
-
-      h1 {
-        margin: 0;
-        color: #333;
-        font-size: 28px;
-        font-weight: 600;
-      }
-    }
-
-    .header-right {
-      display: flex;
-      gap: 10px;
-
-      .btn {
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        &.btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-          }
-        }
-
-        &.btn-outline {
-          background: white;
-          color: #666;
-          border: 1px solid #ddd;
-
-          &:hover {
-            background: #f8f9fa;
-            border-color: #adb5bd;
-          }
-        }
-      }
-    }
-  }
-}
+// Header rules removed; AdminHeader component provides its own styling
 
 .upload-section {
   background: white;
@@ -286,7 +205,7 @@
   padding: 0 20px 40px;
 }
 
-  .gallery-grid {
+.gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 30px;
@@ -393,32 +312,37 @@
       .item-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 8px 10px;
         margin-bottom: 10px;
 
         h4 {
           margin: 0;
           font-size: 1.1rem;
           font-weight: 600;
-          flex-grow: 1;
-          margin-right: 10px; // Space between title and buttons
+          flex: 1 1 auto;
+          min-width: 160px;
         }
       }
 
       .item-actions {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
 
         .action-btn {
           display: inline-flex;
           align-items: center;
           gap: 6px;
           font-size: 0.85rem;
+          padding: 4px 8px;
+          line-height: 1.2;
         }
 
         .toggle-btn {
           &.active {
-            // This is the "Deactivate" button
             background-color: #ffc107; // Yellow
             color: #333;
             &:hover {
@@ -426,7 +350,6 @@
             }
           }
           &.inactive {
-            // This is the "Activate" button
             background-color: #28a745; // Green
             color: white;
             &:hover {
@@ -435,7 +358,7 @@
           }
         }
 
-  // Material variants handle colors; hooks removed to satisfy lint rules
+        // Material variants handle colors; hooks removed to satisfy lint rules
       }
 
       .item-category {
@@ -535,11 +458,6 @@
 }
 
 @media (max-width: 768px) {
-  .gallery-header .header-content {
-    flex-direction: column;
-    gap: 15px;
-  }
-
   .upload-section .upload-form .form-row {
     grid-template-columns: 1fr;
   }
@@ -562,21 +480,12 @@
     grid-template-columns: 1fr;
     gap: 15px;
   }
+
+  .gallery-item .item-actions .action-btn span {
+    display: none; // Show icon-only buttons on narrow screens
+  }
 }
 
 @media (max-width: 576px) {
-  .gallery-header .header-content .header-left {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .gallery-header .header-content .header-right {
-    flex-direction: column;
-    width: 100%;
-
-    .btn {
-      justify-content: center;
-    }
-  }
+  // Header rules removed; AdminHeader handles its own responsive layout
 }

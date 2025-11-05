@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, NgIf, NgFor } from '@angular/common';
+import { CommonModule, NgFor } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import {
   CdkDragDrop,
   DragDropModule,
@@ -14,13 +14,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { AdminHeaderComponent } from '../admin-header/admin-header.component';
 
 @Component({
   selector: 'app-category-manager',
   standalone: true,
   imports: [
     CommonModule,
-    NgIf,
     NgFor,
     FormsModule,
     RouterModule,
@@ -29,6 +29,7 @@ import { MatInputModule } from '@angular/material/input';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    AdminHeaderComponent,
   ],
   templateUrl: './category-manager.component.html',
   styleUrls: ['./category-manager.component.scss'],
@@ -41,7 +42,10 @@ export class CategoryManagerComponent implements OnInit {
   lastError = '';
   orderDirty = false;
 
-  constructor(private categoryService: CategoryService) {}
+  constructor(
+    private categoryService: CategoryService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadCategories();
@@ -59,20 +63,35 @@ export class CategoryManagerComponent implements OnInit {
     });
   }
 
+  goBack(): void {
+    this.router.navigate(['/admin/dashboard']);
+  }
+
   selectCategory(category: Category): void {
     // Create a deep copy to avoid modifying the original object directly
     const copy: Category = JSON.parse(JSON.stringify(category));
     // Normalize subcategories to objects with {id,name}
     if (Array.isArray(copy.subcategories)) {
-      copy.subcategories = copy.subcategories.map((s: any) => {
+      const mapped = copy.subcategories.map((s: any) => {
         if (typeof s === 'string') {
-          return { id: slugify(s)!, name: s };
+          return { id: slugify(s)!, name: s, nav_order: undefined } as any;
         }
         return {
           id: s.id ?? slugify(s.name ?? '')!,
           name: s.name ?? String(s.id ?? ''),
-        };
+          nav_order:
+            typeof s.nav_order === 'number' ? Number(s.nav_order) : undefined,
+        } as any;
       });
+      // Sort by nav_order if provided
+      mapped.sort(
+        (a: any, b: any) =>
+          (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
+          (b.nav_order ?? Number.MAX_SAFE_INTEGER)
+      );
+      // Ensure sequential nav_order values (1-based)
+      mapped.forEach((s: any, idx: number) => (s.nav_order = idx + 1));
+      copy.subcategories = mapped as any;
     } else {
       copy.subcategories = [];
     }
@@ -81,7 +100,20 @@ export class CategoryManagerComponent implements OnInit {
 
   saveCategory(category: Category): void {
     this.lastError = '';
-    this.categoryService.saveCategory(category).subscribe({
+    // Ensure nav_order reflects current order (1-based) before persisting
+    const subs = ((category.subcategories || []) as any[]).map(
+      (s: any, idx: number) => ({
+        id: String(s?.id ?? ''),
+        name: String(s?.name ?? ''),
+        nav_order: idx + 1,
+      })
+    );
+    const payload: Category = {
+      ...(category as any),
+      subcategories: subs,
+    } as any;
+
+    this.categoryService.saveCategory(payload).subscribe({
       next: () => {
         this.loadCategories();
         this.resetForm();
@@ -116,10 +148,13 @@ export class CategoryManagerComponent implements OnInit {
       const newSub = {
         id: slugify(name)!,
         name,
+        nav_order:
+          ((this.selectedCategory.subcategories || []) as any[]).length + 1,
       };
       const arr = (this.selectedCategory.subcategories || []) as Array<{
         id?: string;
         name: string;
+        nav_order?: number;
       }>;
       arr.push(newSub);
       this.selectedCategory.subcategories = arr as any;
@@ -129,7 +164,11 @@ export class CategoryManagerComponent implements OnInit {
 
   removeSubcategory(index: number): void {
     if (this.selectedCategory) {
-      (this.selectedCategory.subcategories as any[]).splice(index, 1);
+      const arr = (this.selectedCategory.subcategories as any[]) || [];
+      arr.splice(index, 1);
+      // Reindex nav_order
+      arr.forEach((s: any, idx: number) => (s.nav_order = idx + 1));
+      this.selectedCategory.subcategories = arr as any;
     }
   }
 
@@ -171,6 +210,8 @@ export class CategoryManagerComponent implements OnInit {
     if (!this.selectedCategory) return;
     const arr = (this.selectedCategory.subcategories || []) as any[];
     moveItemInArray(arr, event.previousIndex, event.currentIndex);
+    // Update nav_order after move (1-based)
+    arr.forEach((s: any, idx: number) => (s.nav_order = idx + 1));
     this.selectedCategory.subcategories = arr as any;
   }
 
@@ -257,11 +298,56 @@ export class CategoryManagerComponent implements OnInit {
     );
   }
 
-  get selectedSubcategories(): Array<{ id?: string; name: string }> {
+  get selectedSubcategories(): Array<{
+    id?: string;
+    name: string;
+    nav_order?: number;
+  }> {
     if (!this.selectedCategory) return [];
     const arr = (this.selectedCategory.subcategories || []) as Array<any>;
+    // selectedCategory is normalized to objects; keep as-is to preserve nav_order
     return arr.map((s: any) =>
-      typeof s === 'string' ? { id: slugify(s)!, name: s } : s
+      typeof s === 'string'
+        ? { id: slugify(s)!, name: s, nav_order: undefined }
+        : s
     );
+  }
+
+  // Save current category edits (including new subcategory) then go to gallery with params
+  addItemToSubcategory(sub: { id?: string; name: string }): void {
+    if (!this.selectedCategory) return;
+    this.lastError = '';
+    // Persist edits first, then navigate
+    this.categoryService.saveCategory(this.selectedCategory).subscribe({
+      next: () => {
+        this.router.navigate(['/admin/gallery'], {
+          queryParams: {
+            mainCategory: this.selectedCategory!.type,
+            subCategory: sub.id,
+          },
+        });
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'Save failed';
+        this.lastError = msg;
+      },
+    });
+  }
+
+  // Save current category edits then navigate to add item for the main category
+  addItemToCategory(): void {
+    if (!this.selectedCategory) return;
+    this.lastError = '';
+    this.categoryService.saveCategory(this.selectedCategory).subscribe({
+      next: () => {
+        this.router.navigate(['/admin/gallery'], {
+          queryParams: { mainCategory: this.selectedCategory!.type },
+        });
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'Save failed';
+        this.lastError = msg;
+      },
+    });
   }
 }

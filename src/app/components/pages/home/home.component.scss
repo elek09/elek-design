@@ -1,0 +1,24 @@
+/* Intentionally no transition for immediate reveal after preload */
+
+/* No local overlay styles; handled by shared LoadingOverlayComponent */
+
+/* Full-screen overlay for initial loading */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.overlay .spinner {
+  margin-bottom: 12px;
+}
+
+.overlay .label {
+  font-size: 0.95rem;
+  color: #333;
+}

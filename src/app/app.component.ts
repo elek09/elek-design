@@ -9,20 +9,25 @@ import { FooterComponent } from './components/layout/footer/footer.component';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    <app-header></app-header>
+    @if (!isAdmin) { <app-header></app-header> }
     <router-outlet></router-outlet>
-    <app-footer></app-footer>
+    @if (!isAdmin) { <app-footer></app-footer> }
   `,
   styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit {
   title = 'Elek Design';
+  isAdmin = false;
 
   constructor(private router: Router) {}
 
   ngOnInit(): void {
+    const setIsAdmin = () =>
+      (this.isAdmin = this.router.url.startsWith('/admin'));
+    setIsAdmin();
     this.router.events.subscribe((e) => {
       if (e instanceof NavigationEnd) {
+        setIsAdmin();
         const hash =
           typeof window !== 'undefined' ? (window as any).location?.hash : '';
         if (hash) {

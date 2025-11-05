@@ -1,32 +1,17 @@
 <div class="admin-dashboard">
-    <!-- Header -->
-    <header class="dashboard-header">
-        <div class="header-content">
-            <div class="header-left">
-                <h1>Admin Dashboard</h1>
-                @if (currentUser) {
-                <p>Welcome back, {{ currentUser.name }}!</p>
-                }
-            </div>
-            <div class="header-right">
-                <button mat-stroked-button color="primary" (click)="logout()">
-                    <mat-icon>logout</mat-icon>
-                    Logout
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Loading state -->
-    @if (isLoading) {
-    <div class="loading-container">
-        <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
-        <p>Loading dashboard...</p>
-    </div>
-    }
+    <app-loading-overlay *ngIf="isLoading" [label]="'Loading dashboard…'"></app-loading-overlay>
+    <app-admin-header [title]="'Admin Dashboard'"
+        [subtitle]="currentUser ? ('Welcome back, ' + currentUser.name + '!') : ''">
+        <span header-actions>
+            <button mat-stroked-button color="primary" (click)="logout()">
+                <mat-icon>logout</mat-icon>
+                Logout
+            </button>
+        </span>
+    </app-admin-header>
 
     <!-- Error state -->
-    @if (error && !isLoading) {
+    @if (error) {
     <div class="error-container">
         <div class="alert alert-danger">
             <i class="icon-error"></i>
@@ -37,7 +22,7 @@
     }
 
     <!-- Dashboard content -->
-    @if (!isLoading && !error) {
+    @if (!error) {
     <div class="dashboard-content">
 
         <!-- Stats cards -->
@@ -77,7 +62,7 @@
                     <mat-icon>star</mat-icon>
                 </div>
                 <div class="stat-content">
-                    <h3>{{ stats.byCategory['featured'] }}</h3>
+                    <h3>{{ stats.featuredItems }}</h3>
                     <p>Featured</p>
                 </div>
             </div>
@@ -97,6 +82,24 @@
                     </div>
                 </div>
                 }
+            </div>
+        </div>
+        <!-- Quick actions -->
+        <div class="section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+                <button mat-stroked-button color="primary" (click)="navigateToGallery()">
+                    <mat-icon>add</mat-icon>
+                    <span>Manage Gallery</span>
+                </button>
+                <button mat-stroked-button color="primary" routerLink="/admin/category-manager">
+                    <mat-icon>category</mat-icon>
+                    <span>Manage Categories</span>
+                </button>
+                <button mat-stroked-button color="primary" (click)="loadDashboardData()">
+                    <mat-icon>refresh</mat-icon>
+                    <span>Refresh Data</span>
+                </button>
             </div>
         </div>
 
@@ -135,43 +138,6 @@
                 <button mat-raised-button color="primary" (click)="navigateToGallery()">Add First Item</button>
             </div>
             }
-        </div>
-
-        <!-- Quick actions -->
-        <div class="section">
-            <h2>Quick Actions</h2>
-            <div class="quick-actions">
-                <button mat-stroked-button color="primary" (click)="navigateToGallery()">
-                    <mat-icon>add</mat-icon>
-                    <span>Manage Gallery</span>
-                </button>
-                <button mat-stroked-button color="primary" routerLink="/admin/category-manager">
-                    <mat-icon>category</mat-icon>
-                    <span>Manage Categories</span>
-                </button>
-                <button mat-stroked-button color="primary" (click)="loadDashboardData()">
-                    <mat-icon>refresh</mat-icon>
-                    <span>Refresh Data</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Category statistics (new hierarchical categories) -->
-        <div class="section">
-            <h2>Category Statistics</h2>
-            <div class="category-stats-container">
-                <div class="category-stats">
-                    <h4>Items by Category</h4>
-                    <ul>
-                        @for (categoryKey of getCategoryKeys(); track categoryKey) {
-                        <li>
-                            <span>{{ getCategoryLabel(categoryKey) }}</span>
-                            <span class="count">{{ stats.byCategory[categoryKey] }}</span>
-                        </li>
-                        }
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
     }

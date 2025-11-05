@@ -9,6 +9,9 @@ import {
   tap,
   switchMap,
   startWith,
+  merge,
+  map,
+  distinctUntilChanged,
 } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
@@ -32,6 +35,8 @@ export class AdminApiService {
   private refresh$ = new Subject<void>();
 
   private galleryItems$: Observable<ApiResponse<GalleryItem[]>>;
+  /** Emits true while gallery list refresh request is in-flight, else false. */
+  readonly loading$: Observable<boolean>;
 
   constructor() {
     this.galleryItems$ = this.refresh$.pipe(
@@ -46,6 +51,12 @@ export class AdminApiService {
       ),
       shareReplay(1) // Cache the result
     );
+
+    // loading$ toggles true on refresh trigger and false when galleryItems$ emits
+    this.loading$ = merge(
+      this.refresh$.pipe(map(() => true)),
+      this.galleryItems$.pipe(map(() => false))
+    ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
   }
 
   // Gallery Management

@@ -3,52 +3,6 @@
   background: #f8f9fa;
 }
 
-.dashboard-header {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  padding: 20px 0;
-
-  .header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .header-left {
-      h1 {
-        margin: 0 0 5px 0;
-        color: #333;
-        font-size: 28px;
-        font-weight: 600;
-      }
-
-      p {
-        margin: 0;
-        color: #666;
-      }
-    }
-
-    .header-right {
-      .btn {
-        padding: 10px 20px;
-        border: 1px solid #ddd;
-        background: white;
-        color: #666;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-
-        &:hover {
-          background: #f8f9fa;
-          border-color: #adb5bd;
-        }
-      }
-    }
-  }
-}
-
 .dashboard-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -373,12 +327,6 @@
 
 // Responsive design
 @media (max-width: 768px) {
-  .dashboard-header .header-content {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-
   .stats-grid {
     grid-template-columns: 1fr;
   }

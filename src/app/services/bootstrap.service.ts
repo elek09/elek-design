@@ -10,6 +10,8 @@ import {
   shareReplay,
   startWith,
   switchMap,
+  merge,
+  distinctUntilChanged,
 } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
 import { HeaderConfig, HeaderNavItem } from '../models/header.model';
@@ -47,6 +49,8 @@ export class BootstrapService {
   private readonly apiOrigin: string;
   private readonly data$: Observable<BootstrapPayload>;
   private refresh$!: Subject<void>;
+  /** Emits true while a refresh HTTP request is in-flight, else false. */
+  readonly loading$: Observable<boolean>;
 
   constructor(private http: HttpClient, @Inject(API_BASE_URL) baseUrl: string) {
     this.url = `${baseUrl}/api/v1/bootstrap`;
@@ -73,6 +77,12 @@ export class BootstrapService {
       ),
       shareReplay(1)
     );
+
+    // loading$ is true when a refresh starts and false when the data stream emits
+    this.loading$ = merge(
+      this.refresh$.pipe(map(() => true)),
+      this.data$.pipe(map(() => false))
+    ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
   }
 
   getBootstrap$(): Observable<BootstrapPayload> {

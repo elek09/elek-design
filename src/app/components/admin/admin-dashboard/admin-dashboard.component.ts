@@ -3,15 +3,14 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { AdminApiService } from '../../../services/admin-api.service';
-import {
-  GalleryItem,
-  User,
-  GalleryConfig,
-  GalleryCategory,
-} from '../../../models/admin.models';
+import { GalleryItem, User } from '../../../models/admin.models';
+import { Category } from '../../../models/category.model';
+import { CategoryService } from '../../../services/category.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AdminHeaderComponent } from '../admin-header/admin-header.component';
+import { LoadingOverlayComponent } from '../../shared/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -22,6 +21,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    AdminHeaderComponent,
+    LoadingOverlayComponent,
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss',
@@ -30,14 +31,16 @@ export class AdminDashboardComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly adminApiService = inject(AdminApiService);
   private readonly router = inject(Router);
+  private readonly categoryService = inject(CategoryService);
 
   currentUser: User | null = null;
   galleryItems: GalleryItem[] = [];
-  galleryConfig: GalleryConfig | null = null;
+  categories: Category[] = [];
   stats = {
     totalItems: 0,
     activeItems: 0,
     inactiveItems: 0,
+    featuredItems: 0,
     byCategory: {} as { [key: string]: number },
   };
   isLoading = true;
@@ -50,55 +53,51 @@ export class AdminDashboardComponent implements OnInit {
 
   loadDashboardData(): void {
     this.isLoading = true;
-    this.adminApiService.getGalleryConfig().subscribe({
-      next: (configResponse) => {
-        if (configResponse.success && configResponse.data) {
-          this.galleryConfig = configResponse.data;
-          this.adminApiService.getGalleryItems().subscribe({
-            next: (itemsResponse) => {
-              if (itemsResponse.success && itemsResponse.data) {
-                this.galleryItems = itemsResponse.data;
-                this.calculateStats();
-              }
-              this.isLoading = false;
-            },
-            error: (err) => {
-              console.error('Error loading gallery items:', err);
-              this.error = 'Failed to load gallery items.';
-              this.isLoading = false;
-            },
-          });
-        } else {
-          this.error = 'Failed to load gallery configuration.';
-          this.isLoading = false;
-        }
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = cats || [];
+        this.adminApiService.getGalleryItems().subscribe({
+          next: (itemsResponse) => {
+            if (itemsResponse.success && itemsResponse.data) {
+              this.galleryItems = itemsResponse.data;
+              this.calculateStats();
+            }
+            this.isLoading = false;
+          },
+          error: (err) => {
+            console.error('Error loading gallery items:', err);
+            this.error = 'Failed to load gallery items.';
+            this.isLoading = false;
+          },
+        });
       },
       error: (err) => {
-        console.error('Error loading gallery config:', err);
-        this.error = 'Failed to load gallery configuration.';
+        console.error('Error loading categories:', err);
+        this.error = 'Failed to load categories.';
         this.isLoading = false;
       },
     });
   }
 
   private calculateStats(): void {
-    if (!this.galleryConfig) return;
+    if (!this.categories) return;
 
     this.stats.totalItems = this.galleryItems.length;
     this.stats.activeItems = this.galleryItems.filter(
       (item) => item.is_active
     ).length;
     this.stats.inactiveItems = this.stats.totalItems - this.stats.activeItems;
+    this.stats.featuredItems = this.galleryItems.filter(
+      (item) => !!item.is_featured
+    ).length;
 
     // Reset and initialize category counts from the config
     this.stats.byCategory = {};
-    this.galleryConfig.categories.forEach((cat) => {
-      this.stats.byCategory[cat.value] = 0;
-      if (cat.subcategories) {
-        cat.subcategories.forEach((sub) => {
-          this.stats.byCategory[sub.value] = 0;
-        });
-      }
+    this.categories.forEach((cat) => {
+      this.stats.byCategory[cat.type] = 0;
+      this.normalizeSubcategories(cat.subcategories).forEach((sub) => {
+        this.stats.byCategory[sub.id] = 0;
+      });
     });
 
     // Count by category
@@ -118,14 +117,14 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getCategoryLabel(key: string): string {
-    if (!this.galleryConfig) return key;
+    if (!this.categories) return key;
 
-    for (const cat of this.galleryConfig.categories) {
-      if (cat.value === key) return cat.label;
-      if (cat.subcategories) {
-        const sub = cat.subcategories.find((s) => s.value === key);
-        if (sub) return sub.label;
-      }
+    for (const cat of this.categories) {
+      if (cat.type === key) return cat.name;
+      const sub = this.normalizeSubcategories(cat.subcategories).find(
+        (s) => s.id === key
+      );
+      if (sub) return sub.name;
     }
     return key;
   }
@@ -154,6 +153,18 @@ export class AdminDashboardComponent implements OnInit {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+    });
+  }
+
+  private normalizeSubcategories(
+    subs: Category['subcategories']
+  ): Array<{ id: string; name: string }> {
+    if (!Array.isArray(subs)) return [];
+    return (subs as any[]).map((s: any) => {
+      if (typeof s === 'string') return { id: s, name: s };
+      const name = s?.name ?? String(s?.id ?? '');
+      const id = String(s?.id ?? '').trim();
+      return { id, name };
     });
   }
 }

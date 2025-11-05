@@ -1,0 +1,11 @@
+<div class="overlay">
+    @if (logoUrl) {
+    <img class="logo" [src]="logoUrl!" [alt]="logoAlt" decoding="sync" fetchpriority="high" />
+    }
+    <mat-progress-spinner class="spinner" mode="indeterminate" diameter="64" strokeWidth="4" aria-label="Loading" />
+    @if (label) {
+    <div class="label">{{ label }}</div>
+    }
+    <div class="sr-only" aria-live="polite">Loading, please wait…</div>
+    <!-- sr-only ensures screen readers announce loading state -->
+</div>

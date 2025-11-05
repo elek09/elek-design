@@ -1,0 +1,24 @@
+<header class="admin-header">
+    <div class="header-content">
+        <div class="header-left">
+            @if (backLink) {
+            <a class="btn-back" mat-stroked-button color="primary" [routerLink]="backLink">
+                <mat-icon>arrow_back</mat-icon>
+                {{ backLabel }}
+            </a>
+            }
+            <div class="titles">
+                <h1>{{ title }}</h1>
+                @if (subtitle) {
+                <p class="subtitle">{{ subtitle }}</p>
+                }
+            </div>
+        </div>
+        <div class="header-right">
+            <mat-progress-spinner *ngIf="(isRefreshing$ | async)" class="header-spinner" mode="indeterminate"
+                diameter="16"></mat-progress-spinner>
+            <ng-content select="[header-actions]"></ng-content>
+        </div>
+    </div>
+    <app-admin-nav></app-admin-nav>
+</header>

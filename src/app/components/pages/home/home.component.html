@@ -1,4 +1,8 @@
-<div class="main">
+@if (loading) {
+<app-loading-overlay [logoUrl]="'assets/images/elek-design-logo.png'"></app-loading-overlay>
+}
+
+<div class="main" [style.visibility]="loading ? 'hidden' : 'visible'">
   <app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true" [showManualControls]="false"
     [hasTextOverlay]="true"></app-carousel>
   <hr>

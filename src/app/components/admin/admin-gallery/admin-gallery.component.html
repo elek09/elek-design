@@ -1,26 +1,16 @@
 <div class="admin-gallery">
-    <!-- Header -->
-    <header class="gallery-header">
-        <div class="header-content">
-            <div class="header-left">
-                <button class="btn-back" mat-stroked-button color="primary" (click)="goBack()">
-                    <mat-icon>arrow_back</mat-icon>
-                    Back to Dashboard
-                </button>
-                <h1>Gallery Management</h1>
-            </div>
-            <div class="header-right">
-                <button mat-raised-button color="primary" class="btn btn-primary" (click)="toggleUploadForm()">
-                    <mat-icon>add</mat-icon>
-                    {{ showUploadForm ? 'Cancel' : 'Add New Item' }}
-                </button>
-                <button mat-stroked-button color="primary" class="btn btn-outline" (click)="logout()">
-                    <mat-icon>logout</mat-icon>
-                    Logout
-                </button>
-            </div>
-        </div>
-    </header>
+    <app-admin-header [backLink]="['/admin/dashboard']" title="Gallery Management">
+        <span header-actions>
+            <button mat-raised-button color="primary" class="btn btn-primary" (click)="toggleUploadForm()">
+                <mat-icon>add</mat-icon>
+                {{ showUploadForm ? 'Cancel' : 'Add New Item' }}
+            </button>
+            <button mat-stroked-button color="primary" class="btn btn-outline" (click)="logout()">
+                <mat-icon>logout</mat-icon>
+                Logout
+            </button>
+        </span>
+    </app-admin-header>
 
     <!-- Upload Form -->
     <div class="upload-section" *ngIf="showUploadForm && galleryConfig">
@@ -149,14 +139,8 @@
         </div>
     </div>
 
-    <!-- Loading state -->
-    <div *ngIf="isLoading" class="loading-container">
-        <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
-        <p>Loading gallery items...</p>
-    </div>
-
     <!-- Error state -->
-    <div *ngIf="error && !isLoading" class="error-container">
+    <div *ngIf="error" class="error-container">
         <div class="alert alert-danger">
             <p><strong>Error:</strong> {{ error }}</p>
             <p>Please try refreshing the page. If the problem persists, contact support.</p>
@@ -164,7 +148,7 @@
     </div>
 
     <!-- Gallery Grid -->
-    <div *ngIf="!isLoading && !error" class="gallery-content">
+    <div *ngIf="!error" class="gallery-content">
         <div class="gallery-grid" *ngIf="filteredItems.length > 0">
             <div *ngFor="let item of filteredItems" class="gallery-item">
                 <div class="item-image">
@@ -209,7 +193,7 @@
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="!isLoading && !error && filteredItems.length === 0" class="empty-state">
+        <div *ngIf="!error && filteredItems.length === 0" class="empty-state">
             <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>
             <h3>No Gallery Items Found</h3>
             <p *ngIf="galleryItems.length > 0">No items match your current filters. Try adjusting your search.</p>

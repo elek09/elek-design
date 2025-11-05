@@ -3,6 +3,6 @@ export interface Category {
   _id?: number | string;
   name: string;
   type: string;
-  subcategories: { id?: string; name: string }[] | string[];
+  subcategories: { id?: string; name: string; nav_order?: number }[] | string[];
   nav_order?: number;
 }
