@@ -12,10 +12,7 @@ class NavigationService
      */
     public function buildHeaderItems(): array
     {
-        $categories = Category::orderByRaw('CASE WHEN nav_order IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('nav_order')
-            ->orderBy('name')
-            ->get();
+        $categories = Category::navOrdered()->get();
 
         $items = [];
 

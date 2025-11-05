@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\GalleryItem;
+use App\Services\GalleryImportService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -18,10 +19,11 @@ class GalleryImageSeeder extends Seeder
         Storage::disk('public')->makeDirectory('gallery');
         DB::table('gallery_items')->truncate();
 
-        $this->processImages();
+        $service = app(GalleryImportService::class);
+        $this->processImages($service);
     }
 
-    private function processImages()
+    private function processImages(GalleryImportService $service)
     {
         $sourcePath = database_path('seeders/_sample/gallery');
 
@@ -30,37 +32,39 @@ class GalleryImageSeeder extends Seeder
             return;
         }
 
-        $allFiles = collect(File::files($sourcePath));
+        $allFiles = collect($service->collect($sourcePath));
 
         if ($allFiles->isEmpty()) {
             $this->command->warn('No source images found in the gallery directory.');
             return;
         }
 
-        $this->command->info("--- Found {$allFiles->count()} total images. Processing... ---");
-        $progressBar = $this->command->getOutput()->createProgressBar($allFiles->count());
+    // 1) Parse entries (NO DEDUPE — every file in the folder is unique by input contract)
+    $entries = $service->parseEntries($allFiles->all());
+
+    $this->command->info('--- Found ' . count($entries) . ' images. Copying & seeding... ---' . PHP_EOL);
+
+        // 2) Fizikai másolás és DB beszúrás a deduplikált listából
+        $progressBar = $this->command->getOutput()->createProgressBar(count($entries));
         $progressBar->start();
 
-        foreach ($allFiles as $file) {
-            $filename = $file->getFilename();
-            $baseName = Str::lower($file->getFilenameWithoutExtension());
-            
-            $is_featured = str_starts_with($baseName, 'featured_');
-            if ($is_featured) {
-                $baseName = substr($baseName, 9); // "featured_" length
-            }
-            
-            $category = $this->findCategoryByKeyword($baseName) ?? 'egyeb';
+        foreach ($entries as $entry) {
+            /** @var \App\Support\Gallery\ImportEntry $entry */
+            $file = $entry->file;
+            $category = $entry->category;
+            $title = $entry->title;
+            $order = (int) $entry->order;
+            $is_featured = (bool) $entry->is_featured;
 
-            // Treat every file as a gallery content item; uncategorized files go under 'egyeb'
-            $title = Str::headline(str_replace(['(1)','(2)','(3)'], '', $baseName));
             $categorySlug = Str::slug($category);
             $titleSlug = Str::slug($title);
             $extension = $file->getExtension();
 
-            $newFilename = "{$titleSlug}-" . time() . rand(10, 99) . ".{$extension}";
-            $destinationDirectory = "gallery/{$categorySlug}";
-            $newPath = "{$destinationDirectory}/{$newFilename}";
+            // Őrizzük meg az rendelési számot a fájlnévben, hogy a runtime parser fel tudja venni
+            $orderSuffix = $order > 0 ? '(' . $order . ')' : '';
+            $newFilename = $titleSlug . $orderSuffix . '-' . time() . rand(10, 99) . '.' . $extension;
+            $destinationDirectory = 'gallery/' . $categorySlug;
+            $newPath = $destinationDirectory . '/' . $newFilename;
 
             Storage::disk('public')->makeDirectory($destinationDirectory);
             File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
@@ -68,38 +72,18 @@ class GalleryImageSeeder extends Seeder
             GalleryItem::create([
                 'title' => $title,
                 'category' => $category,
-                'description' => "Automatikus leírás: {$title}",
+                'description' => 'Automatikus leírás: ' . $title,
                 'image_path' => $newPath,
                 'is_active' => true,
                 'is_featured' => $is_featured,
             ]);
-            
+
             $progressBar->advance();
         }
 
         $progressBar->finish();
-        $this->command->info("\n--- Gallery processing complete! ---");
+        $this->command->info(PHP_EOL . '--- Gallery processing complete! ---');
     }
 
-    private function findCategoryByKeyword(string $filename): ?string
-    {
-        $keywordMap = [
-            'konyha' => 'konyha', 'nappali' => 'nappali', 'furdoszoba' => 'furdoszoba',
-            'haloszoba' => 'haloszoba', 'gardrob' => 'gardrob', 'lepcso' => 'lepcso',
-            'iroda' => 'iroda-berendezes', 'uzlet' => 'uzlet-berendezes',
-            'kiallitasibutorok' => 'kiallitasi-butorok', '3d' => '3d-falboritas',
-            '3dfal' => '3d-falboritas', 'ivesbutorok' => 'ives-butorok', 'ives' => 'ives-butorok',
-            // Common utility or branding assets -> 'egyeb'
-            'elekdesign_logo' => 'egyeb', 'elekdesign-logo' => 'egyeb', 'logo' => 'egyeb',
-            'elek_imre' => 'egyeb', 'elekimre' => 'egyeb',
-        ];
-
-        foreach ($keywordMap as $keyword => $category) {
-            if (str_starts_with($filename, $keyword)) {
-                return $category;
-            }
-        }
-
-        return null;
-    }
+    // Keyword mapping now lives in config/gallery.php and is used by GalleryImportService
 }

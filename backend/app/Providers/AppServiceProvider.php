@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Category;
+use App\Observers\CategoryObserver;
+use App\Models\GalleryItem;
+use App\Observers\GalleryItemObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Category::observe(CategoryObserver::class);
+        GalleryItem::observe(GalleryItemObserver::class);
     }
 }

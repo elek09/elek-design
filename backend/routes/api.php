@@ -71,7 +71,6 @@ Route::prefix('v1')->group(function () {
             Route::delete('pages/{page}', [PageController::class, 'destroy']);
             
             // Gallery management
-            Route::get('gallery/config', [AdminGalleryController::class, 'config']);
             Route::apiResource('gallery', AdminGalleryController::class)->parameters([
                 'gallery' => 'galleryItem'
             ]);

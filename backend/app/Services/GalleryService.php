@@ -99,11 +99,13 @@ class GalleryService
     private function parseOrderFromTitleOrPath(?string $title, ?string $path): int
     {
         $title = (string) $title;
+        // Title végén lévő (n) mint ábécésorrend segéd
         if (preg_match('/\((\d+)\)\s*$/', $title, $m)) {
             return (int) $m[1];
         }
         $file = strtolower(pathinfo((string) $path, PATHINFO_FILENAME));
-        if (preg_match('/\((\d+)\)$/', $file, $m)) {
+        // Fájlnévben bárhol előforduló (n), pl. konyha(3)-1699999999.jpg
+        if (preg_match('/\((\d+)\)/', $file, $m)) {
             return (int) $m[1];
         }
         return 0;

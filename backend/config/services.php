@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    // Bootstrap payload cache TTL (minutes)
+    'bootstrap_cache_ttl' => env('BOOTSTRAP_CACHE_TTL', 10),
+
 ];

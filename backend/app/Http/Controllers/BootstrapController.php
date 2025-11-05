@@ -22,13 +22,11 @@ class BootstrapController extends Controller
      */
     public function __invoke()
     {
-        $payload = Cache::remember(self::CACHE_KEY, now()->addMinutes(5), function () {
+        $ttl = (int) config('services.bootstrap_cache_ttl', 10);
+        $payload = Cache::remember(self::CACHE_KEY, now()->addMinutes($ttl), function () {
             $headerItems = $this->nav->buildHeaderItems();
 
-            $categories = Category::orderByRaw('CASE WHEN nav_order IS NULL THEN 1 ELSE 0 END')
-                ->orderBy('nav_order')
-                ->orderBy('name')
-                ->get();
+            $categories = Category::navOrdered()->get();
 
             // Top 12 featured items
             $featured = $this->gallery->queryActive()
