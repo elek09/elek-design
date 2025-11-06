@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { BootstrapService } from './bootstrap.service';
@@ -6,10 +6,10 @@ import { HeaderConfig } from '../models/header.model';
 
 @Injectable({ providedIn: 'root' })
 export class HeaderService {
-  private readonly headerConfig$: Observable<HeaderConfig>;
-
-  constructor(private bootstrap: BootstrapService) {
-    this.headerConfig$ = this.bootstrap.getHeader$().pipe(
+  private readonly bootstrap = inject(BootstrapService);
+  private readonly headerConfig$: Observable<HeaderConfig> = this.bootstrap
+    .getHeader$()
+    .pipe(
       map((cfg) =>
         this.normalizeConfig(
           (cfg as HeaderConfig) ?? {
@@ -20,7 +20,6 @@ export class HeaderService {
       ),
       shareReplay(1)
     );
-  }
 
   getHeaderConfig(): Observable<HeaderConfig> {
     return this.headerConfig$;

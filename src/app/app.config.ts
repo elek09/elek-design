@@ -2,6 +2,7 @@ import {
   ApplicationConfig,
   APP_INITIALIZER,
   provideZoneChangeDetection,
+  LOCALE_ID,
 } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import {
@@ -47,5 +48,6 @@ export const appConfig: ApplicationConfig = {
       provide: GALLERY_API_BASE_URL,
       useValue: 'http://127.0.0.1:8000/api/v1/gallery',
     },
+    { provide: LOCALE_ID, useValue: 'hu-HU' },
   ],
 };

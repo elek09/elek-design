@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
   Observable,
@@ -45,45 +45,37 @@ type BootstrapPayload = {
 
 @Injectable({ providedIn: 'root' })
 export class BootstrapService {
-  private readonly url: string;
-  private readonly apiOrigin: string;
-  private readonly data$: Observable<BootstrapPayload>;
-  private refresh$!: Subject<void>;
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly url: string = `${this.baseUrl}/api/v1/bootstrap`;
+  private readonly apiOrigin: string = getOrigin(this.baseUrl);
+  private readonly refresh$ = new Subject<void>();
+  private readonly data$: Observable<BootstrapPayload> = this.refresh$.pipe(
+    startWith(void 0),
+    switchMap(() =>
+      defer(() =>
+        this.http
+          .get<
+            BootstrapPayload | { success?: boolean; data?: BootstrapPayload }
+          >(this.url)
+          .pipe(
+            map(
+              (res: any) =>
+                (res && typeof res === 'object' && 'data' in res
+                  ? res.data
+                  : res) as BootstrapPayload
+            ),
+            catchError(() => of<BootstrapPayload>({}))
+          )
+      )
+    ),
+    shareReplay(1)
+  );
   /** Emits true while a refresh HTTP request is in-flight, else false. */
-  readonly loading$: Observable<boolean>;
-
-  constructor(private http: HttpClient, @Inject(API_BASE_URL) baseUrl: string) {
-    this.url = `${baseUrl}/api/v1/bootstrap`;
-    this.apiOrigin = getOrigin(baseUrl);
-    this.refresh$ = new Subject<void>();
-    this.data$ = this.refresh$.pipe(
-      startWith(void 0),
-      switchMap(() =>
-        defer(() =>
-          this.http
-            .get<
-              BootstrapPayload | { success?: boolean; data?: BootstrapPayload }
-            >(this.url)
-            .pipe(
-              map(
-                (res: any) =>
-                  (res && typeof res === 'object' && 'data' in res
-                    ? res.data
-                    : res) as BootstrapPayload
-              ),
-              catchError(() => of<BootstrapPayload>({}))
-            )
-        )
-      ),
-      shareReplay(1)
-    );
-
-    // loading$ is true when a refresh starts and false when the data stream emits
-    this.loading$ = merge(
-      this.refresh$.pipe(map(() => true)),
-      this.data$.pipe(map(() => false))
-    ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
-  }
+  readonly loading$: Observable<boolean> = merge(
+    this.refresh$.pipe(map(() => true)),
+    this.data$.pipe(map(() => false))
+  ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
 
   getBootstrap$(): Observable<BootstrapPayload> {
     return this.data$;

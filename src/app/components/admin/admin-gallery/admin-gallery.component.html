@@ -13,7 +13,8 @@
     </app-admin-header>
 
     <!-- Upload Form -->
-    <div class="upload-section" *ngIf="showUploadForm && galleryConfig">
+    @if (showUploadForm && galleryConfig) {
+    <div class="upload-section">
         <div class="upload-form">
             <h3>Add New Gallery Item</h3>
 
@@ -31,23 +32,29 @@
                         <mat-label>Main Category *</mat-label>
                         <mat-select id="mainCategory" [(ngModel)]="uploadForm.mainCategory"
                             (selectionChange)="onMainCategoryChange()" required>
-                            <mat-option *ngFor="let cat of galleryConfig.categories" [value]="cat.value">
+                            @for (cat of galleryConfig.categories; track cat.value) {
+                            <mat-option [value]="cat.value">
                                 {{ cat.label }}
                             </mat-option>
+                            }
                         </mat-select>
                     </mat-form-field>
                 </div>
 
-                <div class="form-group" *ngIf="availableSubcategories.length > 0">
+                @if (availableSubcategories.length > 0) {
+                <div class="form-group">
                     <mat-form-field appearance="fill" class="w-100">
                         <mat-label>Sub-Category</mat-label>
                         <mat-select id="subCategory" [(ngModel)]="uploadForm.subCategory">
-                            <mat-option *ngFor="let subCat of availableSubcategories" [value]="subCat.value">
+                            @for (subCat of availableSubcategories; track subCat.value) {
+                            <mat-option [value]="subCat.value">
                                 {{ subCat.label }}
                             </mat-option>
+                            }
                         </mat-select>
                     </mat-form-field>
                 </div>
+                }
             </div>
 
             <div class="form-group">
@@ -66,7 +73,8 @@
                         <mat-icon>upload_file</mat-icon>
                         Choose Image
                     </button>
-                    <span class="file-name" *ngIf="uploadForm.image as img">{{ img.name }}</span>
+                    @let img = uploadForm.image;
+                    @if (img) {<span class="file-name">{{ img.name }}</span>}
                 </div>
             </div>
 
@@ -81,7 +89,7 @@
             <div class="form-actions">
                 <button mat-raised-button color="primary" class="btn btn-primary" (click)="onUpload()"
                     [disabled]="isUploading || !uploadForm.title.trim() || !uploadForm.image">
-                    <mat-progress-spinner *ngIf="isUploading" mode="indeterminate" diameter="18"></mat-progress-spinner>
+                    @if (isUploading) {<mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>}
                     <span>{{ isUploading ? 'Uploading...' : 'Upload Image' }}</span>
                 </button>
                 <button mat-stroked-button color="primary" class="btn btn-secondary" (click)="toggleUploadForm()">
@@ -89,28 +97,34 @@
                 </button>
             </div>
 
-            <div class="alert alert-danger" *ngIf="uploadError">
+            @if (uploadError) {
+            <div class="alert alert-danger">
                 {{ uploadError }}
             </div>
+            }
         </div>
     </div>
+    }
 
     <!-- Filters -->
-    <div class="filters-section" *ngIf="galleryConfig">
+    @if (galleryConfig) {
+    <div class="filters-section">
         <div class="filters">
             <div class="filter-group">
                 <mat-form-field appearance="outline">
                     <mat-label>Category</mat-label>
                     <mat-select [(ngModel)]="selectedCategory" (selectionChange)="onFilterChange()">
                         <mat-option value="all">All Categories</mat-option>
-                        <ng-container *ngFor="let cat of galleryConfig.categories">
-                            <mat-optgroup [label]="cat.label">
-                                <mat-option [value]="cat.value">{{ cat.label }} (Main)</mat-option>
-                                <mat-option *ngFor="let subCat of cat.subcategories || []" [value]="subCat.value">
-                                    {{ subCat.label }}
-                                </mat-option>
-                            </mat-optgroup>
-                        </ng-container>
+                        @for (cat of galleryConfig.categories; track cat.value) {
+                        <mat-optgroup [label]="cat.label">
+                            <mat-option [value]="cat.value">{{ cat.label }} (Main)</mat-option>
+                            @for (subCat of (cat.subcategories || []); track subCat.value) {
+                            <mat-option [value]="subCat.value">
+                                {{ subCat.label }}
+                            </mat-option>
+                            }
+                        </mat-optgroup>
+                        }
                     </mat-select>
                 </mat-form-field>
             </div>
@@ -138,19 +152,25 @@
             Showing {{ filteredItems.length }} of {{ galleryItems.length }} items
         </div>
     </div>
+    }
 
     <!-- Error state -->
-    <div *ngIf="error" class="error-container">
+    @if (error) {
+    <div class="error-container">
         <div class="alert alert-danger">
             <p><strong>Error:</strong> {{ error }}</p>
             <p>Please try refreshing the page. If the problem persists, contact support.</p>
         </div>
     </div>
+    }
 
     <!-- Gallery Grid -->
-    <div *ngIf="!error" class="gallery-content">
-        <div class="gallery-grid" *ngIf="filteredItems.length > 0">
-            <div *ngFor="let item of filteredItems" class="gallery-item">
+    @if (!error) {
+    <div class="gallery-content">
+        @if (filteredItems.length > 0) {
+        <div class="gallery-grid">
+            @for (item of filteredItems; track item) {
+            <div class="gallery-item">
                 <div class="item-image">
                     <img [src]="getImageUrl(item.image_path)" [alt]="item.title">
                 </div>
@@ -185,23 +205,30 @@
                     </p>
                     <p class="item-description">{{ item.description || 'No description available.' }}</p>
                     <div class="item-meta">
-                        <small>Uploaded: {{ formatDate(item.created_at) }}</small>
-                        <small>Updated: {{ formatDate(item.updated_at) }}</small>
+                        <small>Uploaded: {{ formatDateTime(item.created_at) }}</small>
+                        <small>Updated: {{ formatDateTime(item.updated_at) }}</small>
                     </div>
                 </div>
             </div>
+            }
         </div>
+        }
 
         <!-- Empty State -->
-        <div *ngIf="!error && filteredItems.length === 0" class="empty-state">
+        @if (!error && filteredItems.length === 0) {
+        <div class="empty-state">
             <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>
             <h3>No Gallery Items Found</h3>
-            <p *ngIf="galleryItems.length > 0">No items match your current filters. Try adjusting your search.</p>
-            <p *ngIf="galleryItems.length === 0">Get started by adding a new gallery item.</p>
-            <button mat-raised-button color="primary" class="btn" (click)="toggleUploadForm()" *ngIf="!showUploadForm">
+            @if (galleryItems.length > 0) {<p>No items match your current filters. Try adjusting your search.</p>}
+            @if (galleryItems.length === 0) {<p>Get started by adding a new gallery item.</p>}
+            @if (!showUploadForm) {
+            <button mat-raised-button color="primary" class="btn" (click)="toggleUploadForm()">
                 <mat-icon>add</mat-icon>
                 Add New Item
             </button>
+            }
         </div>
+        }
     </div>
+    }
 </div>

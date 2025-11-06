@@ -1,0 +1,39 @@
+.orders-list {
+  padding: 1rem;
+}
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+.status-filter {
+  min-width: 220px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 0.5rem 1rem;
+}
+
+.grid {
+  width: 100%;
+}
+
+/* Truncate long notes in cells */
+.note-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Vertically center the action button in its cell and align icon+label nicely */
+.ag-cell.action-cell {
+  display: flex;
+  align-items: center;
+}
+.ag-cell.action-cell .ag-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

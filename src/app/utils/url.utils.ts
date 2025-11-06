@@ -13,3 +13,9 @@ export function resolveToAbsolute(apiOrigin: string, raw?: string): string {
   const path = raw.startsWith('/') ? raw : `/${raw}`;
   return apiOrigin ? `${apiOrigin}${path}` : path;
 }
+
+export function joinUrl(base: string, path: string): string {
+  const b = base?.endsWith('/') ? base.slice(0, -1) : base;
+  const p = path?.startsWith('/') ? path : `/${path}`;
+  return `${b}${p}`;
+}

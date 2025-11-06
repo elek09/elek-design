@@ -1,0 +1,102 @@
+@if (order(); as o) {
+<div class="order-detail">
+    <app-admin-header [title]="o.kind === 'quote' ? 'Árajánlat' : 'Rendelés'"
+        [subtitle]="'#' + o.id + ' – ' + (o.created_at | date:'yyyy.MM.dd HH:mm')">
+        <span header-actions>
+            <button mat-stroked-button (click)="back()">
+                <mat-icon>arrow_back</mat-icon>
+                Vissza
+            </button>
+            <button mat-stroked-button color="primary" (click)="sendConfirmation()">
+                <mat-icon>mail</mat-icon>
+                Megerősítő email
+            </button>
+        </span>
+    </app-admin-header>
+
+
+
+    <div class="order-meta">
+        <div class="customer-block">
+            <h3>Ügyfél</h3>
+            <div class="rowline"><mat-icon>person</mat-icon><span>{{ o.customer.name }}</span></div>
+            <div class="rowline"><mat-icon>email</mat-icon><a [href]="'mailto:' + o.customer.email">{{ o.customer.email
+                    }}</a></div>
+            @if (o.customer.phone) {
+            <div class="rowline"><mat-icon>call</mat-icon><a [href]="'tel:' + o.customer.phone">{{ o.customer.phone
+                    }}</a></div>
+            }
+        </div>
+        <div class="summary-block">
+            <h3>Rendelés</h3>
+            <div class="rowline"><mat-icon>calendar_today</mat-icon><span>{{ o.created_at | date:'yyyy.MM.dd HH:mm'
+                    }}</span></div>
+            <div class="rowline"><mat-icon>assignment</mat-icon><span>{{ o.kind === 'quote' ? 'Árajánlat' : 'Rendelés'
+                    }} #{{ o.id }}</span></div>
+            @if (o.total != null) {
+            <div class="rowline"><mat-icon>payments</mat-icon><span>{{ o.total |
+                    currency:'HUF':'symbol':'1.0-0':'hu-HU' }}</span>
+            </div>
+            }
+        </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="row">
+            <mat-form-field appearance="fill">
+                <mat-label>Státusz</mat-label>
+                <mat-select formControlName="status">
+                    <mat-option value="new">Új</mat-option>
+                    <mat-option value="accepted">Elfogadott</mat-option>
+                    <mat-option value="rejected">Elutasított</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <div class="quick">
+                <button mat-button type="button" (click)="setStatus('accepted')">Elfogad</button>
+                <button mat-button type="button" (click)="setStatus('rejected')">Elutasít</button>
+            </div>
+        </div>
+
+        <div class="items" formArrayName="items">
+            @for (ctrl of itemsFA.controls; track $index; let i = $index) {
+            <div class="item" [formGroupName]="i">
+                <div class="product">{{ ctrl.get('product_name')?.value }}</div>
+                <mat-form-field appearance="fill" class="qty">
+                    <mat-label>Mennyiség</mat-label>
+                    <input matInput type="number" formControlName="quantity" min="1" />
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="price">
+                    <mat-label>Egységár (HUF)</mat-label>
+                    <input matInput type="number" formControlName="unit_price" />
+                </mat-form-field>
+                <div class="opts">
+                    @let hw = o.items[i].options?.hardware_type;
+                    @if (hw) {
+                    <div class="opt hw" [title]="hw">
+                        <mat-icon>build</mat-icon>
+                        <span>Vasalat: {{ hw }}</span>
+                    </div>
+                    }
+                    @let cs = o.items[i].options?.color_scheme;
+                    @if (cs) {
+                    <div class="opt cs" [title]="cs">
+                        <mat-icon>palette</mat-icon>
+                        <span>Szín: {{ cs }}</span>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+
+        <mat-form-field appearance="fill" class="note">
+            <mat-label>Admin megjegyzés</mat-label>
+            <textarea matInput rows="3" formControlName="admin_note"></textarea>
+        </mat-form-field>
+
+        <div class="actions">
+            <button mat-raised-button color="primary" type="submit" [disabled]="saving()">Mentés</button>
+        </div>
+    </form>
+</div>
+}

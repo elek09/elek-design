@@ -27,7 +27,6 @@ export class AdminHeaderComponent {
   @Input() title = '';
   @Input() subtitle?: string;
   @Input() backLink?: string | any[];
-  @Input() backLabel: string = 'Back to Dashboard';
 
   private readonly bootstrap = inject(BootstrapService);
   private readonly adminApi = inject(AdminApiService);

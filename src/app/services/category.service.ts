@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, of, forkJoin } from 'rxjs';
 import { Category } from '../models/category.model';
@@ -17,27 +17,18 @@ import { BootstrapService } from './bootstrap.service';
   providedIn: 'root',
 })
 export class CategoryService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly bootstrap = inject(BootstrapService);
   // URL for admin, write operations
-  private adminApiUrl: string;
+  private readonly adminApiUrl = `${this.baseUrl}/api/v1/admin/categories`;
   // Shared observable cache and refresh trigger
-  private refresh$ = new Subject<void>();
-  private categories$!: Observable<Category[]>;
-
-  constructor(
-    private http: HttpClient,
-    @Inject(API_BASE_URL) private baseUrl: string,
-    private bootstrap: BootstrapService
-  ) {
-    // Set up admin URL
-    this.adminApiUrl = `${this.baseUrl}/api/v1/admin/categories`;
-
-    // Build cached categories stream similar to gallery items approach
-    this.categories$ = this.refresh$.pipe(
-      startWith(void 0),
-      switchMap(() => this.bootstrap.getCategories$()),
-      shareReplay(1)
-    );
-  }
+  private readonly refresh$ = new Subject<void>();
+  private readonly categories$: Observable<Category[]> = this.refresh$.pipe(
+    startWith(void 0),
+    switchMap(() => this.bootstrap.getCategories$()),
+    shareReplay(1)
+  );
 
   // Uses the PUBLIC URL
   getCategories(): Observable<Category[]> {

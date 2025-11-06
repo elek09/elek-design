@@ -11,6 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminHeaderComponent } from '../admin-header/admin-header.component';
 import { LoadingOverlayComponent } from '../../shared/loading-overlay/loading-overlay.component';
+import { formatDateTime } from '../../../utils/date.utils';
+import { normalizeSubcategories } from '../../../utils/category.utils';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -95,7 +97,7 @@ export class AdminDashboardComponent implements OnInit {
     this.stats.byCategory = {};
     this.categories.forEach((cat) => {
       this.stats.byCategory[cat.type] = 0;
-      this.normalizeSubcategories(cat.subcategories).forEach((sub) => {
+      normalizeSubcategories(cat.subcategories).forEach((sub) => {
         this.stats.byCategory[sub.id] = 0;
       });
     });
@@ -121,8 +123,8 @@ export class AdminDashboardComponent implements OnInit {
 
     for (const cat of this.categories) {
       if (cat.type === key) return cat.name;
-      const sub = this.normalizeSubcategories(cat.subcategories).find(
-        (s) => s.id === key
+      const sub = normalizeSubcategories(cat.subcategories).find(
+        (s: { id: string; name: string }) => s.id === key
       );
       if (sub) return sub.name;
     }
@@ -146,25 +148,7 @@ export class AdminDashboardComponent implements OnInit {
     return this.adminApiService.getImageUrl(imagePath);
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
+  readonly formatDateTime = formatDateTime;
 
-  private normalizeSubcategories(
-    subs: Category['subcategories']
-  ): Array<{ id: string; name: string }> {
-    if (!Array.isArray(subs)) return [];
-    return (subs as any[]).map((s: any) => {
-      if (typeof s === 'string') return { id: s, name: s };
-      const name = s?.name ?? String(s?.id ?? '');
-      const id = String(s?.id ?? '').trim();
-      return { id, name };
-    });
-  }
+  // normalization moved to utils/category.utils
 }

@@ -1,3 +1,5 @@
+/* AG Grid v33 uses Theming API by default, no CSS theme imports here */
+
 /* Consistent box model across the app */
 *,
 *::before,
@@ -166,3 +168,25 @@ img {
 
 /* --- CONTACT PAGE AND FORM STYLES --- */
 /* Moved contact-specific styles into contact.component.scss */
+
+/* Global status badge styles so they apply inside AG Grid renderers */
+.status-badge {
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+.status-badge.new {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.status-badge.accepted {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.status-badge.rejected {
+  background: #ffebee;
+  color: #c62828;
+}

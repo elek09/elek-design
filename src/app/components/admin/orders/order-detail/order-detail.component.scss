@@ -1,0 +1,149 @@
+.order-detail {
+  padding: 1rem;
+}
+.customer {
+  margin: 0.5rem 0 1rem;
+  opacity: 0.8;
+}
+.order-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 0.5rem 0 1rem;
+}
+.customer-block,
+.summary-block {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 1rem;
+}
+.rowline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+}
+.rowline a {
+  color: inherit;
+  text-decoration: none;
+}
+.rowline a:hover {
+  text-decoration: underline;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 0 0.5rem;
+}
+.row mat-form-field {
+  min-width: 260px;
+  max-width: 340px;
+  width: 100%;
+}
+.row .quick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.items {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.item {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) 140px 180px minmax(260px, 3fr);
+  gap: 0.875rem;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.item .product,
+.item .opts {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item .opts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0; /* allow ellipsis */
+}
+.item .opt {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 1;
+  background: #f6f7f9;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  color: #333;
+  max-width: 100%;
+}
+.item .opt mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+}
+.item .opt span {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Type-specific accent colors */
+.item .opt.hw {
+  background: #e3f2fd; /* light blue */
+  border-color: #bbdefb;
+  color: #1565c0;
+}
+.item .opt.cs {
+  background: #f3e5f5; /* light purple */
+  border-color: #e1bee7;
+  color: #6a1b9a;
+}
+.qty,
+.price,
+.note {
+  width: 100%;
+}
+.actions {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Make the entire form look like a card for consistency */
+form[formGroup] {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1rem;
+}
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .order-meta {
+    grid-template-columns: 1fr;
+  }
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .item {
+    grid-template-columns: 1fr 1fr;
+  }
+  .item .product,
+  .item .opts {
+    grid-column: 1 / -1;
+  }
+}

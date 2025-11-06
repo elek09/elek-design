@@ -14,7 +14,7 @@ import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
 import { CategoryService } from './category.service';
 import { Category } from '../models/category.model';
 import { BootstrapService } from './bootstrap.service';
-import { getOrigin, resolveToAbsolute } from '../utils/url.utils';
+import { getOrigin, resolveToAbsolute, joinUrl } from '../utils/url.utils';
 import { slugify } from '../utils/slug.utils';
 
 type ApiImageItem = {
@@ -54,7 +54,7 @@ export class GalleryDataService {
     // Cache per-section HTTP to align with backend endpoint /section/{section}
     const key = section.toLowerCase();
     if (!this.sectionCache.has(key)) {
-      const url = this.joinUrl(this.galleryApiUrl, `/section/${key}`);
+      const url = joinUrl(this.galleryApiUrl, `/section/${key}`);
       const section$ = this.http
         .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
         .pipe(
@@ -171,12 +171,6 @@ export class GalleryDataService {
     if (!raw) return undefined;
     const abs = resolveToAbsolute(this.apiOrigin, raw);
     return abs || undefined;
-  }
-
-  private joinUrl(base: string, path: string): string {
-    const b = base?.endsWith('/') ? base.slice(0, -1) : base;
-    const p = path?.startsWith('/') ? path : `/${path}`;
-    return `${b}${p}`;
   }
 
   // origin helper moved to utils

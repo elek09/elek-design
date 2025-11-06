@@ -14,13 +14,15 @@
             <h3>Existing Categories</h3>
             <p class="hint">Drag to change header navigation order. Logo and Kapcsolat are fixed.</p>
             <ul cdkDropList (cdkDropListDropped)="dropCategory($event)">
-                <li *ngFor="let category of categories; let i = index; trackBy: trackByCategory" cdkDrag>
+                @for (category of categories; track trackByCategory($index, category); let i = $index) {
+                <li cdkDrag>
                     <div class="category-row" (click)="selectCategory(category)" cdkDragHandle>
                         <mat-icon class="handle" title="Drag to reorder">drag_indicator</mat-icon>
                         <span class="name">{{ i + 1 }}. {{ category.name }}</span>
                         <span class="type">({{ category.type }})</span>
                     </div>
                 </li>
+                }
             </ul>
         </div>
 
@@ -63,7 +65,8 @@
 
             <h4>Subcategories</h4>
             <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
-                <li *ngFor="let sub of selectedSubcategories; let i = index; trackBy: trackBySub" cdkDrag>
+                @for (sub of selectedSubcategories; track trackBySub($index, sub); let i = $index) {
+                <li cdkDrag>
                     <div class="subcategory-row">
                         <div class="drag-handle" cdkDragHandle title="Drag to reorder">
                             <mat-icon>drag_indicator</mat-icon>
@@ -92,6 +95,7 @@
                         </div>
                     </div>
                 </li>
+                }
             </ul>
             @if (hasDuplicateSubIds) {
             <p class="warn">

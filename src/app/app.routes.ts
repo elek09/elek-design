@@ -4,11 +4,11 @@ import { HomeComponent } from './components/pages/home/home.component';
 import { ContactComponent } from './components/pages/contact/contact.component';
 import { WallCladdingComponent } from './components/pages/wall-cladding/wall-cladding.component';
 import { CurvedFurnitureComponent } from './components/pages/curved-furniture/curved-furniture.component';
-import { AdminLoginComponent } from './components/admin/admin-login/admin-login.component';
-import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
-import { AdminGalleryComponent } from './components/admin/admin-gallery/admin-gallery.component';
+import { WebshopComponent } from './components/pages/webshop/webshop.component';
 import { authGuard } from './guards/auth.guard';
 import { CategoryManagerComponent } from './components/admin/category-manager/category-manager.component';
+import { OrdersListComponent } from './components/admin/orders/orders-list/orders-list.component';
+import { OrderDetailComponent } from './components/admin/orders/order-detail/order-detail.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -18,22 +18,54 @@ export const routes: Routes = [
   { path: 'kapcsolat', component: ContactComponent },
   { path: '3d-falboritas', component: WallCladdingComponent },
   { path: 'ives-butorok', component: CurvedFurnitureComponent },
+  { path: 'webshop', component: WebshopComponent },
 
   // Admin routes
-  { path: 'admin/login', component: AdminLoginComponent },
+  {
+    path: 'admin/login',
+    loadComponent: () =>
+      import('./components/admin/admin-login/admin-login.component').then(
+        (m) => m.AdminLoginComponent
+      ),
+  },
   {
     path: 'admin/dashboard',
-    component: AdminDashboardComponent,
+    loadComponent: () =>
+      import(
+        './components/admin/admin-dashboard/admin-dashboard.component'
+      ).then((m) => m.AdminDashboardComponent),
     canActivate: [authGuard],
   },
   {
     path: 'admin/gallery',
-    component: AdminGalleryComponent,
+    loadComponent: () =>
+      import('./components/admin/admin-gallery/admin-gallery.component').then(
+        (m) => m.AdminGalleryComponent
+      ),
     canActivate: [authGuard],
   },
   {
     path: 'admin/category-manager',
-    component: CategoryManagerComponent,
+    loadComponent: () =>
+      import(
+        './components/admin/category-manager/category-manager.component'
+      ).then((m) => m.CategoryManagerComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'admin/orders',
+    loadComponent: () =>
+      import(
+        './components/admin/orders/orders-list/orders-list.component'
+      ).then((m) => m.OrdersListComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'admin/orders/:id',
+    loadComponent: () =>
+      import(
+        './components/admin/orders/order-detail/order-detail.component'
+      ).then((m) => m.OrderDetailComponent),
     canActivate: [authGuard],
   },
   { path: 'admin', redirectTo: 'admin/dashboard', pathMatch: 'full' },

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
-import { CommonModule, NgIf, NgFor } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApiService } from '../../../services/admin-api.service';
@@ -23,14 +23,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminHeaderComponent } from '../admin-header/admin-header.component';
+import { formatDateTime } from '../../../utils/date.utils';
+import { normalizeSubcategories } from '../../../utils/category.utils';
 
 @Component({
   selector: 'app-admin-gallery',
   standalone: true,
   imports: [
     CommonModule,
-    NgIf,
-    NgFor,
     FormsModule,
     MatButtonModule,
     MatIconModule,
@@ -145,36 +145,12 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     const mapped = (categories || []).map((c) => ({
       label: c.name,
       value: String(c.type),
-      subcategories: this.normalizeSubcategories(c.subcategories).map((s) => ({
+      subcategories: normalizeSubcategories(c.subcategories).map((s) => ({
         label: s.name,
         value: s.id,
       })),
     }));
     return { categories: mapped };
-  }
-
-  private normalizeSubcategories(
-    subs: Category['subcategories']
-  ): Array<{ id: string; name: string }> {
-    if (!Array.isArray(subs)) return [];
-    const arr = (subs as any[])
-      .map((s: any) => {
-        if (typeof s === 'string') return { id: s, name: s, nav_order: 0 };
-        const name = s?.name ?? String(s?.id ?? '');
-        const id = String(s?.id ?? '').trim();
-        const nav_order = typeof s?.nav_order === 'number' ? s.nav_order : 0;
-        return { id, name, nav_order } as {
-          id: string;
-          name: string;
-          nav_order?: number;
-        };
-      })
-      .sort(
-        (a, b) =>
-          (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
-          (b.nav_order ?? Number.MAX_SAFE_INTEGER)
-      );
-    return arr.map(({ id, name }) => ({ id, name }));
   }
 
   objectKeys<T extends object>(obj: T): (keyof T)[] {
@@ -488,15 +464,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     return this.adminApiService.getImageUrl(imagePath);
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
+  readonly formatDateTime = formatDateTime;
 
   goBack(): void {
     this.router.navigate(['/admin/dashboard']);

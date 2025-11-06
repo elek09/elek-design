@@ -1,0 +1,127 @@
+<div class="webshop-page">
+    <h1>Webshop</h1>
+
+    <div class="cards-grid">
+        @for (p of products(); track p.id) {
+        <mat-card class="product-card">
+            @if (productImages()[p.id] && productImages()[p.id].length) {
+            <img mat-card-image [src]="productImages()[p.id][0]" [alt]="p.name" />
+            }
+            <mat-card-header>
+                <mat-card-title>{{ p.name }}</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                @if (p.description) {<p class="desc">{{ p.description }}</p>}
+                @if (productImages()[p.id] && productImages()[p.id].length > 1) {
+                <div class="thumbs">
+                    @for (t of (productImages()[p.id] | slice:1); track $index) {
+                    <img class="thumb" [src]="t" [alt]="p.name + ' kép'" loading="lazy" decoding="async" />
+                    }
+                </div>
+                }
+                <div class="row">
+                    @if (p.options.hardware_types.length) {
+                    <mat-form-field appearance="fill" class="field">
+                        <mat-label>Vasalat típusa</mat-label>
+                        <mat-select [value]="selections()[p.id].hardware_type || ''"
+                            (selectionChange)="updateSelection(p.id, { hardware_type: $event.value || null })">
+                            <mat-option value="">Nincs megadva</mat-option>
+                            @for (h of p.options.hardware_types; track h) {
+                            <mat-option [value]="h">{{ h }}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    }
+
+                    @if (p.options.color_schemes.length) {
+                    <mat-form-field appearance="fill" class="field">
+                        <mat-label>Színösszeállítás</mat-label>
+                        <mat-select [value]="selections()[p.id].color_scheme || ''"
+                            (selectionChange)="updateSelection(p.id, { color_scheme: $event.value || null })">
+                            <mat-option value="">Nincs megadva</mat-option>
+                            @for (c of p.options.color_schemes; track c) {
+                            <mat-option [value]="c">{{ c }}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    }
+
+                    @for (g of extraOptionGroups(p); track g.key) {
+                    <mat-form-field appearance="fill" class="field">
+                        <mat-label>{{ g.label }}</mat-label>
+                        <mat-select [value]="selections()[p.id].extra?.[g.key] || ''"
+                            (selectionChange)="updateExtraOption(p.id, g.key, $event.value || null)">
+                            <mat-option value="">Nincs megadva</mat-option>
+                            @for (v of g.values; track v) {
+                            <mat-option [value]="v">{{ v }}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                    }
+
+                    <mat-form-field appearance="fill" class="qty">
+                        <mat-label>Mennyiség</mat-label>
+                        <input matInput type="number" min="1" [value]="selections()[p.id].quantity || 1"
+                            (input)="updateSelection(p.id, { quantity: ($any($event.target).valueAsNumber || 1) })" />
+                    </mat-form-field>
+                </div>
+            </mat-card-content>
+            <mat-card-actions>
+                <button mat-raised-button color="primary" (click)="addToCart(p)">Kosárba</button>
+            </mat-card-actions>
+        </mat-card>
+        }
+    </div>
+
+    @if (cartItems().length > 0) {
+    <mat-card class="section">
+        <h2>Kosár</h2>
+        <div class="cart-list">
+            @for (item of cartItems(); track $index; let i = $index) {
+            <div class="cart-item">
+                <div>
+                    <div class="title">{{ item.product.name }} × {{ item.quantity }}</div>
+                    <div class="opts">
+                        @if (item.hardware_type) {<span>Vasalat: {{ item.hardware_type }}</span>}
+                        @if (item.color_scheme) {<span>Szín: {{ item.color_scheme }}</span>}
+                    </div>
+                </div>
+                <button mat-button color="warn" (click)="removeItem(i)">Eltávolít</button>
+            </div>
+            }
+        </div>
+    </mat-card>
+    }
+
+    <mat-card class="section">
+        <h2>Rendelés / Árajánlat</h2>
+        <form [formGroup]="checkoutForm" (ngSubmit)="checkout()" class="checkout-form">
+            <div class="row">
+                <mat-form-field class="field" appearance="fill">
+                    <mat-label>Név</mat-label>
+                    <input matInput formControlName="customer_name" required />
+                </mat-form-field>
+                <mat-form-field class="field" appearance="fill">
+                    <mat-label>Email</mat-label>
+                    <input matInput type="email" formControlName="customer_email" required />
+                </mat-form-field>
+                <mat-form-field class="field" appearance="fill">
+                    <mat-label>Telefon (opcionális)</mat-label>
+                    <input matInput formControlName="customer_phone" />
+                </mat-form-field>
+            </div>
+
+            <div class="actions">
+                <button mat-raised-button color="primary" type="submit" [disabled]="cartItems().length === 0">Rendelés
+                    leadása</button>
+                <button mat-stroked-button color="accent" type="button" (click)="requestQuote()"
+                    [disabled]="cartItems().length === 0">Árajánlatot kérek</button>
+            </div>
+        </form>
+    </mat-card>
+
+    <div class="status">
+        @if (message()) {<p class="success">{{ message() }}</p>}
+        @if (error()) {<p class="error">{{ error() }}</p>}
+    </div>
+</div>

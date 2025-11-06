@@ -9,24 +9,26 @@
             <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Email Address</mat-label>
                 <input matInput type="email" id="email" formControlName="email" placeholder="Enter your email" />
-                <mat-error *ngIf="getFieldError('email')">{{ getFieldError('email') }}</mat-error>
+                @if (getFieldError('email')) {<mat-error>{{ getFieldError('email') }}</mat-error>}
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Password</mat-label>
                 <input matInput type="password" id="password" formControlName="password"
                     placeholder="Enter your password" />
-                <mat-error *ngIf="getFieldError('password')">{{ getFieldError('password') }}</mat-error>
+                @if (getFieldError('password')) {<mat-error>{{ getFieldError('password') }}</mat-error>}
             </mat-form-field>
 
-            <div class="error-row" *ngIf="errorMessage">
+            @if (errorMessage) {
+            <div class="error-row">
                 <mat-icon color="warn">error</mat-icon>
                 <span class="error-text">{{ errorMessage }}</span>
             </div>
+            }
 
             <button mat-flat-button color="primary" type="submit" class="submit-btn"
                 [disabled]="isLoading || !loginForm.valid">
-                <mat-progress-spinner *ngIf="isLoading" [diameter]="20" mode="indeterminate"></mat-progress-spinner>
+                @if (isLoading) {<mat-progress-spinner [diameter]="20" mode="indeterminate"></mat-progress-spinner>}
                 <span>{{ isLoading ? 'Signing In...' : 'Sign In' }}</span>
             </button>
         </form>
