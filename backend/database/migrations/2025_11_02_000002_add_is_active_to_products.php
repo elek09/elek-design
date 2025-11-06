@@ -11,9 +11,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $t) {
-            $t->boolean('is_active')->default(true)->after('options');
-        });
+        // Guarded no-op: base create migration already includes is_active
+        if (!Schema::hasColumn('products', 'is_active')) {
+            Schema::table('products', function (Blueprint $t) {
+                $t->boolean('is_active')->default(true)->after('options');
+            });
+        }
 
         // Backfill is_active from existing 'active' if present
         if (Schema::hasColumn('products', 'active')) {
@@ -27,10 +30,10 @@ return new class extends Migration {
     public function down(): void
     {
         // Safe rollback: just drop the new column if it exists
-        Schema::table('products', function (Blueprint $t) {
-            if (Schema::hasColumn('products', 'is_active')) {
+        if (Schema::hasColumn('products', 'is_active')) {
+            Schema::table('products', function (Blueprint $t) {
                 $t->dropColumn('is_active');
-            }
-        });
+            });
+        }
     }
 };

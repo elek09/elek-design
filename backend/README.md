@@ -29,3 +29,18 @@ Notes:
 
 -   All media URLs in the API are absolute (built via `asset()`), so frontends can pass them through without origin handling.
 -   Migrations were squashed so that base “create” migrations reflect the final schema (with `is_active`, `is_featured`, and `nav_order` included). Follow-up migrations remain guarded no-ops for compatibility and narrative.
+
+## Troubleshooting
+
+-   Seeding error: table column missing (e.g., `gallery_items has no column named is_active`)
+	-   Cause: Local SQLite schema drifted from current migrations.
+	-   Fix: Rebuild the database and reseed.
+
+		PowerShell:
+
+		```powershell
+		php artisan migrate:fresh --seed
+		```
+
+-   Duplicate column error during migrate (e.g., `duplicate column name: is_active` on products)
+	-   Ensure you have the latest code. Follow-up migrations are guarded to be safe no-ops on fresh installs.
