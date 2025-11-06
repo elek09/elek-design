@@ -51,6 +51,9 @@ Route::prefix('v1')->group(function () {
         Route::post('checkout', [CartController::class, 'checkout']);
     });
 
+    // Public submit endpoint (no session cart): send entire payload once at submit
+    Route::post('orders/submit', [OrderController::class, 'storePublic']);
+
     // Bejelentkezett
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('orders', [OrderController::class, 'store']);
@@ -79,7 +82,10 @@ Route::prefix('v1')->group(function () {
             
             // Orders management
             Route::get('orders', [OrderController::class, 'index']);
+            Route::get('orders/{order}', [OrderController::class, 'adminShow']);
             Route::put('orders/{order}/status', [OrderController::class, 'updateStatus']);
+            Route::put('orders/{order}', [OrderController::class, 'updateAdmin']);
+            Route::post('orders/{order}/confirm', [OrderController::class, 'sendConfirmation']);
 
             // Category management (include index for admin UI)
             Route::get('categories', [AdminCategoryController::class, 'index']);

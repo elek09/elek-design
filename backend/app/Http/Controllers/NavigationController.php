@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\Page;
 use App\Services\NavigationService;
-use Illuminate\Http\Request;
 
 class NavigationController extends Controller
 {
@@ -25,5 +23,14 @@ class NavigationController extends Controller
                 'items' => $items,
             ],
         ]);
+    }
+
+    /**
+     * Public categories list (ordered for navigation), including subcategories.
+     */
+    public function getCategories()
+    {
+        $cats = Category::navOrdered()->get();
+        return \App\Http\Resources\CategoryResource::collection($cats);
     }
 }

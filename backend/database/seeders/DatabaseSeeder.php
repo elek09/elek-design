@@ -9,6 +9,8 @@ use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\GalleryImageSeeder;
 use Illuminate\Support\Str;
 use App\Models\Category;
+use Database\Seeders\ProductSeeder;
+use Database\Seeders\OrderDemoSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -33,6 +35,8 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             GalleryImageSeeder::class,
             CategorySeeder::class,
+            ProductSeeder::class,
+            OrderDemoSeeder::class,
         ]);
     }
 }

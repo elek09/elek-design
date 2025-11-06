@@ -2,21 +2,19 @@
 
 namespace App\Services;
 
-use App\Http\Controllers\BootstrapController;
 use App\Models\Category;
-use Illuminate\Support\Facades\Cache;
 
 class CategoryService
 {
     public function create(array $data): Category
     {
-        // Cache invalidálást az Observer végzi
+        // Cache invalidation is handled by the Observer
         return Category::create($data);
     }
 
     public function update(Category $category, array $data): Category
     {
-        // Cache invalidálást az Observer végzi
+        // Cache invalidation is handled by the Observer
         $category->update($data);
         return $category;
     }

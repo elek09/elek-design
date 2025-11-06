@@ -99,7 +99,6 @@ class GalleryService
     private function parseOrderFromTitleOrPath(?string $title, ?string $path): int
     {
         $title = (string) $title;
-        // Title végén lévő (n) mint ábécésorrend segéd
         if (preg_match('/\((\d+)\)\s*$/', $title, $m)) {
             return (int) $m[1];
         }

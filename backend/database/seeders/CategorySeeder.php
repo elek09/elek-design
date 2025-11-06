@@ -19,12 +19,12 @@ class CategorySeeder extends Seeder
                 'type' => 'eletter',
                 'nav_order' => 1,
                 'subcategories' => [
-                    ['id' => 'konyha', 'name' => 'Konyha'],
-                    ['id' => 'nappali', 'name' => 'Nappali'],
-                    ['id' => 'furdoszoba', 'name' => 'Fürdőszoba'],
-                    ['id' => 'haloszoba', 'name' => 'Hálószoba'],
-                    ['id' => 'gardrob', 'name' => 'Gardrób'],
-                    ['id' => 'lepcso', 'name' => 'Lépcső'],
+                    ['id' => 'konyha', 'name' => 'Konyha', 'nav_order' => 1],
+                    ['id' => 'nappali', 'name' => 'Nappali', 'nav_order' => 2],
+                    ['id' => 'furdoszoba', 'name' => 'Fürdőszoba', 'nav_order' => 3],
+                    ['id' => 'haloszoba', 'name' => 'Hálószoba', 'nav_order' => 4],
+                    ['id' => 'gardrob', 'name' => 'Gardrób', 'nav_order' => 5],
+                    ['id' => 'lepcso', 'name' => 'Lépcső', 'nav_order' => 6],
                 ]
             ],
             [
@@ -32,9 +32,9 @@ class CategorySeeder extends Seeder
                 'type' => 'uzletter',
                 'nav_order' => 2,
                 'subcategories' => [
-                    ['id' => 'iroda-berendezes', 'name' => 'Iroda Berendezés'],
-                    ['id' => 'uzlet-berendezes', 'name' => 'Üzlet Berendezés'],
-                    ['id' => 'kiallitasi-butorok', 'name' => 'Kiállítási Bútorok'],
+                    ['id' => 'iroda-berendezes', 'name' => 'Iroda Berendezés', 'nav_order' => 1],
+                    ['id' => 'uzlet-berendezes', 'name' => 'Üzlet Berendezés', 'nav_order' => 2],
+                    ['id' => 'kiallitasi-butorok', 'name' => 'Kiállítási Bútorok', 'nav_order' => 3],
                 ]
             ],
             [

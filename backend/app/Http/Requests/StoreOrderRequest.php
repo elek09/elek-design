@@ -25,10 +25,15 @@ class StoreOrderRequest extends FormRequest
             'customer_name' => ['required', 'string', 'max:120'],
             'customer_email' => ['required', 'email'],
             'customer_phone' => ['nullable', 'string', 'max:40'],
+            // When true, this is a quote request (árajánlat)
+            'is_quote' => ['sometimes', 'boolean'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.options' => ['nullable', 'array'],
+            // Optional expected keys (customizations)
+            'items.*.options.hardware_type' => ['sometimes', 'string', 'max:120'],
+            'items.*.options.color_scheme' => ['sometimes', 'string', 'max:120'],
         ];
     }
 }

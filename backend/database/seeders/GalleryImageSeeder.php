@@ -44,7 +44,7 @@ class GalleryImageSeeder extends Seeder
 
     $this->command->info('--- Found ' . count($entries) . ' images. Copying & seeding... ---' . PHP_EOL);
 
-        // 2) Fizikai másolás és DB beszúrás a deduplikált listából
+        // 2) Physical copy and DB insertion from the deduplicated list
         $progressBar = $this->command->getOutput()->createProgressBar(count($entries));
         $progressBar->start();
 
@@ -60,7 +60,7 @@ class GalleryImageSeeder extends Seeder
             $titleSlug = Str::slug($title);
             $extension = $file->getExtension();
 
-            // Őrizzük meg az rendelési számot a fájlnévben, hogy a runtime parser fel tudja venni
+            // Preserve the order number in the filename so the runtime parser can pick it up
             $orderSuffix = $order > 0 ? '(' . $order . ')' : '';
             $newFilename = $titleSlug . $orderSuffix . '-' . time() . rand(10, 99) . '.' . $extension;
             $destinationDirectory = 'gallery/' . $categorySlug;
@@ -84,6 +84,4 @@ class GalleryImageSeeder extends Seeder
         $progressBar->finish();
         $this->command->info(PHP_EOL . '--- Gallery processing complete! ---');
     }
-
-    // Keyword mapping now lives in config/gallery.php and is used by GalleryImportService
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['user_id', 'status', 'customer_name', 'customer_email', 'customer_phone', 'total'];
+    protected $fillable = ['user_id', 'kind', 'status', 'customer_name', 'customer_email', 'customer_phone', 'total', 'admin_note'];
     public function items()
     {
         return $this->hasMany(OrderItem::class);
