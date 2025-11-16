@@ -18,6 +18,7 @@ import {
   LocalCartItem,
 } from '../../../services/local-cart.service';
 import { SubmitOrderRequest } from '../../../models/shop.model';
+import { LoadingOverlayComponent } from '../../../components/shared/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-webshop',
@@ -30,6 +31,7 @@ import { SubmitOrderRequest } from '../../../models/shop.model';
     MatInputModule,
     MatButtonModule,
     MatCardModule,
+    LoadingOverlayComponent,
   ],
   templateUrl: './webshop.component.html',
   styleUrl: './webshop.component.scss',
@@ -79,6 +81,10 @@ export class WebshopComponent implements OnInit {
     }[]
   >([]);
 
+  // Cache slides to avoid race between products and gallery (null = not loaded yet)
+  private slidesCache: Slide[] | null = null;
+  protected imagesLoading = signal(true);
+
   ngOnInit(): void {
     // Load any locally stored cart items (prune expired)
     const stored = this.localCart.getItems();
@@ -116,27 +122,50 @@ export class WebshopComponent implements OnInit {
           };
         }
         this.selections.set(defaults);
+
+        // Attempt to compute images (may wait on slides)
+        this.computeProductImages();
       },
-      error: () => this.error.set('Nem sikerült betölteni a termékeket.'),
+      error: () => {
+        this.error.set('Nem sikerült betölteni a termékeket.');
+        this.imagesLoading.set(false);
+      },
     });
 
     // Map images from gallery by section 'eletter' and product's inferred subcategory
     this.gallery.getSlidesByCategory$('eletter').subscribe({
       next: (slides: Slide[]) => {
-        const imgs: Record<number, string[]> = {};
-        const prods = this.products();
-        for (const p of prods) {
-          const subcats = this.inferSubcategoriesForProduct(p);
-          // For each matched subcategory, take only the first image
-          const urls = subcats
-            .map((sc) => slides.find((s) => String(s.category) === sc))
-            .filter((s): s is Slide => !!s)
-            .map((s) => s.imageUrl);
-          if (urls.length) imgs[p.id] = urls;
-        }
-        this.productImages.set(imgs);
+        this.slidesCache = slides || [];
+        this.computeProductImages();
+      },
+      error: () => {
+        // If gallery fails, don't block UI with loader
+        this.slidesCache = [];
+        this.imagesLoading.set(false);
       },
     });
+  }
+
+  private computeProductImages(): void {
+    const slides = this.slidesCache;
+    const prods = this.products();
+    // Wait until both datasets are loaded (slides: null means not yet loaded)
+    if (slides === null || !prods?.length) return;
+
+    const imgs: Record<number, string[]> = {};
+    if (slides.length) {
+      for (const p of prods) {
+        const subcats = this.inferSubcategoriesForProduct(p);
+        const urls = subcats
+          .map((sc) => slides.find((s) => String(s.category) === sc))
+          .filter((s): s is Slide => !!s)
+          .map((s) => s.imageUrl);
+        if (urls.length) imgs[p.id] = urls;
+      }
+    }
+    this.productImages.set(imgs);
+    // Hide loader once we attempted to map images (even if none matched)
+    this.imagesLoading.set(false);
   }
 
   private inferSubcategoriesForProduct(product: Product): string[] {

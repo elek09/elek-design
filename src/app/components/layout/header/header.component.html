@@ -15,6 +15,12 @@
       {{ item.label }}
     </a>
     }
+
+    <!-- CTA: Árajánlatot Kérek! (wrapped for stable two-line layout) -->
+    <a class="options cta" routerLink="/webshop" routerLinkActive="active" #rlaCta="routerLinkActive"
+      aria-label="Árajánlatot Kérek" [attr.aria-current]="rlaCta.isActive ? 'page' : null">
+      <span class="cta-lines">Árajánlatot<br>Kérek!</span>
+    </a>
     }
 
     <!-- Mobile menu toggle -->

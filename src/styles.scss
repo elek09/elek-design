@@ -1,3 +1,4 @@
+@use "./styles/tokens" as *;
 /* AG Grid v33 uses Theming API by default, no CSS theme imports here */
 
 /* Consistent box model across the app */
@@ -31,6 +32,14 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Global design tokens */
+:root {
+  --color-text: #757575;
+  --color-accent: #b8cb70;
+  --color-footer-bg: #212429;
+  --color-footer-text: #b5b5b5;
+}
+
 #container {
   min-height: 100%;
   position: relative;
@@ -44,8 +53,8 @@ body {
 /* --- FOOTER STYLES --- */
 .footer {
   width: 100%;
-  background-color: #212429;
-  color: #b5b5b5;
+  background-color: var(--color-footer-bg);
+  color: var(--color-footer-text);
   font-family: Arial, Helvetica, sans-serif;
   list-style-type: none;
   text-align: center;
@@ -64,7 +73,7 @@ body {
 
 .footer span a {
   text-decoration: none;
-  color: #b5b5b5;
+  color: var(--color-footer-text);
   font-weight: lighter;
   text-transform: uppercase;
   font-size: 1.2rem;
@@ -72,7 +81,7 @@ body {
 }
 
 .footer span a:hover {
-  color: #b8cb70;
+  color: var(--color-accent);
 }
 
 .footer li {
@@ -80,12 +89,12 @@ body {
 }
 
 .footer span#name {
-  color: #b8cb70;
+  color: var(--color-accent);
 }
 
 /* --- MAIN CONTENT STYLES --- */
 .main {
-  max-width: 960px;
+  max-width: $container-max; /* match widened header */
   margin: 0 auto;
   padding: 0 10px; /* add small side padding on narrow screens */
 }
@@ -99,7 +108,7 @@ img {
 .main hr {
   max-width: 100%;
   height: 3px;
-  background-color: #757575;
+  background-color: var(--color-text);
   border: none;
   padding: 0;
   margin: 0;
@@ -108,7 +117,7 @@ img {
 .part .sub-head {
   padding: 2px 0px;
   margin: 0 auto;
-  color: #757575;
+  color: var(--color-text);
   text-align: left;
   text-transform: uppercase;
   font-weight: lighter;
@@ -131,7 +140,7 @@ img {
   margin: 0;
   font-size: 1.2em;
   font-weight: 300;
-  color: #757575;
+  color: var(--color-text);
 }
 
 .second ul {
@@ -145,12 +154,12 @@ img {
 }
 
 .menu-list a {
-  color: #757575;
+  color: var(--color-text);
   text-decoration: none;
 }
 
 .menu-list a:hover {
-  color: #b8cb70;
+  color: var(--color-accent);
 }
 
 @media screen and (max-width: 996px) {

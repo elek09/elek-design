@@ -1,6 +1,7 @@
 <div class="webshop-page">
-    <h1>Webshop</h1>
-
+    @if (imagesLoading()) {
+    <app-loading-overlay [logoUrl]="'assets/images/elek-design-logo.png'"></app-loading-overlay>
+    }
     <div class="cards-grid">
         @for (p of products(); track p.id) {
         <mat-card class="product-card">
