@@ -24,6 +24,7 @@
     "@fontsource/material-symbols-outlined": "^5.2.28",
     "ag-grid-angular": "^33.0.0",
     "ag-grid-community": "^33.0.0",
+    "ngx-toastr": "^19.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

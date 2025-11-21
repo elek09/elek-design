@@ -19,9 +19,9 @@
 <div class="orders-list">
     <div class="card">
         <ag-grid-angular class="grid" [theme]="theme" [rowData]="rowData" [columnDefs]="columnDefs"
-            [defaultColDef]="defaultColDef" [pagination]="true" [paginationPageSize]="10"
+            [context]="gridContext" [defaultColDef]="defaultColDef" [pagination]="true" [paginationPageSize]="10"
             [paginationPageSizeSelector]="[10, 25, 50]" [domLayout]="'autoHeight'" [animateRows]="true"
-            (gridReady)="onGridReady($event)">
+            [alwaysShowHorizontalScroll]="true" (gridReady)="onGridReady($event)">
         </ag-grid-angular>
     </div>
 </div>

@@ -1,21 +1,21 @@
 <div class="admin-login-container">
     <mat-card class="login-card">
         <div class="login-header">
-            <h2>Admin Login</h2>
-            <p>Sign in to manage your gallery</p>
+            <h2>Admin bejelentkezés</h2>
+            <p>Jelentkezzen be a galéria kezeléséhez</p>
         </div>
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" autocomplete="on">
             <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Email Address</mat-label>
-                <input matInput type="email" id="email" formControlName="email" placeholder="Enter your email" />
+                <mat-label>E-mail cím</mat-label>
+                <input matInput type="email" id="email" formControlName="email" placeholder="Adja meg e-mail címét" />
                 @if (getFieldError('email')) {<mat-error>{{ getFieldError('email') }}</mat-error>}
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Password</mat-label>
+                <mat-label>Jelszó</mat-label>
                 <input matInput type="password" id="password" formControlName="password"
-                    placeholder="Enter your password" />
+                    placeholder="Adja meg jelszavát" />
                 @if (getFieldError('password')) {<mat-error>{{ getFieldError('password') }}</mat-error>}
             </mat-form-field>
 
@@ -29,7 +29,7 @@
             <button mat-flat-button color="primary" type="submit" class="submit-btn"
                 [disabled]="isLoading || !loginForm.valid">
                 @if (isLoading) {<mat-progress-spinner [diameter]="20" mode="indeterminate"></mat-progress-spinner>}
-                <span>{{ isLoading ? 'Signing In...' : 'Sign In' }}</span>
+                <span>{{ isLoading ? 'Bejelentkezés…' : 'Bejelentkezés' }}</span>
             </button>
         </form>
     </mat-card>

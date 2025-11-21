@@ -4,6 +4,8 @@ import {
   provideZoneChangeDetection,
   LOCALE_ID,
 } from '@angular/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideToastr } from 'ngx-toastr';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import {
   provideHttpClient,
@@ -49,5 +51,13 @@ export const appConfig: ApplicationConfig = {
       useValue: 'http://127.0.0.1:8000/api/v1/gallery',
     },
     { provide: LOCALE_ID, useValue: 'hu-HU' },
+    provideAnimations(),
+    provideToastr({
+      timeOut: 3000,
+      positionClass: 'toast-bottom-right',
+      preventDuplicates: true,
+      progressBar: true,
+      closeButton: true,
+    }),
   ],
 };

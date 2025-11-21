@@ -1,4 +1,6 @@
 @use "./styles/tokens" as *;
+/* Removed deprecated Sass @import for ngx-toastr.
+  Toastr base CSS now loaded via angular.json styles array. */
 /* AG Grid v33 uses Theming API by default, no CSS theme imports here */
 
 /* Consistent box model across the app */

@@ -95,28 +95,27 @@
     }
 
     <mat-card class="section">
-        <h2>Rendelés / Árajánlat</h2>
-        <form [formGroup]="checkoutForm" (ngSubmit)="checkout()" class="checkout-form">
+        <h2>Árajánlat kérés</h2>
+        <form [formGroup]="checkoutForm" (ngSubmit)="requestQuote()" class="checkout-form">
             <div class="row">
                 <mat-form-field class="field" appearance="fill">
                     <mat-label>Név</mat-label>
-                    <input matInput formControlName="customer_name" required />
+                    <input matInput formControlName="customer_name" required (blur)="onCheckoutBlur('customer_name')" />
                 </mat-form-field>
                 <mat-form-field class="field" appearance="fill">
                     <mat-label>Email</mat-label>
-                    <input matInput type="email" formControlName="customer_email" required />
+                    <input matInput type="email" formControlName="customer_email" required
+                        (blur)="onCheckoutBlur('customer_email')" />
                 </mat-form-field>
                 <mat-form-field class="field" appearance="fill">
                     <mat-label>Telefon (opcionális)</mat-label>
-                    <input matInput formControlName="customer_phone" />
+                    <input matInput formControlName="customer_phone" (blur)="onCheckoutBlur('customer_phone')" />
                 </mat-form-field>
             </div>
 
             <div class="actions">
-                <button mat-raised-button color="primary" type="submit" [disabled]="cartItems().length === 0">Rendelés
-                    leadása</button>
-                <button mat-stroked-button color="accent" type="button" (click)="requestQuote()"
-                    [disabled]="cartItems().length === 0">Árajánlatot kérek</button>
+                <button mat-raised-button color="primary" type="submit"
+                    [disabled]="cartItems().length === 0 || checkoutForm.invalid">Árajánlatot kérek</button>
             </div>
         </form>
     </mat-card>

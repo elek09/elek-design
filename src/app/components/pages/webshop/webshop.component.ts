@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,10 +14,7 @@ import { AuthService } from '../../../services/auth.service';
 import { BootstrapService } from '../../../services/bootstrap.service';
 import { GalleryDataService } from '../../../services/gallery-data.service';
 import { Slide } from '../../../models/slide.model';
-import {
-  LocalCartService,
-  LocalCartItem,
-} from '../../../services/local-cart.service';
+import { LocalCartService } from '../../../services/local-cart.service';
 import { SubmitOrderRequest } from '../../../models/shop.model';
 import { LoadingOverlayComponent } from '../../../components/shared/loading-overlay/loading-overlay.component';
 
@@ -44,6 +42,7 @@ export class WebshopComponent implements OnInit {
   private readonly bootstrap = inject(BootstrapService);
   private readonly gallery = inject(GalleryDataService);
   private readonly localCart = inject(LocalCartService);
+  private readonly toastr = inject(ToastrService);
 
   protected products = signal<Product[]>([]);
   protected message = signal<string | null>(null);
@@ -55,7 +54,6 @@ export class WebshopComponent implements OnInit {
     customer_phone: [''],
   });
 
-  // Per-product selections (for card-based UI)
   protected selections = signal<
     Record<
       number,
@@ -68,7 +66,6 @@ export class WebshopComponent implements OnInit {
     >
   >({});
 
-  // Product images mapped from gallery by subcategory
   protected productImages = signal<Record<number, string[]>>({});
 
   protected cartItems = signal<
@@ -81,12 +78,10 @@ export class WebshopComponent implements OnInit {
     }[]
   >([]);
 
-  // Cache slides to avoid race between products and gallery (null = not loaded yet)
   private slidesCache: Slide[] | null = null;
   protected imagesLoading = signal(true);
 
   ngOnInit(): void {
-    // Load any locally stored cart items (prune expired)
     const stored = this.localCart.getItems();
     if (stored.length) {
       this.cartItems.set(
@@ -103,7 +98,6 @@ export class WebshopComponent implements OnInit {
       next: (list) => {
         const active = list.filter((p) => p.is_active !== false);
         this.products.set(active);
-        // initialize selections
         const defaults: Record<
           number,
           {
@@ -123,7 +117,6 @@ export class WebshopComponent implements OnInit {
         }
         this.selections.set(defaults);
 
-        // Attempt to compute images (may wait on slides)
         this.computeProductImages();
       },
       error: () => {
@@ -132,14 +125,12 @@ export class WebshopComponent implements OnInit {
       },
     });
 
-    // Map images from gallery by section 'eletter' and product's inferred subcategory
     this.gallery.getSlidesByCategory$('eletter').subscribe({
       next: (slides: Slide[]) => {
         this.slidesCache = slides || [];
         this.computeProductImages();
       },
       error: () => {
-        // If gallery fails, don't block UI with loader
         this.slidesCache = [];
         this.imagesLoading.set(false);
       },
@@ -149,7 +140,6 @@ export class WebshopComponent implements OnInit {
   private computeProductImages(): void {
     const slides = this.slidesCache;
     const prods = this.products();
-    // Wait until both datasets are loaded (slides: null means not yet loaded)
     if (slides === null || !prods?.length) return;
 
     const imgs: Record<number, string[]> = {};
@@ -164,7 +154,6 @@ export class WebshopComponent implements OnInit {
       }
     }
     this.productImages.set(imgs);
-    // Hide loader once we attempted to map images (even if none matched)
     this.imagesLoading.set(false);
   }
 
@@ -214,7 +203,6 @@ export class WebshopComponent implements OnInit {
     this.error.set(null);
     const sel = this.selections()[product.id] ?? { quantity: 1 };
 
-    // Update local cart immediately (only local, no API call)
     this.cartItems.update((items) => [
       ...items,
       {
@@ -226,7 +214,6 @@ export class WebshopComponent implements OnInit {
       },
     ]);
 
-    // Persist locally with TTL
     this.localCart.add({
       product,
       quantity: sel.quantity || 1,
@@ -241,41 +228,6 @@ export class WebshopComponent implements OnInit {
   removeItem(index: number): void {
     this.cartItems.update((items) => items.filter((_, i) => i !== index));
     this.localCart.removeAt(index);
-  }
-
-  checkout(): void {
-    this.message.set(null);
-    this.error.set(null);
-    if (this.checkoutForm.invalid || this.cartItems().length === 0) {
-      this.checkoutForm.markAllAsTouched();
-      return;
-    }
-    const v = this.checkoutForm.value;
-    const payload: SubmitOrderRequest = {
-      customer_name: v.customer_name!,
-      customer_email: v.customer_email!,
-      customer_phone: v.customer_phone || undefined,
-      // is_quote omitted for order
-      items: this.cartItems().map((ci) => ({
-        product_id: ci.product.id,
-        quantity: ci.quantity,
-        options: this.composeOptions({
-          hardware_type: ci.hardware_type ?? null,
-          color_scheme: ci.color_scheme ?? null,
-          extra: ci.extra || {},
-        }),
-      })),
-    };
-
-    this.ordersApi.submitPublicOrder(payload).subscribe({
-      next: () => {
-        this.message.set('Rendelés leadva. Visszaigazoló email elküldve.');
-        this.cartItems.set([]);
-        this.localCart.clear();
-        this.checkoutForm.reset();
-      },
-      error: () => this.error.set('Nem sikerült leadni a rendelést.'),
-    });
   }
 
   requestQuote(): void {
@@ -313,6 +265,32 @@ export class WebshopComponent implements OnInit {
       error: () =>
         this.error.set('Nem sikerült elküldeni az árajánlat kérést.'),
     });
+  }
+
+  protected onCheckoutBlur(field: string): void {
+    const c = this.checkoutForm.get(field);
+    if (!c) return;
+    c.markAsTouched();
+    if (c.invalid) {
+      const msg = this.composeCheckoutError(field, c.errors || {});
+      this.toastr.warning(msg, 'Hibás mező');
+    }
+  }
+
+  private composeCheckoutError(
+    field: string,
+    errors: Record<string, any>
+  ): string {
+    if (errors['required']) {
+      switch (field) {
+        case 'customer_name':
+          return 'A név mező kötelező.';
+        case 'customer_email':
+          return 'Az email mező kötelező.';
+      }
+    }
+    if (errors['email']) return 'Érvényes email címet adjon meg.';
+    return 'Érvénytelen mező.';
   }
 
   private composeOptions(sel: {

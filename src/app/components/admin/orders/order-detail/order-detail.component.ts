@@ -154,14 +154,58 @@ export class OrderDetailComponent implements OnInit {
   sendConfirmation(): void {
     const o = this.order();
     if (!o) return;
-    this.api.sendConfirmation(o.id).subscribe({
-      next: () =>
-        this.snack.open('Megerősítő email elküldve', 'OK', { duration: 2500 }),
-      error: () =>
-        this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
-          duration: 3000,
-        }),
-    });
+    const currentNote = this.form.get('admin_note')?.value || '';
+    const originalNote = o.admin_note ?? o.note ?? '';
+
+    // If note changed, persist it first (without touching items/prices), then send email
+    const saveNote$ =
+      currentNote !== originalNote
+        ? this.api.updateOrder(o.id, { admin_note: currentNote })
+        : null;
+
+    if (saveNote$) {
+      this.saving.set(true);
+      saveNote$.subscribe({
+        next: (resp) => {
+          const updated = (resp as any).data ?? (resp as any);
+          this.order.set(updated);
+          this.form.patchValue({
+            admin_note: updated.admin_note || updated.note || '',
+          });
+          this.api.sendConfirmation(updated.id).subscribe({
+            next: () => {
+              this.saving.set(false);
+              this.snack.open('Megerősítő email elküldve', 'OK', {
+                duration: 2500,
+              });
+            },
+            error: () => {
+              this.saving.set(false);
+              this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
+                duration: 3000,
+              });
+            },
+          });
+        },
+        error: () => {
+          this.saving.set(false);
+          this.snack.open('Hiba: megjegyzés mentése sikertelen', 'Bezár', {
+            duration: 3000,
+          });
+        },
+      });
+    } else {
+      this.api.sendConfirmation(o.id).subscribe({
+        next: () =>
+          this.snack.open('Megerősítő email elküldve', 'OK', {
+            duration: 2500,
+          }),
+        error: () =>
+          this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
+            duration: 3000,
+          }),
+      });
+    }
   }
 
   back(): void {

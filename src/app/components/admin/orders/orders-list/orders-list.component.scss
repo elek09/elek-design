@@ -32,8 +32,19 @@
   display: flex;
   align-items: center;
 }
-.ag-cell.action-cell .ag-button {
+.ag-cell.action-cell .row-actions {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optional: reduce icon button size slightly to fit more */
+.ag-cell.action-cell button[mat-icon-button] {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
 }
