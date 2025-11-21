@@ -33,14 +33,67 @@ Notes:
 ## Troubleshooting
 
 -   Seeding error: table column missing (e.g., `gallery_items has no column named is_active`)
-	-   Cause: Local SQLite schema drifted from current migrations.
-	-   Fix: Rebuild the database and reseed.
 
-		PowerShell:
+    -   Cause: Local SQLite schema drifted from current migrations.
+    -   Fix: Rebuild the database and reseed.
 
-		```powershell
-		php artisan migrate:fresh --seed
-		```
+        PowerShell:
+
+        ```powershell
+        php artisan migrate:fresh --seed
+        ```
 
 -   Duplicate column error during migrate (e.g., `duplicate column name: is_active` on products)
-	-   Ensure you have the latest code. Follow-up migrations are guarded to be safe no-ops on fresh installs.
+    -   Ensure you have the latest code. Follow-up migrations are guarded to be safe no-ops on fresh installs.
+
+## Contact Form Endpoint
+
+Public endpoint for general inquiries/contact messages (no persistence, only email forwarding).
+
+-   `POST /api/v1/contact`
+-   Payload JSON:
+
+```json
+{
+    "name": "Teszt Felhasználó",
+    "email": "user@example.com",
+    "subject": "Ajánlatkérés",
+    "message": "Szeretnék érdeklődni a termékekről..."
+}
+```
+
+Validation:
+
+-   `name`: required, min 2, max 150
+-   `email`: required, RFC email
+-   `subject`: required, min 3, max 200
+-   `message`: required, min 10, max 4000
+
+Rate limiting: max 10 / hour per IP (`throttle:contact`).
+
+Spam heuristics:
+
+-   Max 3 URLs allowed in message
+-   Reject if 10+ identical consecutive characters
+
+Responses:
+
+-   201 `{ "success": true }`
+-   422 `{ "success": false, "errors": { field: [..] } }`
+-   429 (automatic from rate limiter)
+-   500 mail queue failure `{ "success": false, "errors": { "general": ["Email küldési hiba."] } }`
+
+Email delivery:
+
+-   Admin értesítés: első cím a `MAIL_ADMIN_TO` listából (vagy `MAIL_FROM_ADDRESS` ha üres).
+-   Felhasználói visszaigazolás: külön email a beküldőnek "Üzenet fogadva – Elek Design" tárggyal.
+-   `.env` példa: `MAIL_ADMIN_TO=admin1@example.com,admin2@example.com`
+-   Admin levélnél `Reply-To` a felhasználó email címe.
+-   Nincs adatbázis mentés.
+-   Válasz JSON mezők: `admin_mail_sent`, `user_mail_sent`.
+
+PowerShell quick test:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8000/api/v1/contact -ContentType 'application/json' -Body '{"name":"Teszt","email":"teszt@example.com","subject":"Proba","message":"Ez egy teszt üzenet amely elég hosszú."}'
+```

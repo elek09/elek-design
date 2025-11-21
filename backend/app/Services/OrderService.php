@@ -6,6 +6,9 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderConfirmationMail;
+use App\Mail\QuoteReceivedAdminMail;
+use App\Mail\OrderReceivedAdminMail;
+use App\Mail\QuoteAcceptedMail;
 
 class OrderService
 {
@@ -30,11 +33,33 @@ class OrderService
     /**
      * Send confirmation email using current order state and optional admin note.
      */
-    public function sendConfirmation(Order $order, ?string $adminNote = null): void
+    public function sendConfirmation(Order $order, ?string $adminNote = null, bool $byAdmin = false): void
     {
         $isQuote = $order->kind === 'quote';
-        Mail::to($order->customer_email)
-            ->send(new OrderConfirmationMail($order->fresh('items.product'), $isQuote, $adminNote ?? $order->admin_note));
+        $fresh = $order->fresh('items.product');
+        if ($byAdmin && $isQuote) {
+            // Admin elfogadta az árajánlatot: új email sablon, ár mutatása
+            Mail::to($fresh->customer_email)
+                ->send(new \App\Mail\QuoteAcceptedMail($fresh, $adminNote ?? $fresh->admin_note));
+        } else {
+            // Régi logika: árajánlat leadásakor vagy sima rendelés
+            $showPrices = $byAdmin ? true : null;
+            Mail::to($fresh->customer_email)
+                ->send(new OrderConfirmationMail($fresh, $isQuote, $adminNote ?? $fresh->admin_note, $showPrices));
+        }
+
+        if (!$byAdmin) {
+            $admins = (array) config('mail.admin_recipients', []);
+            foreach ($admins as $rcpt) {
+                if (!empty($rcpt)) {
+                    if ($isQuote) {
+                        Mail::to($rcpt)->send(new QuoteReceivedAdminMail($fresh));
+                    } else {
+                        Mail::to($rcpt)->send(new OrderReceivedAdminMail($fresh));
+                    }
+                }
+            }
+        }
     }
 
     /**

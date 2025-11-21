@@ -12,9 +12,10 @@ class OrderConfirmationMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public Order $order,
+        public Order|array $order,
         public bool $isQuote = false,
-        public ?string $adminNote = null
+        public ?string $adminNote = null,
+        public ?bool $showPrices = null
     ) {}
 
     public function build()
@@ -23,12 +24,32 @@ class OrderConfirmationMail extends Mailable
             ? 'Árajánlat kérése – visszaigazolás'
             : 'Rendelés visszaigazolása';
 
+        $payload = $this->order;
+        if ($payload instanceof Order) {
+            $payload = $payload->load('items.product');
+        }
+
+        // Decide whether to show prices
+        $computedShowPrices = $this->showPrices !== null ? (bool) $this->showPrices : !$this->isQuote;
+        if ($this->order instanceof Order) {
+            $hasPositivePrice = (float) ($this->order->total ?? 0) > 0;
+            if (!$hasPositivePrice) {
+                foreach ($this->order->items as $it) {
+                    if ((float) ($it->unit_price ?? 0) > 0) { $hasPositivePrice = true; break; }
+                }
+            }
+            if (!$hasPositivePrice) {
+                $computedShowPrices = false;
+            }
+        }
+
         return $this->subject($subject)
-            ->view('emails.order_confirmation')
+            ->view('emails.order-confirmation')
             ->with([
-                'order' => $this->order->load('items.product'),
+                'order' => $payload,
                 'isQuote' => $this->isQuote,
                 'adminNote' => $this->adminNote,
+                'showPrices' => $computedShowPrices,
             ]);
     }
 }

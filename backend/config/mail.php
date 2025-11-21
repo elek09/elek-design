@@ -115,4 +115,7 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    // Comma-separated list of admin recipients for system notifications (e.g., new quotes)
+    'admin_recipients' => array_values(array_filter(array_map('trim', explode(',', (string) env('MAIL_ADMIN_TO', ''))))),
+
 ];

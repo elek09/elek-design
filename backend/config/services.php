@@ -38,4 +38,7 @@ return [
     // Bootstrap payload cache TTL (minutes)
     'bootstrap_cache_ttl' => env('BOOTSTRAP_CACHE_TTL', 10),
 
+    // Frontend Admin App base URL (for links in emails)
+    'admin_app_url' => env('ADMIN_APP_URL', env('APP_URL', 'http://localhost')),
+
 ];

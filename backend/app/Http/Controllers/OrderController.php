@@ -76,7 +76,8 @@ class OrderController extends Controller
     {
         $isQuote = $order->kind === 'quote';
         try {
-            $this->orders->sendConfirmation($order, $order->admin_note);
+            // Admin manuálisan küldi: jelöljük a szolgáltatásnak
+            $this->orders->sendConfirmation($order, $order->admin_note, true);
         } catch (\Throwable $e) {
             \Log::warning('Admin send confirmation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Email sending failed'], 500);

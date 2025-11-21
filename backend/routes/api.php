@@ -13,6 +13,8 @@ use App\Models\Category;
 use App\Http\Resources\CategoryResource as PublicCategoryResource;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\SimpleOrderController;
+use App\Http\Controllers\ContactController;
 
 Route::prefix('v1')->group(function () {
     // Auth
@@ -53,6 +55,11 @@ Route::prefix('v1')->group(function () {
 
     // Public submit endpoint (no session cart): send entire payload once at submit
     Route::post('orders/submit', [OrderController::class, 'storePublic']);
+    // Minimal example endpoint for simple email sending (name/email/product/quantity)
+    Route::post('orders/simple', [SimpleOrderController::class, 'store']);
+
+    // Contact form endpoint (rate limited & public)
+    Route::post('contact', [ContactController::class, 'store'])->middleware('throttle:10,1');
 
     // Bejelentkezett
     Route::middleware('auth:sanctum')->group(function () {
