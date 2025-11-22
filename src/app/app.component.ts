@@ -9,9 +9,13 @@ import { FooterComponent } from './components/layout/footer/footer.component';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    @if (!isAdmin) { <app-header></app-header> }
-    <router-outlet></router-outlet>
-    @if (!isAdmin) { <app-footer></app-footer> }
+    <div class="app-shell">
+      @if (!isAdmin) { <app-header></app-header> }
+      <main class="app-content">
+        <router-outlet></router-outlet>
+      </main>
+      @if (!isAdmin) { <app-footer></app-footer> }
+    </div>
   `,
   styleUrl: './app.component.scss',
 })

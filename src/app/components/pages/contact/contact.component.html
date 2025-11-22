@@ -40,63 +40,51 @@
   <section class="form">
     <p class="form-intro">Van kérdése? Lépjen kapcsolatba velünk!</p>
     <div class="form-grid">
-      <div class="form-left">
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <div class="form-row">
-            <mat-form-field appearance="outline">
-              <mat-label>Név</mat-label>
-              <input matInput formControlName="name" placeholder="Név" (blur)="onFieldBlur('name')">
-              <mat-error *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Adj meg legalább 2
-                karaktert.</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" placeholder="Email" type="email" (blur)="onFieldBlur('email')">
-              <mat-error *ngIf="form.get('email')?.touched && form.get('email')?.invalid">Érvényes email címet adj
-                meg.</mat-error>
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Tárgy</mat-label>
-              <input matInput formControlName="subject" placeholder="Tárgy" (blur)="onFieldBlur('subject')">
-              <mat-error *ngIf="form.get('subject')?.touched && form.get('subject')?.invalid">Legalább 3
-                karakter.</mat-error>
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Üzenet</mat-label>
-              <textarea matInput formControlName="message" rows="4" placeholder="Üzenet..."
-                (blur)="onFieldBlur('message')"></textarea>
-              <mat-error *ngIf="form.get('message')?.touched && form.get('message')?.invalid">Legalább 10 karakter
-                legyen.</mat-error>
-            </mat-form-field>
-          </div>
-          <div class="actions">
-            <button mat-raised-button color="primary" type="submit" [disabled]="sending || form.invalid">
-              {{ sending ? 'Küldés...' : 'Küldés' }}
-            </button>
-          </div>
-          <div *ngIf="sent" style="text-align:center; margin-top:8px; color:#4caf50; font-weight:500;">
-            Üzenet sikeresen elküldve.
-          </div>
-        </form>
-      </div>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Név</mat-label>
+            <input matInput formControlName="name" placeholder="Név" (blur)="onFieldBlur('name')"
+              [errorStateMatcher]="errorMatcher">
+            <mat-error *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Adj meg legalább 2
+              karaktert.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" placeholder="Email" type="email" (blur)="onFieldBlur('email')"
+              [errorStateMatcher]="errorMatcher">
+            <mat-error *ngIf="form.get('email')?.touched && form.get('email')?.invalid">Érvényes email címet adj
+              meg.</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tárgy</mat-label>
+            <input matInput formControlName="subject" placeholder="Tárgy" (blur)="onFieldBlur('subject')"
+              [errorStateMatcher]="errorMatcher">
+            <mat-error *ngIf="form.get('subject')?.touched && form.get('subject')?.invalid">Legalább 3
+              karakter.</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Üzenet</mat-label>
+            <textarea matInput formControlName="message" rows="4" placeholder="Üzenet..."
+              (blur)="onFieldBlur('message')" [errorStateMatcher]="errorMatcher"></textarea>
+            <mat-error *ngIf="form.get('message')?.touched && form.get('message')?.invalid">Legalább 10 karakter
+              legyen.</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="sending || form.invalid">
+            {{ sending ? 'Küldés...' : 'Küldés' }}
+          </button>
+        </div>
+        <div *ngIf="sent" style="text-align:center; margin-top:8px; color:#4caf50; font-weight:500;">
+          Üzenet sikeresen elküldve.
+        </div>
+      </form>
 
-      <div class="form-right">
-        <ul class="contact-info">
-          <li>
-            <p>Budapest, 1015, Magyarország</p>
-          </li>
-          <li>
-            <p>+36 20 9243 557</p>
-          </li>
-          <li>
-            <p>info&#64;elekdesign.hu</p>
-          </li>
-        </ul>
-      </div>
     </div>
   </section>
 </div>

@@ -11,6 +11,7 @@ import {
   provideHttpClient,
   withFetch,
   withInterceptors,
+  withXsrfConfiguration,
 } from '@angular/common/http';
 import {
   API_BASE_URL,
@@ -21,7 +22,8 @@ import {
 import { routes } from './app.routes';
 import { authInterceptor } from './services/auth.interceptor';
 import { BootstrapService } from './services/bootstrap.service';
-import { firstValueFrom, take } from 'rxjs';
+import { catchError, firstValueFrom, of, take } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,7 +35,26 @@ export const appConfig: ApplicationConfig = {
         scrollPositionRestoration: 'enabled',
       })
     ),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideHttpClient(
+      withFetch(),
+      withXsrfConfiguration({
+        cookieName: 'XSRF-TOKEN',
+        headerName: 'X-XSRF-TOKEN',
+      }),
+      withInterceptors([authInterceptor])
+    ),
+    // Fetch CSRF cookie once at app startup for Sanctum
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [HttpClient, API_BASE_URL],
+      useFactory: (http: HttpClient, base: string) => () =>
+        firstValueFrom(
+          http
+            .get(`${base}/sanctum/csrf-cookie`, { withCredentials: true })
+            .pipe(catchError(() => of(null)))
+        ),
+    },
     {
       provide: APP_INITIALIZER,
       multi: true,
@@ -41,14 +62,14 @@ export const appConfig: ApplicationConfig = {
       useFactory: (bootstrap: BootstrapService) => () =>
         firstValueFrom(bootstrap.getBootstrap$().pipe(take(1))),
     },
-    { provide: API_BASE_URL, useValue: 'http://127.0.0.1:8000' },
+    { provide: API_BASE_URL, useValue: 'http://localhost:8000' },
     {
       provide: ADMIN_API_BASE_URL,
-      useValue: 'http://127.0.0.1:8000/api/v1/admin',
+      useValue: 'http://localhost:8000/api/v1/admin',
     },
     {
       provide: GALLERY_API_BASE_URL,
-      useValue: 'http://127.0.0.1:8000/api/v1/gallery',
+      useValue: 'http://localhost:8000/api/v1/gallery',
     },
     { provide: LOCALE_ID, useValue: 'hu-HU' },
     provideAnimations(),

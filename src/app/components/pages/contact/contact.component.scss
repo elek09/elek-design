@@ -49,12 +49,21 @@
 .form-intro {
   text-align: center;
   color: #b5b5b5;
+  font-size: 1.4rem; /* enlarged for prominence */
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 600px) {
+  .form-intro {
+    font-size: 1.2rem; /* slightly smaller on narrow screens */
+  }
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
+  grid-template-columns: 1fr; /* single column after removing contact info */
+  gap: 0; /* no column gap needed */
 }
 
 @media screen and (max-width: 900px) {
@@ -82,17 +91,4 @@
 .actions {
   text-align: center;
   margin-top: 8px;
-}
-
-.contact-info {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.contact-info li p {
-  text-align: left;
-  font-size: 1rem;
-  font-weight: 300;
-  color: #b5b5b5;
 }

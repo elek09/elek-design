@@ -72,12 +72,6 @@ export class OrdersListComponent implements OnInit, OnDestroy {
       minWidth: 160,
     },
     {
-      field: 'kind',
-      headerName: 'Típus',
-      valueFormatter: () => 'Árajánlat',
-      minWidth: 130,
-    },
-    {
       field: 'status',
       headerName: 'Státusz',
       minWidth: 130,

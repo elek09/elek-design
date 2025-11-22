@@ -6,7 +6,15 @@ import { CarouselComponent } from '../../ui/carousel/carousel.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  FormControl,
+  FormGroupDirective,
+  NgForm,
+} from '@angular/forms';
+import { ErrorStateMatcher } from '@angular/material/core';
 import { Observable } from 'rxjs';
 import { ContactService } from '../../../services/contact.service';
 import { ToastrService } from 'ngx-toastr';
@@ -40,6 +48,8 @@ export class ContactComponent implements OnInit {
   });
   protected sending = false;
   protected sent = false;
+  // Custom matcher: do not show errors just because form was submitted.
+  protected errorMatcher = new NoSubmitErrorStateMatcher();
 
   ngOnInit(): void {
     this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
@@ -57,7 +67,10 @@ export class ContactComponent implements OnInit {
         this.sent = !!resp?.success;
         if (this.sent) {
           this.toastr.success('Üzenet elküldve');
+          // Reset form and ensure pristine/untouched so fields are not red.
           this.form.reset();
+          this.form.markAsPristine();
+          this.form.markAsUntouched();
         } else {
           this.toastr.error('Nem sikerült elküldeni az üzenetet.');
         }
@@ -102,5 +115,14 @@ export class ContactComponent implements OnInit {
       return `Legalább ${req} karakter szükséges.`;
     }
     return 'Érvénytelen mező.';
+  }
+}
+
+class NoSubmitErrorStateMatcher implements ErrorStateMatcher {
+  isErrorState(
+    control: FormControl | null,
+    form: FormGroupDirective | NgForm | null
+  ): boolean {
+    return !!(control && control.invalid && (control.dirty || control.touched));
   }
 }

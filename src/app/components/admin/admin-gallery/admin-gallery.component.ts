@@ -375,9 +375,6 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
         if (updatedItem) {
           this.updateLocalItem(item.id, updatedItem);
-          console.log(
-            `Item ${item.id} status updated to ${updatedItem.is_active}`
-          );
         } else {
           this.handleUpdateError(
             item,
@@ -402,9 +399,6 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         const updatedItem = response.data;
         if (updatedItem) {
           this.updateLocalItem(item.id, updatedItem);
-          console.log(
-            `Item ${item.id} featured status updated to ${updatedItem.is_featured}`
-          );
         } else {
           this.handleUpdateError(
             item,

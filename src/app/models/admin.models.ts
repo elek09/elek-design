@@ -25,7 +25,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   success: boolean;
   user: User;
-  token: string;
+  token?: string | null;
 }
 
 export interface ApiResponse<T = any> {

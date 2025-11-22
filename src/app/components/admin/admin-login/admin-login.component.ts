@@ -61,11 +61,8 @@ export class AdminLoginComponent {
 
       this.authService.login(credentials).subscribe({
         next: (response) => {
-          console.log('Login response:', response);
           if (response.success) {
-            console.log('Login successful, navigating to dashboard...');
             this.router.navigate(['/admin/dashboard']).then((success) => {
-              console.log('Navigation result:', success);
               if (!success) {
                 console.error('Navigation failed');
                 this.errorMessage = 'Login successful but navigation failed';

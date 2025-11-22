@@ -3,7 +3,7 @@
         <span header-actions>
             <button mat-raised-button color="primary" class="btn btn-primary" (click)="toggleUploadForm()">
                 <mat-icon>add</mat-icon>
-                {{ showUploadForm ? 'Mégse' : 'Új elem hozzáadása' }}
+                {{ showUploadForm ? 'Mégse' : 'Új kép hozzáadása' }}
             </button>
             <button mat-stroked-button color="primary" class="btn btn-outline" (click)="logout()">
                 <mat-icon>logout</mat-icon>
@@ -133,7 +133,7 @@
                 <mat-form-field appearance="outline">
                     <mat-label>Státusz</mat-label>
                     <mat-select [(ngModel)]="selectedStatus" (selectionChange)="onFilterChange()">
-                        <mat-option value="all">Összes elem</mat-option>
+                        <mat-option value="all">Összes kép</mat-option>
                         <mat-option value="active">Csak aktív</mat-option>
                         <mat-option value="inactive">Csak inaktív</mat-option>
                     </mat-select>
@@ -150,7 +150,7 @@
         </div>
 
         <div class="results-info">
-            Megjelenítve {{ filteredItems.length }} / {{ galleryItems.length }} elem
+            Megjelenítve {{ filteredItems.length }} / {{ galleryItems.length }} kép
         </div>
     </div>
     }
@@ -220,13 +220,13 @@
         @if (!error && filteredItems.length === 0) {
         <div class="empty-state">
             <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>
-            <h3>Nem található galéria elem</h3>
+            <h3>Nem található galéria kép</h3>
             @if (galleryItems.length > 0) {<p>Nincs találat a jelenlegi szűrőkre. Próbálja módosítani a keresést.</p>}
-            @if (galleryItems.length === 0) {<p>Kezdje egy új galéria elem hozzáadásával.</p>}
+            @if (galleryItems.length === 0) {<p>Kezdje egy új galéria kép hozzáadásával.</p>}
             @if (!showUploadForm) {
             <button mat-raised-button color="primary" class="btn" (click)="toggleUploadForm()">
                 <mat-icon>add</mat-icon>
-                Új elem hozzáadása
+                Új kép hozzáadása
             </button>
             }
         </div>

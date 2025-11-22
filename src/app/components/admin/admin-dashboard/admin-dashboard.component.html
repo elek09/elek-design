@@ -35,7 +35,7 @@
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.totalItems }}</h3>
-                    <p>Összes elem</p>
+                    <p>Összes kép</p>
                 </div>
             </div>
 
@@ -45,7 +45,7 @@
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.activeItems }}</h3>
-                    <p>Aktív elemek</p>
+                    <p>Aktív képek</p>
                 </div>
             </div>
 
@@ -55,7 +55,7 @@
                 </div>
                 <div class="stat-content">
                     <h3>{{ stats.inactiveItems }}</h3>
-                    <p>Inaktív elemek</p>
+                    <p>Inaktív képek</p>
                 </div>
             </div>
 
@@ -108,7 +108,7 @@
         <!-- Recent items -->
         <div class="section">
             <div class="section-header">
-                <h2>Legutóbbi elemek</h2>
+                <h2>Legutóbbi képek</h2>
                 <button mat-raised-button color="primary" (click)="navigateToGallery()">Teljes galéria
                     megtekintése</button>
             </div>
@@ -136,9 +136,9 @@
             } @else {
             <div class="empty-state">
                 <mat-icon>photo_library</mat-icon>
-                <h3>Még nincs galéria elem</h3>
+                <h3>Még nincs galéria kép</h3>
                 <p>Kezdje néhány kép hozzáadásával a galériához.</p>
-                <button mat-raised-button color="primary" (click)="navigateToGallery()">Első elem hozzáadása</button>
+                <button mat-raised-button color="primary" (click)="navigateToGallery()">Első kép hozzáadása</button>
             </div>
             }
         </div>

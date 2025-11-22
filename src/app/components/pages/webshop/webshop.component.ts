@@ -1,7 +1,15 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  Validators,
+  FormControl,
+  FormGroupDirective,
+  NgForm,
+} from '@angular/forms';
+import { ErrorStateMatcher } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -45,14 +53,14 @@ export class WebshopComponent implements OnInit {
   private readonly toastr = inject(ToastrService);
 
   protected products = signal<Product[]>([]);
-  protected message = signal<string | null>(null);
-  protected error = signal<string | null>(null);
+  // Messages now handled via toastr notifications.
 
   checkoutForm = this.fb.group({
     customer_name: ['', Validators.required],
     customer_email: ['', [Validators.required, Validators.email]],
     customer_phone: [''],
   });
+  protected errorMatcher = new NoSubmitErrorStateMatcher();
 
   protected selections = signal<
     Record<
@@ -120,7 +128,7 @@ export class WebshopComponent implements OnInit {
         this.computeProductImages();
       },
       error: () => {
-        this.error.set('Nem sikerült betölteni a termékeket.');
+        this.toastr.error('Nem sikerült betölteni a termékeket.', 'Hiba');
         this.imagesLoading.set(false);
       },
     });
@@ -199,8 +207,6 @@ export class WebshopComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
-    this.message.set(null);
-    this.error.set(null);
     const sel = this.selections()[product.id] ?? { quantity: 1 };
 
     this.cartItems.update((items) => [
@@ -222,17 +228,22 @@ export class WebshopComponent implements OnInit {
       extra: sel.extra || {},
     });
 
-    this.message.set('A termék hozzáadva a kosárhoz.');
+    this.toastr.success('Termék hozzáadva a kosárhoz.', 'Siker');
+    setTimeout(() => {
+      const cartEl = document.getElementById('cart-card');
+      if (cartEl) {
+        cartEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
   }
 
   removeItem(index: number): void {
     this.cartItems.update((items) => items.filter((_, i) => i !== index));
     this.localCart.removeAt(index);
+    this.toastr.info('Termék eltávolítva a kosárból.', 'Eltávolítva');
   }
 
   requestQuote(): void {
-    this.message.set(null);
-    this.error.set(null);
     if (this.checkoutForm.invalid || this.cartItems().length === 0) {
       this.checkoutForm.markAllAsTouched();
       return;
@@ -255,15 +266,21 @@ export class WebshopComponent implements OnInit {
     };
     this.ordersApi.submitPublicOrder(payload).subscribe({
       next: () => {
-        this.message.set(
-          'Árajánlat kérés elküldve. Visszaigazoló email elküldve.'
+        this.toastr.success(
+          'Árajánlat kérés elküldve. Email elküldve.',
+          'Siker'
         );
         this.cartItems.set([]);
         this.localCart.clear();
         this.checkoutForm.reset();
+        this.checkoutForm.markAsPristine();
+        this.checkoutForm.markAsUntouched();
       },
       error: () =>
-        this.error.set('Nem sikerült elküldeni az árajánlat kérést.'),
+        this.toastr.error(
+          'Nem sikerült elküldeni az árajánlat kérést.',
+          'Hiba'
+        ),
     });
   }
 
@@ -328,5 +345,14 @@ export class WebshopComponent implements OnInit {
       .replace(/\s+/g, ' ')
       .trim()
       .replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+}
+
+class NoSubmitErrorStateMatcher implements ErrorStateMatcher {
+  isErrorState(
+    control: FormControl | null,
+    form: FormGroupDirective | NgForm | null
+  ): boolean {
+    return !!(control && control.invalid && (control.dirty || control.touched));
   }
 }

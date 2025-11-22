@@ -42,12 +42,7 @@ export class AdminApiService {
     this.galleryItems$ = this.refresh$.pipe(
       startWith(null), // Trigger initial fetch
       switchMap(() =>
-        this.http.get<ApiResponse<GalleryItem[]>>(
-          `${this.adminApiUrl}/gallery`,
-          {
-            headers: this.authService.getAuthHeaders(),
-          }
-        )
+        this.http.get<ApiResponse<GalleryItem[]>>(`${this.adminApiUrl}/gallery`)
       ),
       shareReplay(1) // Cache the result
     );
@@ -66,17 +61,13 @@ export class AdminApiService {
 
   getGalleryItem(id: number): Observable<ApiResponse<GalleryItem>> {
     return this.http
-      .get<ApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery/${id}`, {
-        headers: this.authService.getAuthHeaders(),
-      })
+      .get<ApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery/${id}`)
       .pipe(catchError(this.handleError));
   }
 
   getGalleryConfig(): Observable<ApiResponse<GalleryConfig>> {
     return this.http
-      .get<ApiResponse<GalleryConfig>>(`${this.adminApiUrl}/gallery/config`, {
-        headers: this.authService.getAuthHeaders(),
-      })
+      .get<ApiResponse<GalleryConfig>>(`${this.adminApiUrl}/gallery/config`)
       .pipe(catchError(this.handleError));
   }
 
@@ -98,9 +89,7 @@ export class AdminApiService {
     }
 
     return this.http
-      .post<ApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery`, formData, {
-        headers: this.authService.getAuthHeadersForFormData(),
-      })
+      .post<ApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery`, formData)
       .pipe(
         tap(() => this.refresh$.next()), // Refresh the cache
         catchError(this.handleError)
@@ -139,8 +128,7 @@ export class AdminApiService {
     return this.http
       .post<ApiResponse<GalleryItem>>(
         `${this.adminApiUrl}/gallery/${id}`,
-        formData,
-        { headers: this.authService.getAuthHeadersForFormData() }
+        formData
       )
       .pipe(
         tap(() => this.refresh$.next()), // Refresh the cache
@@ -155,8 +143,7 @@ export class AdminApiService {
     return this.http
       .put<ApiResponse<GalleryItem>>(
         `${this.adminApiUrl}/gallery/${id}/status`,
-        { is_active: isActive ? '1' : '0' },
-        { headers: this.authService.getAuthHeaders() }
+        { is_active: isActive ? '1' : '0' }
       )
       .pipe(
         tap(() => this.refresh$.next()), // Refresh the cache
@@ -171,8 +158,7 @@ export class AdminApiService {
     return this.http
       .put<ApiResponse<GalleryItem>>(
         `${this.adminApiUrl}/gallery/${id}/featured`,
-        { is_featured: isFeatured ? '1' : '0' },
-        { headers: this.authService.getAuthHeaders() }
+        { is_featured: isFeatured ? '1' : '0' }
       )
       .pipe(
         tap(() => this.refresh$.next()), // Refresh the cache
@@ -182,9 +168,7 @@ export class AdminApiService {
 
   deleteGalleryItem(id: number): Observable<ApiResponse> {
     return this.http
-      .delete<ApiResponse>(`${this.adminApiUrl}/gallery/${id}`, {
-        headers: this.authService.getAuthHeaders(),
-      })
+      .delete<ApiResponse>(`${this.adminApiUrl}/gallery/${id}`)
       .pipe(
         tap(() => this.refresh$.next()), // Refresh the cache
         catchError(this.handleError)

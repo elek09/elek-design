@@ -60,68 +60,80 @@
                     </mat-form-field>
                     }
 
-                    <mat-form-field appearance="fill" class="qty">
-                        <mat-label>Mennyiség</mat-label>
-                        <input matInput type="number" min="1" [value]="selections()[p.id].quantity || 1"
-                            (input)="updateSelection(p.id, { quantity: ($any($event.target).valueAsNumber || 1) })" />
-                    </mat-form-field>
+                    <div class="qty-add">
+                        <mat-form-field appearance="fill" class="qty">
+                            <mat-label>Mennyiség</mat-label>
+                            <input matInput type="number" min="1" [value]="selections()[p.id].quantity || 1"
+                                (input)="updateSelection(p.id, { quantity: ($any($event.target).valueAsNumber || 1) })" />
+                        </mat-form-field>
+                        <button mat-raised-button color="primary" (click)="addToCart(p)"
+                            class="add-btn">Kosárba</button>
+                    </div>
                 </div>
             </mat-card-content>
-            <mat-card-actions>
-                <button mat-raised-button color="primary" (click)="addToCart(p)">Kosárba</button>
-            </mat-card-actions>
         </mat-card>
         }
     </div>
 
     @if (cartItems().length > 0) {
-    <mat-card class="section">
-        <h2>Kosár</h2>
+    <mat-card id="cart-card" class="section cart-card">
+        <div class="cart-header">
+            <h2 class="cart-title">Kosár</h2>
+            <p class="cart-sub"><span class="cart-sub-inner">Az összeállított tételek. Eltávolítható
+                    módosításhoz.</span></p>
+        </div>
         <div class="cart-list">
             @for (item of cartItems(); track $index; let i = $index) {
             <div class="cart-item">
-                <div>
-                    <div class="title">{{ item.product.name }} × {{ item.quantity }}</div>
+                <div class="cart-info">
+                    <div class="title">{{ item.product.name }} <span class="mult">× {{ item.quantity }}</span></div>
                     <div class="opts">
-                        @if (item.hardware_type) {<span>Vasalat: {{ item.hardware_type }}</span>}
-                        @if (item.color_scheme) {<span>Szín: {{ item.color_scheme }}</span>}
+                        @if (item.hardware_type) {<span class="opt">Vasalat: <strong>{{ item.hardware_type
+                                }}</strong></span>}
+                        @if (item.color_scheme) {<span class="opt">Szín: <strong>{{ item.color_scheme
+                                }}</strong></span>}
                     </div>
                 </div>
-                <button mat-button color="warn" (click)="removeItem(i)">Eltávolít</button>
+                <button mat-stroked-button color="warn" class="remove-btn" (click)="removeItem(i)">Eltávolítás</button>
             </div>
             }
         </div>
     </mat-card>
     }
 
-    <mat-card class="section">
-        <h2>Árajánlat kérés</h2>
-        <form [formGroup]="checkoutForm" (ngSubmit)="requestQuote()" class="checkout-form">
+    <mat-card class="section quote-card">
+        <div class="quote-header">
+            <h2 class="quote-title">Árajánlat kérés</h2>
+            <p class="quote-sub"><span class="quote-sub-inner">Töltse ki az adatokat és elküldjük a személyre szabott
+                    ajánlatot.</span></p>
+            <p class="quote-note"><span class="req">*</span> Kötelező mezők</p>
+        </div>
+        <form [formGroup]="checkoutForm" (ngSubmit)="requestQuote()" class="checkout-form" novalidate>
             <div class="row">
                 <mat-form-field class="field" appearance="fill">
                     <mat-label>Név</mat-label>
-                    <input matInput formControlName="customer_name" required (blur)="onCheckoutBlur('customer_name')" />
+                    <input matInput formControlName="customer_name" required (blur)="onCheckoutBlur('customer_name')"
+                        [errorStateMatcher]="errorMatcher" />
                 </mat-form-field>
                 <mat-form-field class="field" appearance="fill">
                     <mat-label>Email</mat-label>
                     <input matInput type="email" formControlName="customer_email" required
-                        (blur)="onCheckoutBlur('customer_email')" />
+                        (blur)="onCheckoutBlur('customer_email')" [errorStateMatcher]="errorMatcher" />
                 </mat-form-field>
                 <mat-form-field class="field" appearance="fill">
                     <mat-label>Telefon (opcionális)</mat-label>
-                    <input matInput formControlName="customer_phone" (blur)="onCheckoutBlur('customer_phone')" />
+                    <input matInput formControlName="customer_phone" (blur)="onCheckoutBlur('customer_phone')"
+                        [errorStateMatcher]="errorMatcher" />
                 </mat-form-field>
             </div>
-
-            <div class="actions">
+            <div class="actions quote-actions">
                 <button mat-raised-button color="primary" type="submit"
-                    [disabled]="cartItems().length === 0 || checkoutForm.invalid">Árajánlatot kérek</button>
+                    [disabled]="cartItems().length === 0 || checkoutForm.invalid">
+                    {{ cartItems().length === 0 ? 'Nincs termék a kosárban' : 'Árajánlatot kérek' }}
+                </button>
             </div>
         </form>
     </mat-card>
 
-    <div class="status">
-        @if (message()) {<p class="success">{{ message() }}</p>}
-        @if (error()) {<p class="error">{{ error() }}</p>}
-    </div>
+    <!-- Status messages removed; using Toastr notifications now. -->
 </div>
