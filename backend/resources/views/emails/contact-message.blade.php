@@ -21,7 +21,7 @@
     <hr />
     <p><strong>Üzenet:</strong></p>
     <pre>{{ $message_text }}</pre>
-    <p class="meta">IP: {{ $ip }} | Küldve: {{ $sent_at }}</p>
+    <p class="meta">Küldve: {{ $sent_at }}</p>
 </div>
 </body>
 </html>

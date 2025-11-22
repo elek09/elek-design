@@ -23,9 +23,10 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        $token = $user->createToken('api')->plainTextToken;
+        Auth::login($user);
+        $r->session()->regenerate();
         return response()->json([
-            'token' => $token,
+            'success' => true,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -38,15 +39,31 @@ class AuthController extends Controller
     {
         $cred = $r->validate(['email' => 'required|email', 'password' => 'required']);
         if (!Auth::attempt($cred))
-            return response()->json(['message' => 'Invalid credentials'], 422);
+            return response()->json(['success' => false, 'message' => 'Invalid credentials'], 401);
+        $r->session()->regenerate();
         $user = $r->user();
-        $token = $user->createToken('api')->plainTextToken;
-        return ['token' => $token, 'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'admin' => $user->admin]];
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'admin' => (bool) $user->admin
+            ]
+        ]);
     }
     public function logout(Request $r)
     {
-        $r->user()->currentAccessToken()->delete();
-        return response()->noContent();
+        if ($r->user() && method_exists($r->user(), 'currentAccessToken')) {
+            $token = $r->user()->currentAccessToken();
+            if ($token && method_exists($token, 'delete')) {
+                $token->delete();
+            }
+        }
+        Auth::guard('web')->logout();
+        $r->session()->invalidate();
+        $r->session()->regenerateToken();
+        return response()->json(['success' => true, 'message' => 'Logout successful']);
     }
 }
 

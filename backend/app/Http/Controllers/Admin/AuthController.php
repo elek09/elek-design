@@ -31,8 +31,8 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // Create token for API authentication
-            $token = $user->createToken('admin-token')->plainTextToken;
+            // Regenerate session and authenticate via cookie (Sanctum stateful)
+            $request->session()->regenerate();
 
             return response()->json([
                 'success' => true,
@@ -41,9 +41,8 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'admin' => $user->admin
-                ],
-                'token' => $token
+                    'admin' => (bool) $user->admin
+                ]
             ]);
         }
 
@@ -55,8 +54,16 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        
+        if ($request->user() && method_exists($request->user(), 'currentAccessToken')) {
+            $token = $request->user()->currentAccessToken();
+            if ($token && method_exists($token, 'delete')) {
+                $token->delete();
+            }
+        }
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return response()->json([
             'success' => true,
             'message' => 'Logout successful'

@@ -17,8 +17,14 @@ use App\Http\Controllers\SimpleOrderController;
 use App\Http\Controllers\ContactController;
 
 Route::prefix('v1')->group(function () {
-    // Auth
-    Route::prefix('auth')->group(function () {
+    // Auth (SPA cookie-based via Sanctum / session)
+    Route::prefix('auth')->middleware([
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+    ])->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
         Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
@@ -67,9 +73,15 @@ Route::prefix('v1')->group(function () {
         Route::get('orders/my', [OrderController::class, 'my']);
     });
 
-    // Admin Authentication
+    // Admin Authentication (SPA cookie-based via Sanctum / session)
     Route::prefix('admin')->group(function () {
-        Route::post('login', [AdminAuthController::class, 'login']);
+        Route::post('login', [AdminAuthController::class, 'login'])->middleware([
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        ]);
         
         Route::middleware(['auth:sanctum', 'admin.api'])->group(function () {
             Route::post('logout', [AdminAuthController::class, 'logout']);

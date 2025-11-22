@@ -15,12 +15,8 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    // Read stateful domains explicitly from environment. Keep defaults empty to require explicit config per environment.
+    'stateful' => array_filter(array_map('trim', explode(',', (string) env('SANCTUM_STATEFUL_DOMAINS', '')))),
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +43,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Personal access token lifetime in minutes (default: 1440 = 1 day)
+    'expiration' => (int) env('SANCTUM_EXPIRATION', 1440),
 
     /*
     |--------------------------------------------------------------------------
