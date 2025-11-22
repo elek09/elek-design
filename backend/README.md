@@ -84,10 +84,10 @@ Alap URL: `http://127.0.0.1:8000`
 
 ### 8. Admin belépés
 
-- Alap admin email: `admin@elekdesign.hu`
-- A jelszó NINCS a kódban tárolt plaintextként. Állítsd be `.env`-ben:
-	- `ADMIN_DEFAULT_PASSWORD` (plain) VAGY `ADMIN_DEFAULT_PASSWORD_HASH` (bcrypt hash), majd futtasd a seedet.
-	- Alternatíva: hozd létre/frissítsd a jelszót a parancsunkkal: lásd 8/a.
+-   Alap admin email: `admin@elekdesign.hu`
+-   A jelszó NINCS a kódban tárolt plaintextként. Állítsd be `.env`-ben:
+    -   `ADMIN_DEFAULT_PASSWORD` (plain) VAGY `ADMIN_DEFAULT_PASSWORD_HASH` (bcrypt hash), majd futtasd a seedet.
+    -   Alternatíva: hozd létre/frissítsd a jelszót a parancsunkkal: lásd 8/a.
 
 Ha nem működik: ellenőrizd, hogy futott-e a seeding és be volt-e állítva a jelszó `.env`-ben.
 
@@ -96,15 +96,19 @@ Ha nem működik: ellenőrizd, hogy futott-e a seeding és be volt-e állítva a
 Két saját Artisan parancs áll rendelkezésre:
 
 1. Admin létrehozása vagy frissítése (felülírás `--force` kapcsolóval):
+
 ```powershell
 php artisan user:create-admin ujadmin@example.com "Új Admin" ErősJelszo456!
 ```
+
 Létező email felülírása (név + jelszó frissül):
+
 ```powershell
 php artisan user:create-admin ujadmin@example.com "Új Admin" UjJelszo789! --force
 ```
 
 2. Admin törlése vagy admin jog visszavonása:
+
 ```powershell
 # Teljes törlés
 php artisan user:delete-admin ujadmin@example.com
@@ -117,15 +121,6 @@ php artisan user:delete-admin ujadmin@example.com --force
 ```
 
 Megjegyzés: A létrehozó parancsban kötelező a jelszó argumentum, nincs automatikus generálás.
-
-3. Általános felhasználó törlése (nem adminokra is):
-```powershell
-# Megerősítéssel
-php artisan user:delete user@example.com
-
-# Megerősítés nélkül
-php artisan user:delete user@example.com --force
-```
 
 ### 9. Gyors hibakeresés
 
