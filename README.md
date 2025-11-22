@@ -1,6 +1,72 @@
 # ElekDesign
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.7.
+Ez a projekt az [Angular CLI](https://github.com/angular/angular-cli) 19.1.7 (később frissítve 20.x dependency-kre) segítségével készült.
+
+## Telepítés és futtatás (Setup)
+
+Az alábbi lépések egy frissen kibontott (zipből érkező) forráskódra vonatkoznak, `node_modules` és esetleges környezeti fájlok nélkül.
+
+### Előfeltételek
+
+- Node.js: ajánlott LTS (pl. 20.x). Ellenőrzés: `node -v`
+- NPM a Node része: `npm -v`
+
+### 1. Projekt kibontása
+
+Csomagold ki a zip fájlt egy tetszőleges mappába, például: `C:\Projects\elek-design`. Győződj meg róla, hogy a gyökérben megtalálható a `package.json`, `angular.json`, `src/` mappa.
+
+### 2. Függőségek telepítése
+
+Lépj be a projekt gyökerébe, majd futtasd:
+
+```powershell
+npm install
+```
+
+Ez létrehozza a `node_modules` mappát az összes szükséges Angular és egyéb csomaggal.
+
+### 3. Fejlesztői szerver indítása
+
+```powershell
+npm start
+```
+
+Alapértelmezett URL: http://localhost:4200/
+Port módosítás (opcionális): `ng serve --port 4300`
+
+### 4. Tesztek futtatása
+
+```powershell
+npm test
+```
+
+Karma + Jasmine egységteszt futtatás. Szükség esetén Chrome böngésző telepítése.
+
+### 5. Production build készítése
+
+```powershell
+npm run build
+```
+
+Eredmény: `dist/elek-design` könyvtár. Fejlesztői (nem optimalizált) build: `ng build --configuration development`.
+
+### 6. Deployment
+
+A `dist/elek-design` tartalma statikusan szolgálható (pl. Nginx, Netlify, Vercel). Single Page App esetén állítsd be a fallback-et minden útvonalra az `index.html`-re (Nginx: `try_files $uri /index.html`).
+
+### 7. Gyors parancs összefoglaló
+
+```powershell
+cd C:\Users\User1\Documents\elek-design-frontend\elek-design
+npm install
+npm start
+npm test
+npm run build
+```
+
+---
+
+Az eredeti (angol) Angular CLI generált részek alább továbbra is megtalálhatóak referencia célból.
 
 ## Development server
 
