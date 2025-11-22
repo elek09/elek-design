@@ -1,99 +1,167 @@
-composer install
-copy .env.example .env
-php artisan key:generate
-php artisan storage:link
-php artisan migrate --seed
-php artisan serve
+## Elek Design Backend – Gyors telepítés (ZIP forrásból)
 
-{
-"email": "admin@elekdesign.hu",
-"password": "ElekAdmin2025!"
-}
+Ez a rövid útmutató arra az esetre készült, amikor csak a forráskódot kapod meg (nincs `vendor/`, nincs `.env`).
 
-## Database
+### 1. Előfeltételek
 
-The schema is designed to be simple, data-driven, and cache-friendly:
+-   PHP >= 8.2
+-   Composer
+-   Node.js (npm)
+-   SQLite (egyszerű fejlesztéshez) vagy MySQL/MariaDB
 
--   Users include an `admin` boolean flag (default false) to separate public users from administrators.
--   Products use `is_active` (boolean) to control catalog visibility without deleting content.
--   Gallery items use both `is_active` (for visibility) and `is_featured` (for curated “Top” selections on the homepage and Bootstrap payload).
--   Categories store a Hungarian `type` (stable identifier), human-friendly `name`, an optional JSON `subcategories` array, and `nav_order` to define header order. The presence of subcategories also drives whether a header item is exposed as a homepage fragment or a route.
-
-The API exposes a single canonical gallery listing route by section:
-
--   `GET /api/v1/gallery/section/{section}?page=1` (e.g., `eletter`, `uzletter`, `3d-falboritas`, `ives-butorok`)
--   `GET /api/v1/gallery/top` returns featured items.
--   `GET /api/v1/bootstrap` returns the consolidated startup payload (header, categories, featured) and is cached for 5 minutes.
-
-Notes:
-
--   All media URLs in the API are absolute (built via `asset()`), so frontends can pass them through without origin handling.
--   Migrations were squashed so that base “create” migrations reflect the final schema (with `is_active`, `is_featured`, and `nav_order` included). Follow-up migrations remain guarded no-ops for compatibility and narrative.
-
-## Troubleshooting
-
--   Seeding error: table column missing (e.g., `gallery_items has no column named is_active`)
-
-    -   Cause: Local SQLite schema drifted from current migrations.
-    -   Fix: Rebuild the database and reseed.
-
-        PowerShell:
-
-        ```powershell
-        php artisan migrate:fresh --seed
-        ```
-
--   Duplicate column error during migrate (e.g., `duplicate column name: is_active` on products)
-    -   Ensure you have the latest code. Follow-up migrations are guarded to be safe no-ops on fresh installs.
-
-## Contact Form Endpoint
-
-Public endpoint for general inquiries/contact messages (no persistence, only email forwarding).
-
--   `POST /api/v1/contact`
--   Payload JSON:
-
-```json
-{
-    "name": "Teszt Felhasználó",
-    "email": "user@example.com",
-    "subject": "Ajánlatkérés",
-    "message": "Szeretnék érdeklődni a termékekről..."
-}
-```
-
-Validation:
-
--   `name`: required, min 2, max 150
--   `email`: required, RFC email
--   `subject`: required, min 3, max 200
--   `message`: required, min 10, max 4000
-
-Rate limiting: max 10 / hour per IP (`throttle:contact`).
-
-Spam heuristics:
-
--   Max 3 URLs allowed in message
--   Reject if 10+ identical consecutive characters
-
-Responses:
-
--   201 `{ "success": true }`
--   422 `{ "success": false, "errors": { field: [..] } }`
--   429 (automatic from rate limiter)
--   500 mail queue failure `{ "success": false, "errors": { "general": ["Email küldési hiba."] } }`
-
-Email delivery:
-
--   Admin értesítés: első cím a `MAIL_ADMIN_TO` listából (vagy `MAIL_FROM_ADDRESS` ha üres).
--   Felhasználói visszaigazolás: külön email a beküldőnek "Üzenet fogadva – Elek Design" tárggyal.
--   `.env` példa: `MAIL_ADMIN_TO=admin1@example.com,admin2@example.com`
--   Admin levélnél `Reply-To` a felhasználó email címe.
--   Nincs adatbázis mentés.
--   Válasz JSON mezők: `admin_mail_sent`, `user_mail_sent`.
-
-PowerShell quick test:
+Ellenőrzés:
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri http://localhost:8000/api/v1/contact -ContentType 'application/json' -Body '{"name":"Teszt","email":"teszt@example.com","subject":"Proba","message":"Ez egy teszt üzenet amely elég hosszú."}'
+php -v
+composer -V
+node -v
+npm -v
+```
+
+### 2. Kicsomagolás
+
+Másold/kicsomagold a projektet pl. `C:\Projects\elek-design\backend` könyvtárba, majd:
+
+```powershell
+Set-Location C:\Projects\elek-design\backend
+```
+
+### 3. .env létrehozása
+
+```powershell
+Copy-Item .env.example .env
+php artisan key:generate
+```
+
+```
+MAIL_MAILER=smtp
+```
+
+SQLite használatához (ha kell):
+
+```powershell
+New-Item .\database\database.sqlite -ItemType File
+```
+
+### 4. Függőségek
+
+```powershell
+composer install
+npm install
+```
+
+### 5. Migráció + Seed (opcionális demó adatok)
+
+```powershell
+php artisan migrate --seed
+```
+
+Teljes újraépítéshez:
+
+```powershell
+php artisan migrate:fresh --seed
+```
+
+### 6. Storage link
+
+```powershell
+php artisan storage:link
+```
+
+### 7. Fejlesztői mód
+
+Két külön PowerShell ablakban:
+
+```powershell
+php artisan serve
+```
+
+```powershell
+npm run dev
+```
+
+Alap URL: `http://127.0.0.1:8000`
+
+### 8. Admin belépés
+
+- Alap admin email: `admin@elekdesign.hu`
+- A jelszó NINCS a kódban tárolt plaintextként. Állítsd be `.env`-ben:
+	- `ADMIN_DEFAULT_PASSWORD` (plain) VAGY `ADMIN_DEFAULT_PASSWORD_HASH` (bcrypt hash), majd futtasd a seedet.
+	- Alternatíva: hozd létre/frissítsd a jelszót a parancsunkkal: lásd 8/a.
+
+Ha nem működik: ellenőrizd, hogy futott-e a seeding és be volt-e állítva a jelszó `.env`-ben.
+
+### 8/a. Admin felhasználók kezelése (parancsok)
+
+Két saját Artisan parancs áll rendelkezésre:
+
+1. Admin létrehozása vagy frissítése (felülírás `--force` kapcsolóval):
+```powershell
+php artisan user:create-admin ujadmin@example.com "Új Admin" ErősJelszo456!
+```
+Létező email felülírása (név + jelszó frissül):
+```powershell
+php artisan user:create-admin ujadmin@example.com "Új Admin" UjJelszo789! --force
+```
+
+2. Admin törlése vagy admin jog visszavonása:
+```powershell
+# Teljes törlés
+php artisan user:delete-admin ujadmin@example.com
+
+# Csak admin jog elvétele, user megmarad
+php artisan user:delete-admin ujadmin@example.com --soft
+
+# Megerősítés kihagyása
+php artisan user:delete-admin ujadmin@example.com --force
+```
+
+Megjegyzés: A létrehozó parancsban kötelező a jelszó argumentum, nincs automatikus generálás.
+
+3. Általános felhasználó törlése (nem adminokra is):
+```powershell
+# Megerősítéssel
+php artisan user:delete user@example.com
+
+# Megerősítés nélkül
+php artisan user:delete user@example.com --force
+```
+
+### 9. Gyors hibakeresés
+
+```powershell
+php artisan optimize:clear
+php artisan migrate:fresh --seed
+composer dump-autoload
+```
+
+Logok: `storage/logs/laravel.log`
+
+### 10. Parancsblokk összefoglaló (copy/paste)
+
+```powershell
+Set-Location C:\Projects\elek-design\backend
+Copy-Item .env.example .env
+php artisan key:generate
+composer install
+npm install
+New-Item .\database\database.sqlite -ItemType File
+php artisan migrate --seed
+php artisan storage:link
+php artisan serve
+npm run dev
+```
+
+### 11. Tesztek
+
+```powershell
+php artisan test
+```
+
+### 12. Production röviden
+
+Állítsd `APP_ENV=production`, `APP_DEBUG=false`, majd:
+
+```powershell
+php artisan optimize
 ```
