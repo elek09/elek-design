@@ -82,6 +82,16 @@ npm run dev
 
 Alap URL: `http://127.0.0.1:8000`
 
+### 8. Auth összefoglaló
+
+Alap autentikáció: Laravel session alapú `web` guard + Sanctum stateful cookie. A böngésző (Angular) `withCredentials: true` beállítással automatikusan küldi a sütiket; nincs szükség JWT-re vagy bearer tokenre.
+
+Válasz séma minden auth endpointnál: `success` (bool), `status` (int), `data` (objektum), `errors` (tömb vagy üres). A `data.user` tartalmazza: `id, name, email, admin`.
+
+Admin felületek nem külön bejelentkezést használnak; az általános login után az admin API route-ok `admin.api` middleware-rel védettek. `GET /api/v1/admin/me` visszaadja a bejelentkezett admin felhasználót.
+
+Későbbi igény esetén stateless API-hoz bevezethető Sanctum personal access token vagy JWT; jelenleg nincs token kiadás / törlés logika.
+
 ### 8. Admin belépés
 
 -   Alap admin email: `admin@elekdesign.hu`
