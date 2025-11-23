@@ -7,7 +7,7 @@ import { AdminNavComponent } from '../admin-nav/admin-nav.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BootstrapService } from '../../../services/bootstrap.service';
 import { AdminApiService } from '../../../services/admin-api.service';
-import { Observable, combineLatest, map, startWith } from 'rxjs';
+import { Observable, combineLatest, map } from 'rxjs';
 
 @Component({
   selector: 'app-admin-header',
@@ -26,7 +26,7 @@ import { Observable, combineLatest, map, startWith } from 'rxjs';
 export class AdminHeaderComponent {
   @Input() title = '';
   @Input() subtitle?: string;
-  @Input() backLink?: string | any[];
+  @Input() backLink?: string | string[];
 
   private readonly bootstrap = inject(BootstrapService);
   private readonly adminApi = inject(AdminApiService);

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -34,17 +34,15 @@ import { AdminHeaderComponent } from '../admin-header/admin-header.component';
   styleUrls: ['./category-manager.component.scss'],
 })
 export class CategoryManagerComponent implements OnInit {
+  private categoryService = inject(CategoryService);
+  private router = inject(Router);
+
   categories: Category[] = [];
   selectedCategory: Category | null = null;
   newCategory: Category = { name: '', type: '', subcategories: [] };
-  newSubcategoryName: string = '';
+  newSubcategoryName = '';
   lastError = '';
   orderDirty = false;
-
-  constructor(
-    private categoryService: CategoryService,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.loadCategories();
@@ -56,7 +54,7 @@ export class CategoryManagerComponent implements OnInit {
       this.categories = [...(data || [])].sort(
         (a, b) =>
           (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
-          (b.nav_order ?? Number.MAX_SAFE_INTEGER)
+          (b.nav_order ?? Number.MAX_SAFE_INTEGER),
       );
       this.orderDirty = false;
     });
@@ -67,30 +65,32 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   selectCategory(category: Category): void {
-    // Create a deep copy to avoid modifying the original object directly
+    interface Subcategory {
+      id: string;
+      name: string;
+      nav_order?: number;
+    }
     const copy: Category = JSON.parse(JSON.stringify(category));
-    // Normalize subcategories to objects with {id,name}
     if (Array.isArray(copy.subcategories)) {
-      const mapped = copy.subcategories.map((s: any) => {
+      let mapped: Subcategory[] = copy.subcategories.map((s) => {
         if (typeof s === 'string') {
-          return { id: slugify(s)!, name: s, nav_order: undefined } as any;
+          return { id: slugify(s)!, name: s };
         }
         return {
           id: s.id ?? slugify(s.name ?? '')!,
           name: s.name ?? String(s.id ?? ''),
           nav_order:
             typeof s.nav_order === 'number' ? Number(s.nav_order) : undefined,
-        } as any;
+        };
       });
-      // Sort by nav_order if provided
-      mapped.sort(
-        (a: any, b: any) =>
-          (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
-          (b.nav_order ?? Number.MAX_SAFE_INTEGER)
-      );
-      // Ensure sequential nav_order values (1-based)
-      mapped.forEach((s: any, idx: number) => (s.nav_order = idx + 1));
-      copy.subcategories = mapped as any;
+      mapped = mapped
+        .sort(
+          (a, b) =>
+            (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
+            (b.nav_order ?? Number.MAX_SAFE_INTEGER),
+        )
+        .map((s, idx) => ({ ...s, nav_order: idx + 1 }));
+      copy.subcategories = mapped;
     } else {
       copy.subcategories = [];
     }
@@ -99,18 +99,21 @@ export class CategoryManagerComponent implements OnInit {
 
   saveCategory(category: Category): void {
     this.lastError = '';
-    // Ensure nav_order reflects current order (1-based) before persisting
-    const subs = ((category.subcategories || []) as any[]).map(
-      (s: any, idx: number) => ({
-        id: String(s?.id ?? ''),
-        name: String(s?.name ?? ''),
+    const subs = (category.subcategories || []).map((s, idx) => {
+      if (typeof s === 'string') {
+        return {
+          id: slugify(s)!,
+          name: s,
+          nav_order: idx + 1,
+        };
+      }
+      return {
+        id: String(s.id ?? slugify(s.name ?? '') ?? ''),
+        name: String(s.name ?? ''),
         nav_order: idx + 1,
-      })
-    );
-    const payload: Category = {
-      ...(category as any),
-      subcategories: subs,
-    } as any;
+      };
+    });
+    const payload: Category = { ...category, subcategories: subs };
 
     this.categoryService.saveCategory(payload).subscribe({
       next: () => {
@@ -147,71 +150,78 @@ export class CategoryManagerComponent implements OnInit {
       const newSub = {
         id: slugify(name)!,
         name,
-        nav_order:
-          ((this.selectedCategory.subcategories || []) as any[]).length + 1,
+        nav_order: (this.selectedCategory.subcategories || []).length + 1,
       };
-      const arr = (this.selectedCategory.subcategories || []) as Array<{
+      const arr = (this.selectedCategory.subcategories || []) as {
         id?: string;
         name: string;
         nav_order?: number;
-      }>;
+      }[];
       arr.push(newSub);
-      this.selectedCategory.subcategories = arr as any;
+      this.selectedCategory.subcategories = arr;
       this.newSubcategoryName = '';
     }
   }
 
   removeSubcategory(index: number): void {
     if (this.selectedCategory) {
-      const arr = (this.selectedCategory.subcategories as any[]) || [];
+      const arr =
+        (this.selectedCategory.subcategories as {
+          id?: string;
+          name: string;
+          nav_order?: number;
+        }[]) || [];
       arr.splice(index, 1);
       // Reindex nav_order
-      arr.forEach((s: any, idx: number) => (s.nav_order = idx + 1));
-      this.selectedCategory.subcategories = arr as any;
+      arr.forEach((s, idx: number) => (s.nav_order = idx + 1));
+      this.selectedCategory.subcategories = arr;
     }
   }
 
   // Editing subcategory fields
   updateSubName(index: number, value: string): void {
     if (!this.selectedCategory) return;
-    const arr = (this.selectedCategory.subcategories || []) as Array<any>;
+    const arr = (this.selectedCategory.subcategories || []) as {
+      id?: string;
+      name: string;
+      nav_order?: number;
+    }[];
     const name = (value || '').trim();
     const existing = arr[index];
-    if (typeof existing === 'string') {
-      // convert to object if string
-      arr[index] = { id: slugify(name)!, name };
-    } else {
-      existing.name = name;
-      // Auto-sync id with name if user hasn't manually set a custom id (basic heuristic)
-      if (!existing.id || existing.id === slugify(existing.name)) {
-        existing.id = slugify(name)!;
-      }
+    existing.name = name;
+    if (!existing.id || existing.id === slugify(existing.id)) {
+      existing.id = slugify(name)!;
     }
-    this.selectedCategory.subcategories = arr as any;
+    this.selectedCategory.subcategories = arr;
   }
 
   updateSubId(index: number, value: string): void {
     if (!this.selectedCategory) return;
-    const arr = (this.selectedCategory.subcategories || []) as Array<any>;
+    const arr = (this.selectedCategory.subcategories || []) as {
+      id?: string;
+      name: string;
+      nav_order?: number;
+    }[];
     const existing = arr[index];
     const newId = slugify(value || '')!;
-    if (typeof existing === 'string') {
-      // convert to object if string
-      arr[index] = { id: newId, name: existing };
-    } else {
-      existing.id = newId;
-    }
-    this.selectedCategory.subcategories = arr as any;
+    existing.id = newId;
+    this.selectedCategory.subcategories = arr;
   }
 
   // Drag & Drop reordering for subcategories
-  dropSubcategory(event: CdkDragDrop<any[]>): void {
+  dropSubcategory(
+    event: CdkDragDrop<{ id?: string; name: string; nav_order?: number }[]>,
+  ): void {
     if (!this.selectedCategory) return;
-    const arr = (this.selectedCategory.subcategories || []) as any[];
+    const arr = (this.selectedCategory.subcategories || []) as {
+      id?: string;
+      name: string;
+      nav_order?: number;
+    }[];
     moveItemInArray(arr, event.previousIndex, event.currentIndex);
     // Update nav_order after move (1-based)
-    arr.forEach((s: any, idx: number) => (s.nav_order = idx + 1));
-    this.selectedCategory.subcategories = arr as any;
+    arr.forEach((s, idx: number) => (s.nav_order = idx + 1));
+    this.selectedCategory.subcategories = arr;
   }
 
   // Drag & Drop reordering for categories (controls header order)
@@ -246,11 +256,13 @@ export class CategoryManagerComponent implements OnInit {
   // Validation helpers
   get hasDuplicateSubIds(): boolean {
     if (!this.selectedCategory) return false;
-    const arr = (this.selectedCategory.subcategories || []) as Array<any>;
+    const arr = (this.selectedCategory.subcategories || []) as {
+      id?: string;
+      name: string;
+      nav_order?: number;
+    }[];
     const ids = arr
-      .map((s) =>
-        typeof s === 'string' ? slugify(s) : slugify(s?.id ?? s?.name ?? '')
-      )
+      .map((s) => slugify(s?.id ?? s?.name ?? ''))
       .filter((id): id is string => !!id);
     const set = new Set<string>();
     for (const id of ids) {
@@ -293,23 +305,21 @@ export class CategoryManagerComponent implements OnInit {
     const t = String(this.selectedCategory.type || '').trim();
     if (!t) return false;
     return this.categories.some(
-      (c) => String(c.type) === t && c._id != this.selectedCategory!._id
+      (c) => String(c.type) === t && c._id != this.selectedCategory!._id,
     );
   }
 
-  get selectedSubcategories(): Array<{
+  get selectedSubcategories(): {
     id?: string;
     name: string;
     nav_order?: number;
-  }> {
+  }[] {
     if (!this.selectedCategory) return [];
-    const arr = (this.selectedCategory.subcategories || []) as Array<any>;
-    // selectedCategory is normalized to objects; keep as-is to preserve nav_order
-    return arr.map((s: any) =>
-      typeof s === 'string'
-        ? { id: slugify(s)!, name: s, nav_order: undefined }
-        : s
-    );
+    return (this.selectedCategory.subcategories || []) as {
+      id?: string;
+      name: string;
+      nav_order?: number;
+    }[];
   }
 
   // Save current category edits (including new subcategory) then go to gallery with params

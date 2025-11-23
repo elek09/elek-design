@@ -53,10 +53,10 @@ export class HomeComponent implements OnInit {
 
     const categories$ = this.categoryService.getCategories();
     this.eletterCategories$ = categories$.pipe(
-      map((categories) => categories.filter((c) => c.type === 'eletter'))
+      map((categories) => categories.filter((c) => c.type === 'eletter')),
     );
     this.uzletterCategories$ = categories$.pipe(
-      map((categories) => categories.filter((c) => c.type === 'uzletter'))
+      map((categories) => categories.filter((c) => c.type === 'uzletter')),
     );
 
     // Wait for the first emission of all slide streams, then preload images
@@ -75,7 +75,7 @@ export class HomeComponent implements OnInit {
           this.topCarouselSlides$,
           this.eletterSlides$,
           this.uzletterSlides$,
-        ]).pipe(take(1))
+        ]).pipe(take(1)),
       );
 
       const urls = this.unique([
@@ -85,7 +85,7 @@ export class HomeComponent implements OnInit {
       ]);
 
       await this.preloadImages(urls);
-    } catch (e) {
+    } catch {
       // On any failure, don't block the UI
     } finally {
       // Preload done: hide overlay and show content immediately

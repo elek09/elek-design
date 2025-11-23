@@ -32,7 +32,7 @@ export class CartService {
     return from(items).pipe(
       concatMap((item) => this.http.post<ApiResponse>(url, item)),
       last(),
-      mapTo(void 0)
+      mapTo(void 0),
     );
   }
 

@@ -33,7 +33,7 @@
                     }}</span></div>
             <div class="rowline"><mat-icon>assignment</mat-icon><span>{{ o.kind === 'quote' ? 'Árajánlat' : 'Rendelés'
                     }} #{{ o.id }}</span></div>
-            @if (o.total != null) {
+            @if (o.total !== null) {
             <div class="rowline"><mat-icon>payments</mat-icon><span>{{ o.total |
                     currency:'HUF':'symbol':'1.0-0':'hu-HU' }}</span>
             </div>

@@ -43,7 +43,7 @@ export class AdminDashboardComponent implements OnInit {
     activeItems: 0,
     inactiveItems: 0,
     featuredItems: 0,
-    byCategory: {} as { [key: string]: number },
+    byCategory: {} as Record<string, number>,
   };
   isLoading = true;
   error = '';
@@ -86,11 +86,11 @@ export class AdminDashboardComponent implements OnInit {
 
     this.stats.totalItems = this.galleryItems.length;
     this.stats.activeItems = this.galleryItems.filter(
-      (item) => item.is_active
+      (item) => item.is_active,
     ).length;
     this.stats.inactiveItems = this.stats.totalItems - this.stats.activeItems;
     this.stats.featuredItems = this.galleryItems.filter(
-      (item) => !!item.is_featured
+      (item) => !!item.is_featured,
     ).length;
 
     // Reset and initialize category counts from the config
@@ -104,7 +104,12 @@ export class AdminDashboardComponent implements OnInit {
 
     // Count by category
     this.galleryItems.forEach((item) => {
-      if (this.stats.byCategory.hasOwnProperty(item.category)) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          this.stats.byCategory,
+          item.category,
+        )
+      ) {
         this.stats.byCategory[item.category]++;
       }
     });
@@ -124,7 +129,7 @@ export class AdminDashboardComponent implements OnInit {
     for (const cat of this.categories) {
       if (cat.type === key) return cat.name;
       const sub = normalizeSubcategories(cat.subcategories).find(
-        (s: { id: string; name: string }) => s.id === key
+        (s: { id: string; name: string }) => s.id === key,
       );
       if (sub) return sub.name;
     }
@@ -139,7 +144,7 @@ export class AdminDashboardComponent implements OnInit {
     return this.galleryItems
       .sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       )
       .slice(0, 5);
   }

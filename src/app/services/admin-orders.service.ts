@@ -27,34 +27,34 @@ export class AdminOrdersService {
       .get<ApiListResponse<Order> | Order[]>(`${this.adminApi}/orders`)
       .pipe(
         map((resp) => (Array.isArray(resp) ? resp : resp.data || [])),
-        shareReplay(1)
+        shareReplay(1),
       );
   }
 
   updateStatus(
     orderId: number,
-    status: OrderStatus
+    status: OrderStatus,
   ): Observable<ApiItemResponse<Order>> {
     return this.http.put<ApiItemResponse<Order>>(
       `${this.adminApi}/orders/${orderId}/status`,
-      { status }
+      { status },
     );
   }
 
   updateOrder(
     orderId: number,
-    payload: OrderUpdatePayload
+    payload: OrderUpdatePayload,
   ): Observable<ApiItemResponse<Order>> {
     return this.http.put<ApiItemResponse<Order>>(
       `${this.adminApi}/orders/${orderId}`,
-      payload
+      payload,
     );
   }
 
   sendConfirmation(orderId: number): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(
       `${this.adminApi}/orders/${orderId}/confirm`,
-      {}
+      {},
     );
   }
 }

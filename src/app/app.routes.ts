@@ -6,9 +6,6 @@ import { WallCladdingComponent } from './components/pages/wall-cladding/wall-cla
 import { CurvedFurnitureComponent } from './components/pages/curved-furniture/curved-furniture.component';
 import { WebshopComponent } from './components/pages/webshop/webshop.component';
 import { authGuard } from './guards/auth.guard';
-import { CategoryManagerComponent } from './components/admin/category-manager/category-manager.component';
-import { OrdersListComponent } from './components/admin/orders/orders-list/orders-list.component';
-import { OrderDetailComponent } from './components/admin/orders/order-detail/order-detail.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -25,7 +22,7 @@ export const routes: Routes = [
     path: 'admin/login',
     loadComponent: () =>
       import('./components/admin/admin-login/admin-login.component').then(
-        (m) => m.AdminLoginComponent
+        (m) => m.AdminLoginComponent,
       ),
   },
   {
@@ -40,7 +37,7 @@ export const routes: Routes = [
     path: 'admin/gallery',
     loadComponent: () =>
       import('./components/admin/admin-gallery/admin-gallery.component').then(
-        (m) => m.AdminGalleryComponent
+        (m) => m.AdminGalleryComponent,
       ),
     canActivate: [authGuard],
   },

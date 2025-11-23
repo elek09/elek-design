@@ -46,15 +46,17 @@
             <mat-label>Név</mat-label>
             <input matInput formControlName="name" placeholder="Név" (blur)="onFieldBlur('name')"
               [errorStateMatcher]="errorMatcher">
-            <mat-error *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Adj meg legalább 2
-              karaktert.</mat-error>
+            @if (form.get('name')?.touched && form.get('name')?.invalid) {
+            <mat-error>Adj meg legalább 2 karaktert.</mat-error>
+            }
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Email</mat-label>
             <input matInput formControlName="email" placeholder="Email" type="email" (blur)="onFieldBlur('email')"
               [errorStateMatcher]="errorMatcher">
-            <mat-error *ngIf="form.get('email')?.touched && form.get('email')?.invalid">Érvényes email címet adj
-              meg.</mat-error>
+            @if (form.get('email')?.touched && form.get('email')?.invalid) {
+            <mat-error>Érvényes email címet adj meg.</mat-error>
+            }
           </mat-form-field>
         </div>
         <div class="form-row">
@@ -62,8 +64,9 @@
             <mat-label>Tárgy</mat-label>
             <input matInput formControlName="subject" placeholder="Tárgy" (blur)="onFieldBlur('subject')"
               [errorStateMatcher]="errorMatcher">
-            <mat-error *ngIf="form.get('subject')?.touched && form.get('subject')?.invalid">Legalább 3
-              karakter.</mat-error>
+            @if (form.get('subject')?.touched && form.get('subject')?.invalid) {
+            <mat-error>Legalább 3 karakter.</mat-error>
+            }
           </mat-form-field>
         </div>
         <div class="form-row">
@@ -71,8 +74,9 @@
             <mat-label>Üzenet</mat-label>
             <textarea matInput formControlName="message" rows="4" placeholder="Üzenet..."
               (blur)="onFieldBlur('message')" [errorStateMatcher]="errorMatcher"></textarea>
-            <mat-error *ngIf="form.get('message')?.touched && form.get('message')?.invalid">Legalább 10 karakter
-              legyen.</mat-error>
+            @if (form.get('message')?.touched && form.get('message')?.invalid) {
+            <mat-error>Legalább 10 karakter legyen.</mat-error>
+            }
           </mat-form-field>
         </div>
         <div class="actions">
@@ -80,9 +84,11 @@
             {{ sending ? 'Küldés...' : 'Küldés' }}
           </button>
         </div>
-        <div *ngIf="sent" style="text-align:center; margin-top:8px; color:#4caf50; font-weight:500;">
+        @if (sent) {
+        <div style="text-align:center; margin-top:8px; color:#4caf50; font-weight:500;">
           Üzenet sikeresen elküldve.
         </div>
+        }
       </form>
 
     </div>

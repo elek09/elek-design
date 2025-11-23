@@ -1,11 +1,11 @@
 export type OrderStatus = 'new' | 'accepted' | 'rejected';
 export type OrderKind = 'order' | 'quote';
 
-export type OrderItemOptions = {
+export interface OrderItemOptions {
   hardware_type?: string;
   color_scheme?: string;
-  [key: string]: any;
-};
+  [key: string]: string | undefined;
+}
 
 export interface OrderItem {
   id: number;

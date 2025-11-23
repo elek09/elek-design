@@ -1,5 +1,5 @@
 // CORRECTED src/app/app.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/layout/header/header.component';
 import { FooterComponent } from './components/layout/footer/footer.component';
@@ -10,20 +10,24 @@ import { FooterComponent } from './components/layout/footer/footer.component';
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
     <div class="app-shell">
-      @if (!isAdmin) { <app-header></app-header> }
+      @if (!isAdmin) {
+        <app-header></app-header>
+      }
       <main class="app-content">
         <router-outlet></router-outlet>
       </main>
-      @if (!isAdmin) { <app-footer></app-footer> }
+      @if (!isAdmin) {
+        <app-footer></app-footer>
+      }
     </div>
   `,
   styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit {
+  private router = inject(Router);
+
   title = 'Elek Design';
   isAdmin = false;
-
-  constructor(private router: Router) {}
 
   ngOnInit(): void {
     const setIsAdmin = () =>
@@ -32,8 +36,7 @@ export class AppComponent implements OnInit {
     this.router.events.subscribe((e) => {
       if (e instanceof NavigationEnd) {
         setIsAdmin();
-        const hash =
-          typeof window !== 'undefined' ? (window as any).location?.hash : '';
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
         if (hash) {
           // allow router to scroll first
           setTimeout(() => {

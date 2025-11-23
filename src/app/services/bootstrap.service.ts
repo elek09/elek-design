@@ -20,7 +20,7 @@ import { Slide } from '../models/slide.model';
 import { getOrigin, resolveToAbsolute } from '../utils/url.utils';
 
 // Backend bootstrap response shape
-type GalleryItemResource = {
+interface GalleryItemResource {
   id: string | number;
   title?: string;
   slug?: string;
@@ -32,16 +32,16 @@ type GalleryItemResource = {
   order?: number | null;
   is_featured?: boolean;
   is_active?: boolean;
-};
+}
 
-type BootstrapPayload = {
+interface BootstrapPayload {
   header?: {
     items?: HeaderNavItem[];
     logoUrl?: string;
   };
   categories?: Category[];
   featured_gallery?: GalleryItemResource[];
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class BootstrapService {
@@ -63,18 +63,18 @@ export class BootstrapService {
               (res: any) =>
                 (res && typeof res === 'object' && 'data' in res
                   ? res.data
-                  : res) as BootstrapPayload
+                  : res) as BootstrapPayload,
             ),
-            catchError(() => of<BootstrapPayload>({}))
-          )
-      )
+            catchError(() => of<BootstrapPayload>({})),
+          ),
+      ),
     ),
-    shareReplay(1)
+    shareReplay(1),
   );
   /** Emits true while a refresh HTTP request is in-flight, else false. */
   readonly loading$: Observable<boolean> = merge(
     this.refresh$.pipe(map(() => true)),
-    this.data$.pipe(map(() => false))
+    this.data$.pipe(map(() => false)),
   ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
 
   getBootstrap$(): Observable<BootstrapPayload> {
@@ -96,7 +96,7 @@ export class BootstrapService {
           logoUrl: logo,
           items: d.header.items ?? [],
         } satisfies HeaderConfig;
-      })
+      }),
     );
   }
 
@@ -109,8 +109,8 @@ export class BootstrapService {
       map((d) =>
         (d.featured_gallery ?? [])
           .map((g) => this.toSlide(g))
-          .filter((s): s is Slide => !!s)
-      )
+          .filter((s): s is Slide => !!s),
+      ),
     );
   }
 

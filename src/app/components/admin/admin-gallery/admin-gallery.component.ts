@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,9 +10,8 @@ import {
   GallerySubCategory,
   GalleryCreateRequest,
 } from '../../../models/admin.models';
-import { ADMIN_API_BASE_URL, GALLERY_API_BASE_URL } from '../../../app.tokens';
-import { Subject } from 'rxjs';
 import { map, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 import { CategoryService } from '../../../services/category.service';
 import { Category } from '../../../models/category.model';
 import { MatButtonModule } from '@angular/material/button';
@@ -45,6 +44,12 @@ import { normalizeSubcategories } from '../../../utils/category.utils';
   styleUrls: ['./admin-gallery.component.scss'],
 })
 export class AdminGalleryComponent implements OnInit, OnDestroy {
+  private adminApiService = inject(AdminApiService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private categoryService = inject(CategoryService);
+
   galleryConfig: GalleryConfig | null = null;
   showUploadForm = false;
   uploadForm = {
@@ -58,28 +63,17 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   };
   isUploading = false;
   uploadError: string | null = null;
+  error: string | null = null;
+  isLoading = true;
 
   galleryItems: GalleryItem[] = [];
   filteredItems: GalleryItem[] = [];
-  isLoading = true;
-  error: string | null = null;
 
-  // Filtering and sorting
   selectedCategory: string | 'all' = 'all';
   selectedStatus: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
 
   private destroy$ = new Subject<void>();
-
-  constructor(
-    private adminApiService: AdminApiService,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private categoryService: CategoryService,
-    @Inject(ADMIN_API_BASE_URL) private adminApiBaseUrl: string,
-    @Inject(GALLERY_API_BASE_URL) private galleryApiBaseUrl: string
-  ) {}
 
   ngOnInit(): void {
     this.loadConfigAndItems();
@@ -92,41 +86,35 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   loadConfigAndItems(): void {
     this.isLoading = true;
-    // Build gallery config dynamically from CategoryService to reflect latest admin-managed categories
     this.categoryService
       .getCategories()
       .pipe(
         map((categories: Category[]) => this.buildGalleryConfig(categories)),
-        takeUntil(this.destroy$)
+        takeUntil(this.destroy$),
       )
       .subscribe({
         next: (config) => {
           this.galleryConfig = config;
-          // Initialize from query params if provided
           const qp = this.route.snapshot.queryParamMap;
           const main = qp.get('mainCategory') || qp.get('main') || '';
           const sub = qp.get('subCategory') || qp.get('sub') || '';
 
-          // Set main category
           const mainExists = !!this.galleryConfig.categories.find(
-            (c) => c.value === main
+            (c) => c.value === main,
           );
           this.uploadForm.mainCategory = mainExists
             ? main!
             : this.galleryConfig.categories[0]?.value || '';
 
-          // Initialize subcategory default first
           this.onMainCategoryChange();
 
-          // If subcategory in params and exists under selected main, set it
           const subExists = !!this.availableSubcategories.find(
-            (s) => s.value === sub
+            (s) => s.value === sub,
           );
           if (sub && subExists) {
             this.uploadForm.subCategory = sub;
           }
 
-          // If any param provided, open the upload form automatically
           if (mainExists || subExists) {
             this.showUploadForm = true;
           }
@@ -159,11 +147,9 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   get availableSubcategories(): GallerySubCategory[] {
     if (!this.galleryConfig) return [];
-
     const selectedMain = this.galleryConfig.categories.find(
-      (c) => c.value === this.uploadForm.mainCategory
+      (c) => c.value === this.uploadForm.mainCategory,
     );
-
     return selectedMain?.subcategories || [];
   }
 
@@ -175,7 +161,6 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   getCategoryLabel(categoryValue: string): string {
     if (!this.galleryConfig) return categoryValue;
-
     for (const category of this.galleryConfig.categories) {
       if (category.value === categoryValue) {
         return category.label;
@@ -197,7 +182,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success && response.data) {
           this.galleryItems = response.data;
-          this.onFilterChange(); // Use onFilterChange to apply filters
+          this.onFilterChange();
         }
         this.isLoading = false;
       },
@@ -210,50 +195,18 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
-    let items = [...this.galleryItems];
-
-    // Filter by status
-    if (this.selectedStatus !== 'all') {
-      const isActive = this.selectedStatus === 'active';
-      items = items.filter((item) => item.is_active === isActive);
-    }
-
-    // Filter by category
-    if (this.selectedCategory !== 'all') {
-      const selectedCatValue = this.selectedCategory;
-      const mainCategory = this.galleryConfig?.categories.find(
-        (c) => c.value === selectedCatValue
-      );
-
-      items = items.filter((item) => {
-        // Direct match
-        if (item.category === selectedCatValue) return true;
-
-        // Check if item's category is a subcategory of the selected main category
-        if (mainCategory && mainCategory.subcategories) {
-          return mainCategory.subcategories.some(
-            (sub) => sub.value === item.category
-          );
-        }
-
-        return false;
-      });
-    }
-
-    // Filter by search term
-    if (this.searchTerm.trim()) {
-      const searchTermLower = this.searchTerm.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.title.toLowerCase().includes(searchTermLower) ||
-          (item.description &&
-            item.description.toLowerCase().includes(searchTermLower))
-      );
-    }
-
-    this.filteredItems = items;
+    this.filteredItems = filterGalleryItems(
+      this.galleryItems,
+      this.galleryConfig,
+      this.selectedCategory,
+      this.selectedStatus,
+      this.searchTerm,
+    );
   }
 
+  trackById(_index: number, item: GalleryItem): number | undefined {
+    return item.id;
+  }
   toggleUploadForm(): void {
     this.showUploadForm = !this.showUploadForm;
     if (!this.showUploadForm) {
@@ -263,19 +216,17 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   onFileSelected(event: Event): void {
     const element = event.currentTarget as HTMLInputElement;
-    let fileList: FileList | null = element.files;
+    const fileList: FileList | null = element.files;
     if (fileList) {
       this.uploadForm.image = fileList[0];
     }
   }
 
   onUpload(): void {
-    // Basic client-side validation aligned with common backend rules
     if (!this.uploadForm.title.trim()) {
       this.uploadError = 'Please enter a title.';
       return;
     }
-    // Require a subcategory when available for the selected main category
     const subs = this.availableSubcategories;
     if (!this.uploadForm.mainCategory) {
       this.uploadError = 'Please select a main category.';
@@ -286,7 +237,6 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         'Please select a subcategory under the chosen main category.';
       return;
     }
-    // Validate the chosen subcategory actually belongs to the selected main category
     if (
       this.uploadForm.subCategory &&
       subs.length > 0 &&
@@ -306,7 +256,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
     const formValue = this.uploadForm;
     const categoryValue = formValue.subCategory || formValue.mainCategory;
-    const normalizedCategory = categoryValue; // already canonical from backend config
+    const normalizedCategory = categoryValue;
     const request: GalleryCreateRequest = {
       title: formValue.title.trim(),
       category: normalizedCategory,
@@ -319,7 +269,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     this.adminApiService.createGalleryItem(request).subscribe({
       next: (response) => {
         if (response.success) {
-          this.loadGalleryItems(); // Refresh the list
+          this.loadGalleryItems();
           this.resetUploadForm();
           this.showUploadForm = false;
         }
@@ -330,14 +280,13 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         if (error?.error) {
           console.error('Upload error details:', error.error);
         }
-        // Prefer detailed backend validation errors when present
         const backendErrors = error?.error?.errors;
         if (backendErrors && typeof backendErrors === 'object') {
           const messages = Object.entries(backendErrors)
             .flatMap(([field, errs]) =>
               Array.isArray(errs)
                 ? errs.map((e) => `${field}: ${e}`)
-                : [`${field}: ${String(errs)}`]
+                : [`${field}: ${String(errs)}`],
             )
             .join('\n');
           this.uploadError =
@@ -364,7 +313,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       is_featured: false,
     };
     this.uploadError = null;
-    this.onMainCategoryChange(); // To populate subcategories
+    this.onMainCategoryChange();
   }
 
   updateItemStatus(item: GalleryItem): void {
@@ -372,20 +321,19 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     this.adminApiService.updateGalleryItemStatus(item.id, newStatus).subscribe({
       next: (response) => {
         const updatedItem = response.data;
-
         if (updatedItem) {
           this.updateLocalItem(item.id, updatedItem);
         } else {
           this.handleUpdateError(
             item,
-            'Status update response did not contain gallery item data.'
+            'Status update response did not contain gallery item data.',
           );
         }
       },
       error: (err) => {
         this.handleUpdateError(
           item,
-          `Failed to update status for item "${item.title}". Please try again.`
+          `Failed to update status for item "${item.title}". Please try again.`,
         );
         console.error('Failed to update item status', err);
       },
@@ -402,16 +350,16 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         } else {
           this.handleUpdateError(
             item,
-            'Featured status update response did not contain gallery item data.'
+            'Featured status update response did not contain gallery item data.',
           );
         }
       },
       error: (err) => {
         this.handleUpdateError(
           item,
-          `Failed to update featured status for item "${item.title}". Please try again.`
+          `Failed to update featured status for item "${item.title}". Please try again.`,
         );
-        console.error('Failed to update featured status', err);
+        console.error('Failed to update item featured status', err);
       },
     });
   }
@@ -421,29 +369,23 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     if (index !== -1) {
       this.galleryItems[index] = updatedItem;
     }
-
-    const filteredIndex = this.filteredItems.findIndex((i) => i.id === id);
-    if (filteredIndex !== -1) {
-      this.filteredItems[filteredIndex] = updatedItem;
-    }
   }
 
   private handleUpdateError(item: GalleryItem, message: string): void {
     console.error(message);
     this.error = message;
-    // Optional: Revert UI changes if needed, though it's better to rely on the updated data from server
   }
 
   deleteItem(id: number): void {
     if (
       confirm(
-        'Are you sure you want to delete this item? This action cannot be undone.'
+        'Are you sure you want to delete this item? This action cannot be undone.',
       )
     ) {
       this.adminApiService.deleteGalleryItem(id).subscribe({
         next: (response) => {
           if (response.success) {
-            this.loadGalleryItems(); // Refresh the list
+            this.loadGalleryItems();
           }
         },
         error: (error) => {
@@ -467,4 +409,42 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
   }
+}
+
+// Pure filtering function kept outside the component class for easier unit testing and future migration to signals
+function filterGalleryItems(
+  items: GalleryItem[],
+  cfg: GalleryConfig | null,
+  selectedCategory: string | 'all',
+  selectedStatus: 'all' | 'active' | 'inactive',
+  searchTerm: string,
+): GalleryItem[] {
+  let out = [...items];
+
+  if (selectedStatus !== 'all') {
+    const isActive = selectedStatus === 'active';
+    out = out.filter((i) => i.is_active === isActive);
+  }
+
+  if (selectedCategory !== 'all' && cfg) {
+    const main = cfg.categories.find((c) => c.value === selectedCategory);
+    out = out.filter((item) => {
+      if (item.category === selectedCategory) return true;
+      if (main && main.subcategories) {
+        return main.subcategories.some((s) => s.value === item.category);
+      }
+      return false;
+    });
+  }
+
+  if (searchTerm.trim()) {
+    const lower = searchTerm.toLowerCase();
+    out = out.filter(
+      (i) =>
+        i.title.toLowerCase().includes(lower) ||
+        (i.description?.toLowerCase().includes(lower) ?? false),
+    );
+  }
+
+  return out;
 }

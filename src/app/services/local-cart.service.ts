@@ -42,7 +42,7 @@ export class LocalCartService {
         i.product.id === item.product.id &&
         (i.hardware_type || null) === (item.hardware_type || null) &&
         (i.color_scheme || null) === (item.color_scheme || null) &&
-        this.sameExtra(i.extra, item.extra)
+        this.sameExtra(i.extra, item.extra),
     );
     if (idx >= 0) {
       items[idx].quantity += item.quantity;

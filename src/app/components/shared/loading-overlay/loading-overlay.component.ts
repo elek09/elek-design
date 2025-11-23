@@ -14,5 +14,5 @@ export class LoadingOverlayComponent {
   @Input() label: string | null = null;
   // Optional logo above the spinner
   @Input() logoUrl: string | null | undefined = null;
-  @Input() logoAlt: string = 'Elek Design';
+  @Input() logoAlt = 'Elek Design';
 }

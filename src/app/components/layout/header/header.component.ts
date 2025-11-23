@@ -1,8 +1,8 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HeaderConfig } from '../../../models/header.model';
 import { HeaderService } from '../../../services/header.service';
 
@@ -15,9 +15,11 @@ import { HeaderService } from '../../../services/header.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
+  private headerService = inject(HeaderService);
+
   isMenuOpen = false;
   headerConfig$!: Observable<HeaderConfig>;
-  constructor(private headerService: HeaderService) {
+  constructor() {
     this.headerConfig$ = this.headerService.getHeaderConfig();
   }
 

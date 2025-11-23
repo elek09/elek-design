@@ -1,21 +1,31 @@
 import { Category } from '../models/category.model';
 
+export interface NormalizedSubcategory {
+  id: string;
+  name: string;
+  nav_order?: number;
+}
+
 export function normalizeSubcategories(
-  subs: Category['subcategories']
-): Array<{ id: string; name: string }> {
+  subs: Category['subcategories'],
+): NormalizedSubcategory[] {
   if (!Array.isArray(subs)) return [];
-  const arr = (subs as any[])
-    .map((s: any) => {
-      if (typeof s === 'string') return { id: s, name: s, nav_order: 0 } as any;
-      const name = s?.name ?? String(s?.id ?? '');
+  const mapped: NormalizedSubcategory[] = subs
+    .map((s) => {
+      if (typeof s === 'string') {
+        const id = String(s).trim();
+        return { id, name: s };
+      }
+      const name = s?.name ?? String(s?.id ?? '').trim();
       const id = String(s?.id ?? '').trim();
-      const nav_order = typeof s?.nav_order === 'number' ? s.nav_order : 0;
-      return { id, name, nav_order } as any;
+      const nav_order =
+        typeof s?.nav_order === 'number' ? s.nav_order : undefined;
+      return { id, name, nav_order };
     })
     .sort(
-      (a: any, b: any) =>
+      (a, b) =>
         (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
-        (b.nav_order ?? Number.MAX_SAFE_INTEGER)
+        (b.nav_order ?? Number.MAX_SAFE_INTEGER),
     );
-  return arr.map(({ id, name }: any) => ({ id, name }));
+  return mapped.map(({ id, name, nav_order }) => ({ id, name, nav_order }));
 }

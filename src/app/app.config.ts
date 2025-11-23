@@ -33,7 +33,7 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({
         anchorScrolling: 'enabled',
         scrollPositionRestoration: 'enabled',
-      })
+      }),
     ),
     provideHttpClient(
       withFetch(),
@@ -41,7 +41,7 @@ export const appConfig: ApplicationConfig = {
         cookieName: 'XSRF-TOKEN',
         headerName: 'X-XSRF-TOKEN',
       }),
-      withInterceptors([authInterceptor])
+      withInterceptors([authInterceptor]),
     ),
     // Fetch CSRF cookie once at app startup for Sanctum
     {
@@ -52,7 +52,7 @@ export const appConfig: ApplicationConfig = {
         firstValueFrom(
           http
             .get(`${base}/sanctum/csrf-cookie`, { withCredentials: true })
-            .pipe(catchError(() => of(null)))
+            .pipe(catchError(() => of(null))),
         ),
     },
     {

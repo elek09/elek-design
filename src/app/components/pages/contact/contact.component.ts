@@ -11,8 +11,6 @@ import {
   FormBuilder,
   Validators,
   FormControl,
-  FormGroupDirective,
-  NgForm,
 } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { Observable } from 'rxjs';
@@ -95,7 +93,7 @@ export class ContactComponent implements OnInit {
 
   private composeErrorMessage(
     field: string,
-    errors: Record<string, any>
+    errors: Record<string, unknown>,
   ): string {
     if (errors['required']) {
       switch (field) {
@@ -110,8 +108,13 @@ export class ContactComponent implements OnInit {
       }
     }
     if (errors['email']) return 'Érvényes email címet adjon meg.';
-    if (errors['minlength']) {
-      const req = errors['minlength'].requiredLength;
+    if (
+      errors['minlength'] &&
+      typeof errors['minlength'] === 'object' &&
+      'requiredLength' in (errors['minlength'] as Record<string, unknown>)
+    ) {
+      const req = (errors['minlength'] as { requiredLength: number })
+        .requiredLength;
       return `Legalább ${req} karakter szükséges.`;
     }
     return 'Érvénytelen mező.';
@@ -119,10 +122,7 @@ export class ContactComponent implements OnInit {
 }
 
 class NoSubmitErrorStateMatcher implements ErrorStateMatcher {
-  isErrorState(
-    control: FormControl | null,
-    form: FormGroupDirective | NgForm | null
-  ): boolean {
+  isErrorState(control: FormControl | null): boolean {
     return !!(control && control.invalid && (control.dirty || control.touched));
   }
 }

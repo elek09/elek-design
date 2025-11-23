@@ -1,53 +1,53 @@
-export type CartItemOptions = {
+export interface CartItemOptions {
   hardware_type?: string;
   color_scheme?: string;
-};
+}
 
-export type CartItemRequest = {
+export interface CartItemRequest {
   product_id: number;
   quantity: number;
   options?: CartItemOptions;
-};
+}
 
-export type CheckoutRequest = {
+export interface CheckoutRequest {
   customer_name: string;
   customer_email: string;
   customer_phone?: string;
-};
+}
 
-export type OrderItem = {
+export interface OrderItem {
   product_id: number;
   quantity: number;
   options?: CartItemOptions;
-};
+}
 
-export type OrderRequest = {
+export interface OrderRequest {
   customer_name: string;
   customer_email: string;
   customer_phone?: string;
   is_quote: boolean;
   items: OrderItem[];
-};
+}
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success?: boolean;
   message?: string;
   data?: T;
 }
 
 // Public submit endpoint payloads
-export type SubmitOrderItem = {
+export interface SubmitOrderItem {
   product_id: number;
   quantity: number;
   options?: CartItemOptions;
   hardware_type?: string;
   color_scheme?: string;
-};
+}
 
-export type SubmitOrderRequest = {
+export interface SubmitOrderRequest {
   customer_name: string;
   customer_email: string;
   customer_phone?: string;
   is_quote?: boolean; // true for quote, omitted/false for order
   items: SubmitOrderItem[];
-};
+}

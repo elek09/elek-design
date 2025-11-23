@@ -1,23 +1,22 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminHeaderComponent } from '../../admin-header/admin-header.component';
 import { AdminOrdersService } from '../../../../services/admin-orders.service';
 import { Order, OrderStatus } from '../../../../models/order.model';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   ColDef,
-  GridApi,
-  GridReadyEvent,
   ValueFormatterParams,
   ICellRendererParams,
   Theme,
   themeQuartz,
+  GridReadyEvent,
 } from 'ag-grid-community';
 import { ActionCellRendererComponent } from './action-cell-renderer.component';
 
@@ -38,7 +37,7 @@ import { ActionCellRendererComponent } from './action-cell-renderer.component';
   templateUrl: './orders-list.component.html',
   styleUrl: './orders-list.component.scss',
 })
-export class OrdersListComponent implements OnInit, OnDestroy {
+export class OrdersListComponent implements OnInit {
   private readonly api = inject(AdminOrdersService);
   private readonly router = inject(Router);
   protected orders = signal<Order[]>([]);
@@ -107,7 +106,7 @@ export class OrdersListComponent implements OnInit, OnDestroy {
       pinned: 'right',
       suppressSizeToFit: true,
       cellClass: 'action-cell',
-      cellRenderer: ActionCellRendererComponent as any,
+      cellRenderer: ActionCellRendererComponent as unknown,
     },
   ];
 
@@ -125,18 +124,21 @@ export class OrdersListComponent implements OnInit, OnDestroy {
     });
   }
 
+  onGridReady(event: GridReadyEvent): void {
+    // Ensure initial data sizing after grid API available
+    this.updateRowData();
+    // Optional: fit columns to available width
+    event.api.sizeColumnsToFit();
+  }
+
   onStatusChange(value: 'all' | OrderStatus) {
     this.filterStatus.set(value);
     this.updateRowData();
   }
-
-  onGridReady(e: GridReadyEvent) {}
 
   private updateRowData() {
     const s = this.filterStatus();
     const arr = this.orders();
     this.rowData = s === 'all' ? arr : arr.filter((o) => o.status === s);
   }
-
-  ngOnDestroy(): void {}
 }

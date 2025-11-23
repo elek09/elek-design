@@ -20,7 +20,7 @@ export class ProductService {
     return this.http.get<ApiListResponse<Product> | Product[]>(url).pipe(
       map((resp) => (Array.isArray(resp) ? resp : resp.data || [])),
       catchError(() => of<Product[]>([])),
-      shareReplay(1)
+      shareReplay(1),
     );
   }
 
@@ -29,9 +29,9 @@ export class ProductService {
     return this.http.get<ApiItemResponse<Product> | Product>(url).pipe(
       map(
         (resp) =>
-          (resp as ApiItemResponse<Product>)?.data ?? (resp as Product) ?? null
+          (resp as ApiItemResponse<Product>)?.data ?? (resp as Product) ?? null,
       ),
-      catchError(() => of<Product | null>(null))
+      catchError(() => of<Product | null>(null)),
     );
   }
 

@@ -16,7 +16,9 @@
             <ul cdkDropList (cdkDropListDropped)="dropCategory($event)">
                 @for (category of categories; track trackByCategory($index, category); let i = $index) {
                 <li cdkDrag>
-                    <div class="category-row" (click)="selectCategory(category)" cdkDragHandle>
+                    <div class="category-row" (click)="selectCategory(category)" cdkDragHandle role="button"
+                        tabindex="0" (keydown.enter)="selectCategory(category)"
+                        (keydown.space)="selectCategory(category)">
                         <mat-icon class="handle" title="Drag to reorder">drag_indicator</mat-icon>
                         <span class="name">{{ i + 1 }}. {{ category.name }}</span>
                         <span class="type">({{ category.type }})</span>

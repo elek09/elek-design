@@ -18,7 +18,7 @@ export class ContactService {
   private readonly apiV1 = joinUrl(this.base, '/api/v1');
 
   sendMessage(
-    payload: ContactMessagePayload
+    payload: ContactMessagePayload,
   ): Observable<{ success: boolean }> {
     const url = joinUrl(this.apiV1, '/contact');
     return this.http.post<{ success: boolean }>(url, payload);

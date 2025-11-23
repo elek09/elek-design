@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { CommonModule } from '@angular/common';
 import {
@@ -6,8 +6,6 @@ import {
   FormBuilder,
   Validators,
   FormControl,
-  FormGroupDirective,
-  NgForm,
 } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -99,7 +97,7 @@ export class WebshopComponent implements OnInit {
           hardware_type: i.hardware_type || undefined,
           color_scheme: i.color_scheme || undefined,
           extra: i.extra || {},
-        }))
+        })),
       );
     }
     this.productsApi.getProducts$().subscribe({
@@ -184,7 +182,7 @@ export class WebshopComponent implements OnInit {
       quantity: number;
       hardware_type?: string | null;
       color_scheme?: string | null;
-    }>
+    }>,
   ) {
     this.selections.update((curr) => ({
       ...curr,
@@ -268,7 +266,7 @@ export class WebshopComponent implements OnInit {
       next: () => {
         this.toastr.success(
           'Árajánlat kérés elküldve. Email elküldve.',
-          'Siker'
+          'Siker',
         );
         this.cartItems.set([]);
         this.localCart.clear();
@@ -279,7 +277,7 @@ export class WebshopComponent implements OnInit {
       error: () =>
         this.toastr.error(
           'Nem sikerült elküldeni az árajánlat kérést.',
-          'Hiba'
+          'Hiba',
         ),
     });
   }
@@ -296,7 +294,7 @@ export class WebshopComponent implements OnInit {
 
   private composeCheckoutError(
     field: string,
-    errors: Record<string, any>
+    errors: Record<string, any>,
   ): string {
     if (errors['required']) {
       switch (field) {
@@ -326,7 +324,7 @@ export class WebshopComponent implements OnInit {
   }
 
   protected extraOptionGroups(
-    p: Product
+    p: Product,
   ): { key: string; label: string; values: string[] }[] {
     const groups: { key: string; label: string; values: string[] }[] = [];
     const opts = p.options || ({} as any);
@@ -349,10 +347,7 @@ export class WebshopComponent implements OnInit {
 }
 
 class NoSubmitErrorStateMatcher implements ErrorStateMatcher {
-  isErrorState(
-    control: FormControl | null,
-    form: FormGroupDirective | NgForm | null
-  ): boolean {
+  isErrorState(control: FormControl | null): boolean {
     return !!(control && control.invalid && (control.dirty || control.touched));
   }
 }

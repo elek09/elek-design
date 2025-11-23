@@ -83,7 +83,7 @@ export class OrderDetailComponent implements OnInit {
           quantity: [it.quantity, [Validators.required, Validators.min(1)]],
           unit_price: [it.unit_price ?? null],
           options: [{ value: this.renderOptions(it), disabled: true }],
-        })
+        }),
       );
     }
   }
@@ -107,21 +107,29 @@ export class OrderDetailComponent implements OnInit {
       .updateOrder(o.id, {
         status: (value.status as OrderStatus) || undefined,
         admin_note: value.admin_note || undefined,
-        items: (value.items || []).map((i: any) => ({
-          id: Number(i.id),
-          quantity:
-            i.quantity != null && i.quantity !== ''
-              ? Number(i.quantity)
-              : undefined,
-          unit_price:
-            i.unit_price != null && i.unit_price !== ''
-              ? Number(i.unit_price)
-              : undefined,
-        })),
+        items: (value.items || []).map((raw) => {
+          const i = raw as {
+            id: unknown;
+            quantity?: unknown;
+            unit_price?: unknown;
+          };
+          return {
+            id: Number(i.id),
+            quantity:
+              i.quantity != null && i.quantity !== ''
+                ? Number(i.quantity)
+                : undefined,
+            unit_price:
+              i.unit_price != null && i.unit_price !== ''
+                ? Number(i.unit_price)
+                : undefined,
+          };
+        }),
       })
       .subscribe({
         next: (resp) => {
-          const updated = (resp as any).data ?? (resp as any);
+          const updated: Order =
+            (resp as { data?: Order }).data ?? (resp as unknown as Order);
           this.order.set(updated);
           this.patchForm(updated);
           this.saving.set(false);
@@ -139,7 +147,8 @@ export class OrderDetailComponent implements OnInit {
     if (!o) return;
     this.api.updateStatus(o.id, status).subscribe({
       next: (resp) => {
-        const updated = (resp as any).data ?? (resp as any);
+        const updated: Order =
+          (resp as { data?: Order }).data ?? (resp as unknown as Order);
         this.order.set(updated);
         this.form.patchValue({ status: updated.status });
         this.snack.open('Státusz frissítve', 'OK', { duration: 2000 });
@@ -167,7 +176,8 @@ export class OrderDetailComponent implements OnInit {
       this.saving.set(true);
       saveNote$.subscribe({
         next: (resp) => {
-          const updated = (resp as any).data ?? (resp as any);
+          const updated: Order =
+            (resp as { data?: Order }).data ?? (resp as unknown as Order);
           this.order.set(updated);
           this.form.patchValue({
             admin_note: updated.admin_note || updated.note || '',

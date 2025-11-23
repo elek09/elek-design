@@ -8,9 +8,8 @@ describe('WallCladdingComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [WallCladdingComponent]
-    })
-    .compileComponents();
+      imports: [WallCladdingComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(WallCladdingComponent);
     component = fixture.componentInstance;

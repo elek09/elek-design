@@ -15,10 +15,10 @@ export class HeaderService {
           (cfg as HeaderConfig) ?? {
             logoUrl: '',
             items: [],
-          }
-        )
+          },
+        ),
       ),
-      shareReplay(1)
+      shareReplay(1),
     );
 
   getHeaderConfig(): Observable<HeaderConfig> {
@@ -44,11 +44,11 @@ export class HeaderService {
     });
 
     const logoItem = mappedItems.find(
-      (i: any) => i?.is_logo || i?.id === 'logo'
+      (i: any) => i?.is_logo || i?.id === 'logo',
     );
     const logoUrl = (logoItem?.image_url ?? '').toString().trim();
     const items = mappedItems.filter(
-      (i: any) => !(i?.is_logo || i?.id === 'logo')
+      (i: any) => !(i?.is_logo || i?.id === 'logo'),
     );
     return { ...cfg, logoUrl, items };
   }

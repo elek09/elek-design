@@ -33,8 +33,8 @@ export class CategorySectionComponent {
 
   // Normalize subcategories so template bindings are safe
   normalizeSubcategories(
-    subs: Array<any> | undefined | null
-  ): Array<{ id: string; name: string }> {
+    subs: any[] | undefined | null,
+  ): { id: string; name: string }[] {
     if (!Array.isArray(subs)) return [];
     return subs.map((s: any) => {
       if (typeof s === 'string') {

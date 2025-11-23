@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams } from 'ag-grid-community';
+import { OrderStatus } from '../../../../models/order.model';
 import { AdminOrdersService } from '../../../../services/admin-orders.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -52,42 +53,42 @@ export class ActionCellRendererComponent implements ICellRendererAngularComp {
   private readonly apiSvc = inject(AdminOrdersService);
   private readonly snack = inject(MatSnackBar);
 
-  params!: ICellRendererParams & { data: any };
-  orderId!: number;
-  status: 'new' | 'accepted' | 'rejected' = 'new';
-  kind: 'quote' = 'quote';
+  private params!: ICellRendererParams & {
+    data: { id: number; status: OrderStatus };
+  };
+  orderId = 0;
+  status: OrderStatus = 'new';
   saving = false;
 
   agInit(params: ICellRendererParams): void {
-    this.params = params as any;
-    this.orderId = (this.params.data?.id as number) ?? 0;
-    this.status = this.params.data?.status ?? 'new';
-    this.kind = 'quote';
+    this.assignParams(params);
   }
 
   refresh(params: ICellRendererParams): boolean {
-    this.params = params as any;
-    this.orderId = (this.params.data?.id as number) ?? 0;
-    this.status = this.params.data?.status ?? 'new';
-    this.kind = 'quote';
+    this.assignParams(params);
     return true;
   }
 
-  private reloadGrid() {
-    const ctx: any = this.params.context;
-    if (ctx && typeof ctx.reload === 'function') ctx.reload();
+  private assignParams(params: ICellRendererParams): void {
+    this.params = params as ICellRendererParams & {
+      data: { id: number; status: OrderStatus };
+    };
+    this.orderId = Number(this.params.data?.id) || 0;
+    this.status = (this.params.data?.status as OrderStatus) || 'new';
+  }
+
+  private reloadGrid(): void {
+    const ctx = this.params.context as { reload?: () => void } | undefined;
+    if (ctx?.reload) ctx.reload();
     else this.params.api?.refreshCells({ force: true });
   }
 
-  onEdit() {
-    // Let the parent handle routing via context if provided
-    const ctx: any = this.params.context;
-    if (ctx && typeof ctx.onEdit === 'function') {
-      ctx.onEdit(this.orderId);
-    } else {
-      // Fallback: navigate using location (kept simple to avoid router injection here)
-      window.location.hash = `#/admin/orders/${this.orderId}`;
-    }
+  onEdit(): void {
+    const ctx = this.params.context as
+      | { onEdit?: (id: number) => void }
+      | undefined;
+    if (ctx?.onEdit) ctx.onEdit(this.orderId);
+    else window.location.hash = `#/admin/orders/${this.orderId}`;
   }
 
   onAccept() {

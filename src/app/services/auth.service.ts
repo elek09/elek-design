@@ -25,11 +25,11 @@ export class AuthService {
   private readonly USER_KEY = 'admin_user';
 
   private currentUserSubject = new BehaviorSubject<User | null>(
-    this.getUserFromStorage()
+    this.getUserFromStorage(),
   );
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor() {}
+  // Removed empty constructor (not needed with inject()).
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
     // 1) Get CSRF cookie, 2) POST login using cookie-based session
@@ -42,8 +42,8 @@ export class AuthService {
           this.http.post<LoginResponse>(
             `${this.apiBase}/api/v1/auth/login`,
             credentials,
-            { withCredentials: true }
-          )
+            { withCredentials: true },
+          ),
         ),
         tap((response: LoginResponse) => {
           if (response.success && response.user) {
@@ -51,7 +51,7 @@ export class AuthService {
             if (typeof window !== 'undefined') {
               localStorage.setItem(
                 this.USER_KEY,
-                JSON.stringify(response.user)
+                JSON.stringify(response.user),
               );
             }
           }
@@ -59,7 +59,7 @@ export class AuthService {
         catchError((error) => {
           console.error('Login error:', error);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -92,6 +92,17 @@ export class AuthService {
 
   getUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  // Called when backend returns 401 for a protected resource
+  handleUnauthorized(): void {
+    if (this.currentUserSubject.value) {
+      this.currentUserSubject.next(null);
+    }
+    this.clearSession();
+    if (this.router.url !== '/admin/login') {
+      this.router.navigate(['/admin/login']);
+    }
   }
 
   private clearSession(): void {

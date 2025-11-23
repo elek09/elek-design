@@ -171,7 +171,7 @@
     <div class="gallery-content">
         @if (filteredItems.length > 0) {
         <div class="gallery-grid">
-            @for (item of filteredItems; track item) {
+            @for (item of filteredItems; track item.id) {
             <div class="gallery-item">
                 <div class="item-image">
                     <img [src]="getImageUrl(item.image_path)" [alt]="item.title">

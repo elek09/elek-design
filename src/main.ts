@@ -12,5 +12,5 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 registerLocaleData(localeHu, 'hu-HU');
 
 bootstrapApplication(AppComponent, appConfig).catch((err) =>
-  console.error(err)
+  console.error(err),
 );

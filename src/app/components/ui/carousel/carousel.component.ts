@@ -23,15 +23,15 @@ import { MatIconModule } from '@angular/material/icon';
 export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
   // --- INPUTS: How we configure the carousel from the outside ---
   @Input() slides: Slide[] = [];
-  @Input() showManualControls: boolean = true;
-  @Input() autoPlay: boolean = false;
-  @Input() autoPlayInterval: number = 3000;
-  @Input() hasTextOverlay: boolean = false;
+  @Input() showManualControls = true;
+  @Input() autoPlay = false;
+  @Input() autoPlayInterval = 3000;
+  @Input() hasTextOverlay = false;
   @Output() slideChanged = new EventEmitter<string>();
 
   // --- INTERNAL STATE ---
   currentSlideIndex = 0;
-  transformValue: string = 'translateX(0px)';
+  transformValue = 'translateX(0px)';
   private intervalId?: number;
 
   // --- LIFECYCLE HOOKS ---
@@ -109,7 +109,7 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
     if (this.autoPlay && !this.intervalId) {
       this.intervalId = window.setInterval(
         () => this.nextSlide(),
-        this.autoPlayInterval
+        this.autoPlayInterval,
       );
     }
   }
