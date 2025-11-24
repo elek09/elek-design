@@ -22,16 +22,13 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  success: boolean;
-  user: User;
-  token?: string | null;
-}
+export type LoginResponse = ApiResponse<{ user: User }>;
 
-export interface ApiResponse<T = unknown> {
+export interface ApiResponse<T> {
   success: boolean;
-  message?: string;
-  data?: T;
+  status: number;
+  data: T | null;
+  errors: Record<string, string[]> | string[] | [];
 }
 
 export interface GalleryCreateRequest {

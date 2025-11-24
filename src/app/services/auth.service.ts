@@ -3,14 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import {
   BehaviorSubject,
   Observable,
-  tap,
   catchError,
   throwError,
-  switchMap,
   of,
+  map,
 } from 'rxjs';
 import { Router } from '@angular/router';
-import { LoginRequest, LoginResponse, User } from '../models/admin.models';
+import { LoginRequest, User, ApiResponse } from '../models/admin.models';
 import { ADMIN_API_BASE_URL, API_BASE_URL } from '../app.tokens';
 
 @Injectable({
@@ -19,7 +18,6 @@ import { ADMIN_API_BASE_URL, API_BASE_URL } from '../app.tokens';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  private readonly adminUrl = inject(ADMIN_API_BASE_URL);
   private readonly apiBase = inject(API_BASE_URL);
 
   private readonly USER_KEY = 'admin_user';
@@ -31,30 +29,22 @@ export class AuthService {
 
   // Removed empty constructor (not needed with inject()).
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
-    // 1) Get CSRF cookie, 2) POST login using cookie-based session
+  login(credentials: LoginRequest): Observable<User> {
     return this.http
-      .get<void>(`${this.apiBase}/sanctum/csrf-cookie`, {
-        withCredentials: true,
-      })
+      .post<
+        ApiResponse<{ user: User }>
+      >(`${this.apiBase}/api/v1/auth/login`, credentials, { withCredentials: true })
       .pipe(
-        switchMap(() =>
-          this.http.post<LoginResponse>(
-            `${this.apiBase}/api/v1/auth/login`,
-            credentials,
-            { withCredentials: true },
-          ),
-        ),
-        tap((response: LoginResponse) => {
-          if (response.success && response.user) {
-            this.currentUserSubject.next(response.user);
+        map((response) => {
+          const user = response.data?.user;
+          if (response.success && user) {
+            this.currentUserSubject.next(user);
             if (typeof window !== 'undefined') {
-              localStorage.setItem(
-                this.USER_KEY,
-                JSON.stringify(response.user),
-              );
+              localStorage.setItem(this.USER_KEY, JSON.stringify(user));
             }
+            return user;
           }
+          throw new Error('Login failed');
         }),
         catchError((error) => {
           console.error('Login error:', error);
@@ -88,6 +78,10 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.currentUserSubject.value;
+  }
+
+  isAdmin(): boolean {
+    return !!this.currentUserSubject.value?.admin;
   }
 
   getUser(): User | null {

@@ -60,23 +60,24 @@ export class AdminLoginComponent {
       const credentials = this.loginForm.value;
 
       this.authService.login(credentials).subscribe({
-        next: (response) => {
-          if (response.success) {
+        next: (user) => {
+          if (user) {
             this.router.navigate(['/admin/dashboard']).then((success) => {
               if (!success) {
                 console.error('Navigation failed');
-                this.errorMessage = 'Login successful but navigation failed';
+                this.errorMessage =
+                  'Belépés sikeres, de az átirányítás nem sikerült.';
               }
             });
           } else {
-            this.errorMessage = 'Login failed. Please check your credentials.';
+            this.errorMessage = 'Sikertelen belépés. Ellenőrizd az adatokat.';
           }
           this.isLoading = false;
         },
         error: (error) => {
           console.error('Login error:', error);
           this.errorMessage =
-            error.error?.message || 'Login failed. Please try again.';
+            error.error?.message || 'Belépés sikertelen. Próbáld újra.';
           this.isLoading = false;
         },
       });

@@ -128,9 +128,11 @@ export class AdminApiService {
       );
   }
 
-  deleteGalleryItem(id: number): Observable<ApiResponse> {
+  deleteGalleryItem(id: number): Observable<ApiResponse<{ message?: string }>> {
     return this.http
-      .delete<ApiResponse>(`${this.adminApiUrl}/gallery/${id}`)
+      .delete<
+        ApiResponse<{ message?: string }>
+      >(`${this.adminApiUrl}/gallery/${id}`)
       .pipe(
         tap(() => this.refresh$.next()), // Refresh the cache
         catchError(this.handleError),
