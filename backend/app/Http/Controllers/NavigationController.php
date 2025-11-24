@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers; 
 
 use App\Models\Category;
 use App\Services\NavigationService;
@@ -30,7 +30,7 @@ class NavigationController extends Controller
      */
     public function getCategories()
     {
-        $cats = Category::navOrdered()->get();
+        $cats = Category::navOrdered()->with('subcategories')->get();
         return \App\Http\Resources\CategoryResource::collection($cats);
     }
 }

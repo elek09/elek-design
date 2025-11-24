@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\Admin\SubcategoryController as AdminSubcategoryController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Models\Category;
@@ -78,6 +79,8 @@ Route::prefix('v1')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::middleware(['auth:sanctum', 'admin.api'])->group(function () {
             Route::get('me', [AdminAuthController::class, 'me']);
+            // Admin bootstrap (supports cache bypass via ?fresh=1)
+            Route::get('bootstrap', \App\Http\Controllers\BootstrapController::class);
 
             // Page management
             Route::post('pages', [PageController::class, 'store']);
@@ -98,9 +101,12 @@ Route::prefix('v1')->group(function () {
             Route::put('orders/{order}', [OrderController::class, 'updateAdmin']);
             Route::post('orders/{order}/confirm', [OrderController::class, 'sendConfirmation']);
 
-            // Category management (include index for admin UI)
-            Route::get('categories', [AdminCategoryController::class, 'index']);
+            // Category management
             Route::apiResource('categories', AdminCategoryController::class)->except(['create', 'edit']);
+            Route::post('categories/reorder', [AdminCategoryController::class, 'reorder']);
+            // Subcategory management
+            Route::apiResource('subcategories', AdminSubcategoryController::class)->except(['create','edit']);
+            Route::post('subcategories/reorder', [AdminSubcategoryController::class, 'reorder']);
         });
     });
 });

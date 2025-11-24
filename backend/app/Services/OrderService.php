@@ -20,11 +20,11 @@ class OrderService
         if ($overrideTotal !== null) {
             $order->total = $overrideTotal;
         } else {
-            $sum = $order->items()->get()->reduce(function ($carry, $i) {
-                $unit = is_null($i->unit_price) ? 0.0 : (float) $i->unit_price;
-                return $carry + $unit * (int) $i->quantity;
-            }, 0.0);
-            $order->total = $sum;
+            // Perform aggregation directly in SQL (more efficient for large item counts)
+            $sum = $order->items()
+                ->selectRaw('COALESCE(SUM(COALESCE(unit_price,0) * quantity),0) as agg_total')
+                ->value('agg_total');
+            $order->total = (float) $sum;
         }
         $order->save();
         return $order;
@@ -69,34 +69,56 @@ class OrderService
     public function createFromData(array $data, ?int $userId = null): Order
     {
         $isQuote = (bool)($data['is_quote'] ?? false);
+        // Normalize: if user provided, prefer snapshot from related user; otherwise require provided fields.
+        $customerName = $data['customer_name'] ?? null;
+        $customerEmail = $data['customer_email'] ?? null;
+        $customerPhone = $data['customer_phone'] ?? null;
+        if ($userId) {
+            $u = \App\Models\User::find($userId);
+            if ($u) {
+                $customerName = $u->name;
+                $customerEmail = $u->email;
+            }
+        }
         $order = Order::create([
             'user_id' => $userId,
             'kind' => $isQuote ? 'quote' : 'order',
             'status' => 'new',
-            'customer_name' => $data['customer_name'],
-            'customer_email' => $data['customer_email'],
-            'customer_phone' => $data['customer_phone'] ?? null,
+            'customer_name' => $customerName,
+            'customer_email' => $customerEmail,
+            'customer_phone' => $customerPhone,
             'total' => $isQuote ? null : 0,
         ]);
 
-        $total = 0.0;
+        // Bulk load products to avoid N+1 queries
+        $productIds = collect($data['items'])->pluck('product_id')->filter()->unique()->values();
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+        $prepared = [];
+        $runningTotal = 0.0;
         foreach ($data['items'] as $it) {
-            $p = Product::find($it['product_id']);
-            if (!$p) { continue; }
-            $qty = (int) $it['quantity'];
+            $pid = $it['product_id'] ?? null;
+            if (!$pid || !isset($products[$pid])) { continue; }
+            $p = $products[$pid];
+            $qty = max(1, (int) $it['quantity']);
             $unit = (float) ($p->price ?? 0);
-            $order->items()->create([
+            $prepared[] = [
                 'product_id' => $p->id,
                 'quantity' => $qty,
                 'unit_price' => $unit,
                 'options' => $it['options'] ?? [],
-            ]);
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
             if (!$isQuote) {
-                $total += $qty * $unit;
+                $runningTotal += $qty * $unit;
             }
         }
+        if (count($prepared)) {
+            $order->items()->insert($prepared); // single bulk insert
+        }
         if (!$isQuote) {
-            $order->update(['total' => $total]);
+            $order->update(['total' => $runningTotal]);
         }
 
         return $order->fresh('items.product');

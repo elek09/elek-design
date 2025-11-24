@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGalleryItemRequest;
 use App\Models\GalleryItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -16,48 +17,49 @@ class GalleryController extends Controller
 {
     public function index()
     {
-        $items = GalleryItem::latest()->paginate(20);
-        
-        return response()->json([
-            'success' => true,
-            'data' => $items->items(),
-            'pagination' => [
-                'current_page' => $items->currentPage(),
-                'last_page' => $items->lastPage(),
-                'per_page' => $items->perPage(),
-                'total' => $items->total()
-            ]
-        ]);
+        $items = GalleryItem::with(['category','subcategory'])->latest()->paginate(20);
+        return \App\Http\Resources\GalleryItemResource::collection($items)
+            ->additional([
+                'success' => true,
+                'pagination' => [
+                    'current_page' => $items->currentPage(),
+                    'last_page' => $items->lastPage(),
+                    'per_page' => $items->perPage(),
+                    'total' => $items->total(),
+                ],
+            ]);
     }
 
     public function store(StoreGalleryItemRequest $request)
     {
         try {
             $validated = $request->validated();
+            $cat = isset($validated['category_id']) ? Category::find($validated['category_id']) : null;
+            $sub = isset($validated['subcategory_id']) ? \App\Models\Subcategory::find($validated['subcategory_id']) : null;
 
             // Accept either 'image' or 'file' input name
             $hasUpload = $request->hasFile('image') || $request->hasFile('file');
             if ($hasUpload) {
                 $image = $request->file('image') ?? $request->file('file');
-                $categorySlug = Str::slug($validated['category']);
+                $categorySlug = Str::slug($sub?->slug ?? $cat?->type ?? 'uncategorized');
                 $titleSlug = Str::slug($validated['title']);
                 $timestamp = now()->timestamp;
                 $extension = $image->getClientOriginalExtension();
-                
+
                 $filename = "{$titleSlug}-{$timestamp}.{$extension}";
                 $directory = "gallery/{$categorySlug}";
-                
+
                 $path = $image->storeAs($directory, $filename, 'public');
                 $validated['image_path'] = $path;
             }
 
-            $galleryItem = GalleryItem::create($validated);
+            $galleryItem = new GalleryItem($validated);
+            $galleryItem->save();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Gallery item created successfully',
-                'data' => $galleryItem->fresh()
-            ], 201);
+            // Invalidate bootstrap cache as featured list might change
+            Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
+
+            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category','subcategory']));
 
         } catch (\Exception $e) {
             return response()->json([
@@ -102,7 +104,8 @@ class GalleryController extends Controller
 
             $validated = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
-                'category' => ['sometimes', 'required', 'string', Rule::in($validCategories)],
+                'category_id' => ['sometimes','nullable','integer','exists:categories,id','required_without:subcategory_id'],
+                'subcategory_id' => ['sometimes','nullable','integer','exists:category_subcategories,id','required_without:category_id'],
                 'description' => 'nullable|string|max:1000',
                 'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'file' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -116,10 +119,11 @@ class GalleryController extends Controller
                 }
 
                 $image = $request->file('image') ?? $request->file('file');
-                $category = $validated['category'] ?? $galleryItem->category;
+                $cat = isset($validated['category_id']) ? Category::find($validated['category_id']) : null;
+                $sub = isset($validated['subcategory_id']) ? \App\Models\Subcategory::find($validated['subcategory_id']) : null;
+                $categorySlug = Str::slug($sub?->slug ?? $cat?->type ?? ($galleryItem->subcategory?->slug ?? $galleryItem->category?->type) ?? 'uncategorized');
                 $title = $validated['title'] ?? $galleryItem->title;
 
-                $categorySlug = Str::slug($category);
                 $titleSlug = Str::slug($title);
                 $timestamp = now()->timestamp;
                 $extension = $image->getClientOriginalExtension();
@@ -133,11 +137,10 @@ class GalleryController extends Controller
 
             $galleryItem->update($validated);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Gallery item updated successfully',
-                'data' => $galleryItem->fresh()
-            ]);
+            // Invalidate bootstrap cache as featured or active state might affect it
+            Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
+
+            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category','subcategory']));
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -163,6 +166,9 @@ class GalleryController extends Controller
 
         $galleryItem->delete();
 
+        // Invalidate bootstrap cache as featured list might change
+        Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
+
         return response()->json([
             'success' => true,
             'message' => 'Gallery item deleted successfully.'
@@ -176,6 +182,7 @@ class GalleryController extends Controller
         ]);
 
         $galleryItem->update(['is_active' => $validated['is_active']]);
+        Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
         
         return response()->json([
             'success' => true,
@@ -191,6 +198,7 @@ class GalleryController extends Controller
         ]);
 
         $galleryItem->update(['is_featured' => $validated['is_featured']]);
+        Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
         
         return response()->json([
             'success' => true,
@@ -206,20 +214,19 @@ class GalleryController extends Controller
     {
         // Build categories dynamically from DB for the admin UI
         $categories = [];
-        $dbCats = Category::orderBy('name')->get();
+        $dbCats = Category::with('subcategories')->orderBy('name')->get();
         foreach ($dbCats as $cat) {
             $entry = [
                 'label' => $cat->name,
                 'value' => $cat->type,
             ];
-            if (is_array($cat->subcategories) && count($cat->subcategories)) {
-                $entry['subcategories'] = collect($cat->subcategories)
-                    ->map(function ($s) {
-                        return [
-                            'label' => $s['name'] ?? $s['id'],
-                            'value' => $s['id'] ?? Str::slug($s['name'] ?? '')
-                        ];
-                    })->values()->all();
+            if ($cat->subcategories->count()) {
+                $entry['subcategories'] = $cat->subcategories->map(function ($s) {
+                    return [
+                        'label' => $s->name,
+                        'value' => $s->id,
+                    ];
+                })->values()->all();
             }
             $categories[] = $entry;
         }

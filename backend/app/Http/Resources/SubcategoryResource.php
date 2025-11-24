@@ -5,23 +5,19 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AdminCategoryResource extends JsonResource
+class SubcategoryResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     * Includes both id and _id for admin UI compatibility.
-     *
-     * @return array<string, mixed>
+     * @return array<string,mixed>
      */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-            '_id' => $this->id,
+            'category_id' => $this->category_id,
             'name' => $this->name,
-            'type' => $this->type,
+            'slug' => $this->slug,
             'nav_order' => $this->nav_order,
-            'subcategories' => $this->subcategories ?? [],
             'created_at' => optional($this->created_at)?->toISOString(),
             'updated_at' => optional($this->updated_at)?->toISOString(),
         ];

@@ -24,25 +24,16 @@ class StoreGalleryItemRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Build allowed categories dynamically from DB
-        $types = Category::query()->pluck('type')->all();
-        $subs = Category::query()
-            ->pluck('subcategories')
-            ->filter()
-            ->flatMap(function ($arr) {
-                return collect($arr)->pluck('id');
-            })->filter()->unique()->values()->all();
-        $validCategories = array_values(array_unique(array_merge($types, $subs, ['featured', 'egyeb'])));
-
         return [
-            'title' => 'required|string|max:255',
-            'category' => ['required', 'string', Rule::in($validCategories)],
-            'description' => 'nullable|string',
-            // Accept either 'image' or 'file' as the upload field name
-            'image' => 'required_without:file|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'file'  => 'required_without:image|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'is_active' => 'required|boolean',
-            'is_featured' => 'sometimes|boolean',
+            'title' => ['required','string','max:255'],
+            // Either a top-level category OR a subcategory must be provided
+            'category_id' => ['required_without:subcategory_id','nullable','integer','exists:categories,id'],
+            'subcategory_id' => ['required_without:category_id','nullable','integer','exists:category_subcategories,id'],
+            'description' => ['nullable','string'],
+            'image' => ['required_without:file','image','mimes:jpeg,png,jpg,gif,webp','max:2048'],
+            'file'  => ['required_without:image','image','mimes:jpeg,png,jpg,gif,webp','max:2048'],
+            'is_active' => ['required','boolean'],
+            'is_featured' => ['sometimes','boolean'],
         ];
     }
 }

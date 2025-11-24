@@ -33,9 +33,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AdminUserSeeder::class,
-            GalleryImageSeeder::class,
-            CategorySeeder::class,
-            ProductSeeder::class,
+            CategorySeeder::class,        // categories + subcategories first
+            ProductSeeder::class,         // products can reference categories
+            GalleryImageSeeder::class,    // needs categories/subcategories to resolve IDs
             OrderDemoSeeder::class,
         ]);
     }

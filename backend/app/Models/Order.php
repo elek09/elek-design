@@ -15,4 +15,18 @@ class Order extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    // Normalized accessors prefer user data when present
+    public function getEffectiveCustomerNameAttribute(): ?string
+    {
+        return $this->user?->name ?: $this->customer_name;
+    }
+    public function getEffectiveCustomerEmailAttribute(): ?string
+    {
+        return $this->user?->email ?: $this->customer_email;
+    }
+    public function getEffectiveCustomerPhoneAttribute(): ?string
+    {
+        return $this->customer_phone; // phone not stored on User currently
+    }
 }

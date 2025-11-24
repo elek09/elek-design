@@ -8,4 +8,9 @@ class Product extends Model
 {
     protected $fillable = ['name', 'slug', 'description', 'price', 'options', 'is_active'];
     protected $casts = ['options' => 'array', 'price' => 'decimal:2', 'is_active' => 'boolean'];
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

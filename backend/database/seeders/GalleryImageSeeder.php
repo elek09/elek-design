@@ -51,12 +51,12 @@ class GalleryImageSeeder extends Seeder
         foreach ($entries as $entry) {
             /** @var \App\Support\Gallery\ImportEntry $entry */
             $file = $entry->file;
-            $category = $entry->category;
+            $legacyCategory = $entry->category; // slug or subcategory slug
             $title = $entry->title;
             $order = (int) $entry->order;
             $is_featured = (bool) $entry->is_featured;
 
-            $categorySlug = Str::slug($category);
+            $categorySlug = Str::slug($legacyCategory);
             $titleSlug = Str::slug($title);
             $extension = $file->getExtension();
 
@@ -69,9 +69,17 @@ class GalleryImageSeeder extends Seeder
             Storage::disk('public')->makeDirectory($destinationDirectory);
             File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
 
+            // Resolve normalized category / subcategory IDs
+            $subcategory = \App\Models\Subcategory::where('slug', $legacyCategory)->first();
+            $categoryModel = null;
+            if (!$subcategory) {
+                $categoryModel = \App\Models\Category::where('type', $legacyCategory)->first();
+            }
+
             GalleryItem::create([
                 'title' => $title,
-                'category' => $category,
+                'category_id' => $subcategory ? $subcategory->category_id : ($categoryModel?->id),
+                'subcategory_id' => $subcategory?->id,
                 'description' => 'Automatikus leírás: ' . $title,
                 'image_path' => $newPath,
                 'is_active' => true,

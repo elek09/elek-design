@@ -8,11 +8,16 @@ class GalleryItem extends Model
 {
     protected $fillable = [
         'title',
-        'category',
+        'category_id',
+        'subcategory_id',
         'description',
         'image_path',
         'is_active',
         'is_featured',
+    ];
+
+    protected $appends = [
+        // No virtual category slug needed; category/subcategory embedded in resources
     ];
 
     protected $casts = [
@@ -32,4 +37,14 @@ class GalleryItem extends Model
     {
         return $query->where('is_featured', true);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+    public function subcategory()
+    {
+        return $this->belongsTo(Subcategory::class, 'subcategory_id');
+    }
+    // Accessor removed (legacy); slug derivation handled where needed via relations.
 }

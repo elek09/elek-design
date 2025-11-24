@@ -8,51 +8,25 @@ use Illuminate\Support\Str;
 
 class GalleryService
 {
-    /**
-     * Canonical, section-based query builder for gallery listing.
-     * - If $section is a main category type, include its direct items and all its subcategory ids.
-     * - Otherwise, fall back to exact category match.
-     */
-    public function queryBySection(string $section)
-    {
-        [$typeToSection, $subToType] = $this->buildCategoryMaps();
-
-        // Collect subcategory ids that belong to this section (if any)
-        $subIds = [];
-        foreach ($subToType as $subId => $parentType) {
-            if ($parentType === $section) {
-                $subIds[] = $subId;
-            }
-        }
-
-        $q = $this->queryActive();
-        if (isset($typeToSection[$section]) || count($subIds) > 0) {
-            // Section is a known main type (or has subs) -> include own and subs
-            return $q->where(function ($x) use ($section, $subIds) {
-                $x->orWhere('category', $section);
-                if (!empty($subIds)) {
-                    $x->orWhereIn('category', $subIds);
-                }
-            });
-        }
-
-        // Fallback: exact match to a plain category value
-        return $q->where('category', $section);
-    }
     public function mapItem(GalleryItem $item): array
     {
-        [$section, $subcategory] = $this->detectSectionAndSubcategory($item);
-        $slug = $this->makeRootSlug($item->title);
         $order = $this->parseOrderFromTitleOrPath($item->title, $item->image_path);
         [$url, $thumbUrl] = $this->buildUrls($item->image_path);
 
         return [
             'id' => $item->id,
             'title' => $item->title,
-            'slug' => $slug,
-            'section' => $section,
-            'subcategory' => $subcategory,
-            'category' => $item->category,
+            'category' => $item->category ? [
+                'id' => $item->category->id,
+                'type' => $item->category->type,
+                'name' => $item->category->name,
+            ] : null,
+            'subcategory' => $item->subcategory ? [
+                'id' => $item->subcategory->id,
+                'slug' => $item->subcategory->slug,
+                'name' => $item->subcategory->name,
+            ] : null,
+            'description' => $item->description,
             'url' => $url,
             'thumb_url' => $thumbUrl,
             'order' => $order,
@@ -63,38 +37,57 @@ class GalleryService
 
     public function queryActive()
     {
-        return GalleryItem::query()->where('is_active', true);
+        return GalleryItem::query()->where('is_active', true)->with(['category','subcategory']);
     }
 
-    private function makeRootSlug(string $title): string
+    /**
+     * Build a query for a given section identifier (top-level category type or subcategory slug).
+     * Falls back to empty result if no match.
+     */
+    public function queryBySection(string $section)
     {
-        $base = preg_replace('/\(\d+\)$/', '', $title);
-        $base = Str::ascii($base);
-        $base = strtolower($base);
-        $base = preg_replace('/[^a-z0-9]+/', '', $base);
-        return $base ?: 'item';
-    }
-
-    private function detectSectionAndSubcategory(GalleryItem $item): array
-    {
-        $category = (string) ($item->category ?? '');
-        [$typeToSection, $subToType] = $this->buildCategoryMaps();
-
-        if ($category !== '') {
-            if (isset($typeToSection[$category])) {
-                $section = $typeToSection[$category];
-                return [$section, null];
-            }
-            if (isset($subToType[$category])) {
-                $parentType = $subToType[$category];
-                $section = $typeToSection[$parentType] ?? $parentType;
-                return [$section, $category];
-            }
+        $section = trim($section);
+        if ($section === '') {
+            return GalleryItem::query()->whereRaw('1=0');
         }
 
-        // No fallback inference: if the category is not recognized, return nulls.
-        return [null, null];
+        // Try top-level category by type
+        $category = Category::where('type', $section)->first();
+        if ($category) {
+            return GalleryItem::query()
+                ->where('is_active', true)
+                ->where('category_id', $category->id)
+                ->with(['category','subcategory'])
+                ->orderByRaw('COALESCE((SELECT nav_order FROM category_subcategories WHERE category_subcategories.id = gallery_items.subcategory_id), 100000) ASC')
+                ->orderByDesc('created_at');
+        }
+
+        // Try subcategory by slug
+        $subcategory = \App\Models\Subcategory::where('slug', $section)->first();
+        if ($subcategory) {
+            return GalleryItem::query()
+                ->where('is_active', true)
+                ->where('subcategory_id', $subcategory->id)
+                ->with(['category','subcategory'])
+                ->orderByDesc('created_at');
+        }
+
+        // No match -> empty
+        return GalleryItem::query()->whereRaw('1=0');
     }
+
+    /**
+     * Map a collection of GalleryItem models using mapItem.
+     * @param \Illuminate\Support\Collection<int,GalleryItem> $collection
+     * @return array<int,array<string,mixed>>
+     */
+    public function mapItemCollection($collection): array
+    {
+        return $collection->map(fn($item) => $this->mapItem($item))->values()->all();
+    }
+
+    // Title-based slug not returned anymore; keep helper removed for clarity
+
 
     private function parseOrderFromTitleOrPath(?string $title, ?string $path): int
     {
@@ -117,24 +110,5 @@ class GalleryService
         return [$url, $thumb];
     }
 
-    private function buildCategoryMaps(): array
-    {
-        $typeToSection = [];
-        $subToType = [];
-
-        $cats = Category::all();
-        foreach ($cats as $cat) {
-            $type = (string) $cat->type;
-            // Keep Hungarian identifiers in API output: section equals the stored type
-            $typeToSection[$type] = $type;
-            if (is_array($cat->subcategories)) {
-                foreach ($cat->subcategories as $sub) {
-                    if (!empty($sub['id'])) {
-                        $subToType[(string) $sub['id']] = $type;
-                    }
-                }
-            }
-        }
-        return [$typeToSection, $subToType];
-    }
+    // Legacy mapping helpers removed after normalization
 }

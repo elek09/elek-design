@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use App\Models\Product;
 use App\Models\GalleryItem;
+use App\Models\Category;
+use App\Models\Subcategory;
 
 class DemoDataSeeder extends Seeder
 {
@@ -51,21 +53,31 @@ class DemoDataSeeder extends Seeder
                     ->replace(['-', '_'], ' ')
                     ->title();
 
+                // Attempt to map 'demo' to an existing category or create transient one
+                $cat = Category::firstOrCreate(
+                    ['type' => 'demo'],
+                    ['name' => 'Demo', 'type' => 'demo']
+                );
                 GalleryItem::updateOrCreate(
                     ['title' => $title],
                     [
-                        'category' => 'demo',
+                        'category_id' => $cat->id,
                         'description' => 'Minta kép',
                         'image_path' => $targetPath,
-                        'active' => true,
+                        'is_active' => true,
+                        'is_featured' => false,
                     ]
                 );
             }
         } else {
             // fallback egy darab demo rekordra (ha nincs mappa)
+            $cat = Category::firstOrCreate(
+                ['type' => 'demo'],
+                ['name' => 'Demo', 'type' => 'demo']
+            );
             GalleryItem::updateOrCreate(
                 ['title' => 'Mintakép'],
-                ['category' => 'demo', 'description' => 'Minta', 'image_path' => 'gallery/demo.jpg', 'active' => true]
+                ['category_id' => $cat->id, 'description' => 'Minta', 'image_path' => 'gallery/demo.jpg', 'is_active' => true, 'is_featured' => false]
             );
         }
     }

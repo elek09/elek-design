@@ -12,7 +12,7 @@ class NavigationService
      */
     public function buildHeaderItems(): array
     {
-        $categories = Category::navOrdered()->get();
+        $categories = Category::navOrdered()->with('subcategories')->get();
 
         $items = [];
 
@@ -29,7 +29,7 @@ class NavigationService
         foreach ($categories as $cat) {
             $type = (string) $cat->type;   // Hungarian identifier, pl. 'eletter'
             $label = (string) $cat->name;  // Megjelenített címke, pl. 'Élettér'
-            $hasSubs = is_array($cat->subcategories) && count($cat->subcategories) > 0;
+            $hasSubs = $cat->subcategories->count() > 0;
 
             // Ha vannak alkategóriák, maradjon a főoldali szekció (fragment)
             if ($hasSubs) {

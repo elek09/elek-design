@@ -12,12 +12,10 @@ class Category extends Model
     protected $fillable = [
         'name',
         'type',
-        'subcategories',
         'nav_order',
     ];
 
     protected $casts = [
-        'subcategories' => \App\Casts\SubcategoriesCast::class,
         'nav_order' => 'integer',
     ];
 
@@ -30,5 +28,10 @@ class Category extends Model
             ->orderByRaw('CASE WHEN nav_order IS NULL THEN 1 ELSE 0 END')
             ->orderBy('nav_order')
             ->orderBy('name');
+    }
+
+    public function subcategories()
+    {
+        return $this->hasMany(Subcategory::class)->navOrdered();
     }
 }

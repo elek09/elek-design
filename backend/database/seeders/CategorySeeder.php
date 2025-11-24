@@ -19,12 +19,12 @@ class CategorySeeder extends Seeder
                 'type' => 'eletter',
                 'nav_order' => 1,
                 'subcategories' => [
-                    ['id' => 'konyha', 'name' => 'Konyha', 'nav_order' => 1],
-                    ['id' => 'nappali', 'name' => 'Nappali', 'nav_order' => 2],
-                    ['id' => 'furdoszoba', 'name' => 'Fürdőszoba', 'nav_order' => 3],
-                    ['id' => 'haloszoba', 'name' => 'Hálószoba', 'nav_order' => 4],
-                    ['id' => 'gardrob', 'name' => 'Gardrób', 'nav_order' => 5],
-                    ['id' => 'lepcso', 'name' => 'Lépcső', 'nav_order' => 6],
+                    ['slug' => 'konyha', 'name' => 'Konyha', 'nav_order' => 1],
+                    ['slug' => 'nappali', 'name' => 'Nappali', 'nav_order' => 2],
+                    ['slug' => 'furdoszoba', 'name' => 'Fürdőszoba', 'nav_order' => 3],
+                    ['slug' => 'haloszoba', 'name' => 'Hálószoba', 'nav_order' => 4],
+                    ['slug' => 'gardrob', 'name' => 'Gardrób', 'nav_order' => 5],
+                    ['slug' => 'lepcso', 'name' => 'Lépcső', 'nav_order' => 6],
                 ]
             ],
             [
@@ -32,9 +32,9 @@ class CategorySeeder extends Seeder
                 'type' => 'uzletter',
                 'nav_order' => 2,
                 'subcategories' => [
-                    ['id' => 'iroda-berendezes', 'name' => 'Iroda Berendezés', 'nav_order' => 1],
-                    ['id' => 'uzlet-berendezes', 'name' => 'Üzlet Berendezés', 'nav_order' => 2],
-                    ['id' => 'kiallitasi-butorok', 'name' => 'Kiállítási Bútorok', 'nav_order' => 3],
+                    ['slug' => 'iroda-berendezes', 'name' => 'Iroda Berendezés', 'nav_order' => 1],
+                    ['slug' => 'uzlet-berendezes', 'name' => 'Üzlet Berendezés', 'nav_order' => 2],
+                    ['slug' => 'kiallitasi-butorok', 'name' => 'Kiállítási Bútorok', 'nav_order' => 3],
                 ]
             ],
             [
@@ -52,10 +52,27 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $categoryData) {
-            Category::updateOrCreate(
+            $subs = $categoryData['subcategories'] ?? [];
+            $record = Category::updateOrCreate(
                 ['type' => $categoryData['type']],
-                $categoryData
+                [
+                    'name' => $categoryData['name'],
+                    'type' => $categoryData['type'],
+                    'nav_order' => $categoryData['nav_order'],
+                ]
             );
+
+            // Create normalized subcategory rows
+            foreach ($subs as $s) {
+                \App\Models\Subcategory::updateOrCreate(
+                    ['slug' => $s['slug']],
+                    [
+                        'category_id' => $record->id,
+                        'name' => $s['name'] ?? $s['slug'],
+                        'nav_order' => $s['nav_order'] ?? null,
+                    ]
+                );
+            }
         }
     }
 }
