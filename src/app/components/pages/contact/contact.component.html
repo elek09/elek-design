@@ -79,8 +79,14 @@
             }
           </mat-form-field>
         </div>
+
+        <p class="consent-note" style="font-size:12px; line-height:1.4; margin:12px 0 4px; color:#555;">
+          Az ajánlatkérés elküldésével hozzájárulok, hogy az Elek-Design a megadott adataimat az ajánlatkérés
+          feldolgozásának céljából kezelje, és ezzel kapcsolatban e-mailben vagy telefonon megkeressen. Az adatkezelés a
+          kapcsolatfelvételi folyamat lezárultáig tart.
+        </p>
         <div class="actions">
-          <button mat-raised-button color="primary" type="submit" [disabled]="sending || form.invalid">
+          <button mat-raised-button color="primary" type="submit" [disabled]="sending">
             {{ sending ? 'Küldés...' : 'Küldés' }}
           </button>
         </div>

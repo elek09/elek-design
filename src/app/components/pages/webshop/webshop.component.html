@@ -126,14 +126,16 @@
                         [errorStateMatcher]="errorMatcher" />
                 </mat-form-field>
             </div>
+            <p class="consent-note" style="font-size:12px; line-height:1.4; margin:4px 0 12px; color:#555;">
+                Az ajánlatkérés elküldésével hozzájárulok, hogy az Elek-Design Kft. a megadott adataimat az ajánlatkérés
+                feldolgozásának céljából kezelje, és ezzel kapcsolatban e-mailben vagy telefonon megkeressen. Az
+                adatkezelés a kapcsolatfelvételi folyamat lezárultáig tart.
+            </p>
             <div class="actions quote-actions">
-                <button mat-raised-button color="primary" type="submit"
-                    [disabled]="cartItems().length === 0 || checkoutForm.invalid">
+                <button mat-raised-button color="primary" type="submit" [disabled]="cartItems().length === 0">
                     {{ cartItems().length === 0 ? 'Nincs termék a kosárban' : 'Árajánlatot kérek' }}
                 </button>
             </div>
         </form>
     </mat-card>
-
-    <!-- Status messages removed; using Toastr notifications now. -->
 </div>
