@@ -1,3 +1,4 @@
+// Public shop/cart models
 export interface CartItemOptions {
   hardware_type?: string;
   color_scheme?: string;
@@ -15,7 +16,7 @@ export interface CheckoutRequest {
   customer_phone?: string;
 }
 
-export interface OrderItem {
+export interface OrderItemPublic {
   product_id: number;
   quantity: number;
   options?: CartItemOptions;
@@ -26,16 +27,9 @@ export interface OrderRequest {
   customer_email: string;
   customer_phone?: string;
   is_quote: boolean;
-  items: OrderItem[];
+  items: OrderItemPublic[];
 }
 
-export interface ApiResponse<T = unknown> {
-  success?: boolean;
-  message?: string;
-  data?: T;
-}
-
-// Public submit endpoint payloads
 export interface SubmitOrderItem {
   product_id: number;
   quantity: number;
@@ -48,6 +42,6 @@ export interface SubmitOrderRequest {
   customer_name: string;
   customer_email: string;
   customer_phone?: string;
-  is_quote?: boolean; // true for quote, omitted/false for order
+  is_quote?: boolean;
   items: SubmitOrderItem[];
 }

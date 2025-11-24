@@ -1,40 +1,24 @@
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  admin: boolean;
-}
-
 export interface GalleryItem {
   id: number;
   title: string;
   description?: string;
-  category: string;
-  image_path: string;
+  category: string | { id: number; type: string; name: string } | null;
+  subcategory?: { id: number; slug: string; name: string } | null;
+  image_path?: string; // legacy
+  url?: string;
+  thumb_url?: string;
+  order?: number;
   is_active: boolean;
   is_featured: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export type LoginResponse = ApiResponse<{ user: User }>;
-
-export interface ApiResponse<T> {
-  success: boolean;
-  status: number;
-  data: T | null;
-  errors: Record<string, string[]> | string[] | [];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface GalleryCreateRequest {
   title: string;
   description?: string;
-  category: string;
+  category_id: number;
+  subcategory_id?: number;
   image: File;
   is_active: boolean;
   is_featured: boolean;
@@ -43,23 +27,9 @@ export interface GalleryCreateRequest {
 export interface GalleryUpdateRequest {
   title?: string;
   description?: string;
-  category?: string;
+  category_id?: number;
+  subcategory_id?: number;
   image?: File;
   is_active?: boolean;
   is_featured?: boolean;
-}
-
-export interface GallerySubCategory {
-  label: string;
-  value: string;
-}
-
-export interface GalleryCategory {
-  label: string;
-  value: string;
-  subcategories?: GallerySubCategory[];
-}
-
-export interface GalleryConfig {
-  categories: GalleryCategory[];
 }

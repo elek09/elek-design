@@ -3,11 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
 import { joinUrl } from '../utils/url.utils';
-import {
-  ApiResponse,
-  OrderRequest,
-  SubmitOrderRequest,
-} from '../models/shop.model';
+import { OrderRequest, SubmitOrderRequest } from '../models/shop.model';
+import { ApiResponse } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class OrdersService {

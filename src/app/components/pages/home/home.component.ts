@@ -51,13 +51,13 @@ export class HomeComponent implements OnInit {
     this.uzletterSlides$ =
       this.galleryDataService.getSlidesByCategory$('uzletter');
 
-    const categories$ = this.categoryService.getCategories();
-    this.eletterCategories$ = categories$.pipe(
-      map((categories) => categories.filter((c) => c.type === 'eletter')),
-    );
-    this.uzletterCategories$ = categories$.pipe(
-      map((categories) => categories.filter((c) => c.type === 'uzletter')),
-    );
+    // Use backend categories as-is; filter by section type
+    this.eletterCategories$ = this.categoryService
+      .getCategories()
+      .pipe(map((cats) => cats.filter((c) => String(c.type) === 'eletter')));
+    this.uzletterCategories$ = this.categoryService
+      .getCategories()
+      .pipe(map((cats) => cats.filter((c) => String(c.type) === 'uzletter')));
 
     // Wait for the first emission of all slide streams, then preload images
     void this.whenSlidesReadyAndPreloaded();

@@ -6,8 +6,6 @@ import { AdminApiService } from '../../../services/admin-api.service';
 import { AuthService } from '../../../services/auth.service';
 import {
   GalleryItem,
-  GalleryConfig,
-  GallerySubCategory,
   GalleryCreateRequest,
 } from '../../../models/admin.models';
 import { map, takeUntil } from 'rxjs/operators';
@@ -24,6 +22,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminHeaderComponent } from '../admin-header/admin-header.component';
 import { formatDateTime } from '../../../utils/date.utils';
 import { normalizeSubcategories } from '../../../utils/category.utils';
+import {
+  GalleryConfig,
+  GallerySubCategory,
+} from '../../../models/gallery.model';
 
 @Component({
   selector: 'app-admin-gallery',
@@ -54,8 +56,8 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   showUploadForm = false;
   uploadForm = {
     title: '',
-    mainCategory: '',
-    subCategory: '',
+    mainCategoryId: '' as string, // store as string for binding; convert to number on submit
+    subCategoryId: '' as string,
     description: '',
     image: null as File | null,
     is_active: true,
@@ -69,7 +71,14 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   galleryItems: GalleryItem[] = [];
   filteredItems: GalleryItem[] = [];
 
-  selectedCategory: string | 'all' = 'all';
+  // Pagination state
+  currentPage = 1;
+  lastPage = 1;
+  totalItems = 0;
+  perPage = 0;
+  allPagesLoaded = false;
+
+  selectedCategory: string | 'all' = 'all'; // now holds category or subcategory numeric id as string
   selectedStatus: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
 
@@ -87,7 +96,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   loadConfigAndItems(): void {
     this.isLoading = true;
     this.categoryService
-      .getCategories()
+      .getCategoriesFresh()
       .pipe(
         map((categories: Category[]) => this.buildGalleryConfig(categories)),
         takeUntil(this.destroy$),
@@ -102,17 +111,24 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
           const mainExists = !!this.galleryConfig.categories.find(
             (c) => c.value === main,
           );
-          this.uploadForm.mainCategory = mainExists
+          this.uploadForm.mainCategoryId = mainExists
             ? main!
             : this.galleryConfig.categories[0]?.value || '';
 
           this.onMainCategoryChange();
 
           const subExists = !!this.availableSubcategories.find(
-            (s) => s.value === sub,
+            (s: any) => s.value === sub,
           );
-          if (sub && subExists) {
-            this.uploadForm.subCategory = sub;
+          if (sub && !subExists) {
+            const slugMatch = this.availableSubcategories.find(
+              (s: any) => s.slug && s.slug.toLowerCase() === sub.toLowerCase(),
+            );
+            if (slugMatch) {
+              this.uploadForm.subCategoryId = slugMatch.value;
+            }
+          } else if (sub && subExists) {
+            this.uploadForm.subCategoryId = sub;
           }
 
           if (mainExists || subExists) {
@@ -132,10 +148,11 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   private buildGalleryConfig(categories: Category[]): GalleryConfig {
     const mapped = (categories || []).map((c) => ({
       label: c.name,
-      value: String(c.type),
+      value: String(c.id ?? c.type), // prefer numeric id if available
       subcategories: normalizeSubcategories(c.subcategories).map((s) => ({
         label: s.name,
-        value: s.id,
+        value: s.id != null ? String(s.id) : String(s.slug), // ensure string for comparison
+        slug: s.slug,
       })),
     }));
     return { categories: mapped };
@@ -148,14 +165,14 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   get availableSubcategories(): GallerySubCategory[] {
     if (!this.galleryConfig) return [];
     const selectedMain = this.galleryConfig.categories.find(
-      (c) => c.value === this.uploadForm.mainCategory,
+      (c) => c.value === this.uploadForm.mainCategoryId,
     );
     return selectedMain?.subcategories || [];
   }
 
   onMainCategoryChange(): void {
     const subcategories = this.availableSubcategories;
-    this.uploadForm.subCategory =
+    this.uploadForm.subCategoryId =
       subcategories.length > 0 ? subcategories[0].value : '';
   }
 
@@ -178,20 +195,51 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   loadGalleryItems(): void {
     this.isLoading = true;
-    this.adminApiService.getGalleryItems().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.galleryItems = response.data;
-          this.onFilterChange();
+    this.adminApiService.getGalleryItemsPage(this.currentPage).subscribe({
+      next: (resp) => {
+        const meta = resp.meta || resp.pagination;
+        if (resp.data) {
+          this.galleryItems = resp.data;
         }
+        if (meta) {
+          this.currentPage = meta.current_page;
+          this.lastPage = meta.last_page;
+          this.totalItems = meta.total;
+          this.perPage = meta.per_page;
+        }
+        this.onFilterChange();
         this.isLoading = false;
       },
-      error: (error) => {
-        console.error('Error loading gallery items:', error);
+      error: (err) => {
+        console.error('Error loading gallery items page:', err);
         this.error = 'Failed to load gallery items';
         this.isLoading = false;
       },
     });
+  }
+
+  loadAllPages(): void {
+    if (this.allPagesLoaded) return;
+    this.isLoading = true;
+    this.adminApiService.getAllGalleryItems().subscribe({
+      next: (items) => {
+        this.galleryItems = items;
+        this.allPagesLoaded = true;
+        this.onFilterChange();
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading all gallery pages:', err);
+        this.error = 'Failed to load all pages';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.lastPage || page === this.currentPage) return;
+    this.currentPage = page;
+    this.loadGalleryItems();
   }
 
   onFilterChange(): void {
@@ -228,19 +276,19 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       return;
     }
     const subs = this.availableSubcategories;
-    if (!this.uploadForm.mainCategory) {
+    if (!this.uploadForm.mainCategoryId) {
       this.uploadError = 'Please select a main category.';
       return;
     }
-    if (subs.length > 0 && !this.uploadForm.subCategory) {
+    if (subs.length > 0 && !this.uploadForm.subCategoryId) {
       this.uploadError =
         'Please select a subcategory under the chosen main category.';
       return;
     }
     if (
-      this.uploadForm.subCategory &&
+      this.uploadForm.subCategoryId &&
       subs.length > 0 &&
-      !subs.some((s) => s.value === this.uploadForm.subCategory)
+      !subs.some((s) => s.value === this.uploadForm.subCategoryId)
     ) {
       this.uploadError =
         'The selected subcategory is not valid for the chosen main category.';
@@ -253,14 +301,20 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
     this.isUploading = true;
     this.uploadError = null;
+    // Close the form immediately after starting a valid upload action
+    const wasFormVisible = this.showUploadForm;
+    this.showUploadForm = false;
 
     const formValue = this.uploadForm;
-    const categoryValue = formValue.subCategory || formValue.mainCategory;
-    const normalizedCategory = categoryValue;
+    const categoryId = Number(formValue.mainCategoryId);
+    const subId = formValue.subCategoryId
+      ? Number(formValue.subCategoryId)
+      : undefined;
     const request: GalleryCreateRequest = {
       title: formValue.title.trim(),
-      category: normalizedCategory,
-      description: formValue.description.trim(),
+      category_id: categoryId,
+      subcategory_id: subId,
+      description: formValue.description.trim() || undefined,
       image: formValue.image!,
       is_active: formValue.is_active,
       is_featured: formValue.is_featured,
@@ -271,7 +325,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         if (response.success) {
           this.loadGalleryItems();
           this.resetUploadForm();
-          this.showUploadForm = false;
+          this.showUploadForm = false; // ensure it stays closed after success
         }
         this.isUploading = false;
       },
@@ -298,6 +352,10 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
             error.error?.message || 'Failed to upload image. Please try again.';
         }
         this.isUploading = false;
+        // Reopen the form so the user can correct issues
+        if (wasFormVisible) {
+          this.showUploadForm = true;
+        }
       },
     });
   }
@@ -305,8 +363,8 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   resetUploadForm(): void {
     this.uploadForm = {
       title: '',
-      mainCategory: this.galleryConfig?.categories[0]?.value || '',
-      subCategory: '',
+      mainCategoryId: this.galleryConfig?.categories[0]?.value || '',
+      subCategoryId: '',
       description: '',
       image: null,
       is_active: true,
@@ -396,8 +454,9 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     }
   }
 
-  getImageUrl(imagePath: string): string {
-    return this.adminApiService.getImageUrl(imagePath);
+  // Deprecated image path helper removed; backend now provides full URLs
+  getThumbOrImage(item: GalleryItem): string {
+    return item.thumb_url || item.url || '';
   }
 
   readonly formatDateTime = formatDateTime;
@@ -427,13 +486,21 @@ function filterGalleryItems(
   }
 
   if (selectedCategory !== 'all' && cfg) {
-    const main = cfg.categories.find((c) => c.value === selectedCategory);
+    const isMain = selectedCategory.startsWith('cat-');
+    const isSub = selectedCategory.startsWith('sub-');
+    const rawId = selectedCategory.replace(/^(cat-|sub-)/, '');
     out = out.filter((item) => {
-      if (item.category === selectedCategory) return true;
-      if (main && main.subcategories) {
-        return main.subcategories.some((s) => s.value === item.category);
+      const catObj = typeof item.category === 'object' ? item.category : null;
+      const catId = catObj?.id != null ? String(catObj.id) : undefined;
+      const subId =
+        item.subcategory?.id != null ? String(item.subcategory.id) : undefined;
+      if (isMain) {
+        return catId === rawId; // include all subcategories under this main category
       }
-      return false;
+      if (isSub) {
+        return subId === rawId; // only this specific subcategory
+      }
+      return true; // safety fallback
     });
   }
 

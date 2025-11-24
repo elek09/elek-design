@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Alkategória név szerkesztése</h2>
+<div mat-dialog-content>
+    <ng-container *ngIf="loading">Betöltés...</ng-container>
+    <ng-container *ngIf="!loading">
+        <ng-container *ngIf="!error; else errTpl">
+            <mat-form-field appearance="fill" style="width:100%">
+                <mat-label>Alkategória neve</mat-label>
+                <input matInput [(ngModel)]="nameInput" />
+            </mat-form-field>
+        </ng-container>
+    </ng-container>
+    <ng-template #errTpl>
+        <p class="error">{{ error }}</p>
+    </ng-template>
+</div>
+<div mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Mégse</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="loading || !nameInput.trim()">Mentés</button>
+</div>

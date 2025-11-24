@@ -9,8 +9,9 @@ import {
   map,
 } from 'rxjs';
 import { Router } from '@angular/router';
-import { LoginRequest, User, ApiResponse } from '../models/admin.models';
-import { ADMIN_API_BASE_URL, API_BASE_URL } from '../app.tokens';
+import { API_BASE_URL } from '../app.tokens';
+import { LoginRequest, User } from '../models/user.model';
+import { ApiResponse } from '../models/api.model';
 
 @Injectable({
   providedIn: 'root',

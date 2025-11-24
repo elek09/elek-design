@@ -75,10 +75,14 @@
             <h2>Kategóriák</h2>
             <div class="category-grid">
                 @for (key of getCategoryKeys(); track key) {
-                <div class="category-card">
+                <div class="category-card" [class.sub-category]="isSubCategoryKey(key)">
                     <h3>{{ stats.byCategory[key] }}</h3>
-                    <p>{{ getCategoryLabel(key) }}</p>
-                    <div class="progress-bar">
+                    <p>
+                        <span class="label" [class.main]="!isSubCategoryKey(key)" [class.sub]="isSubCategoryKey(key)">
+                            {{ getCategoryLabel(key) }}
+                        </span>
+                    </p>
+                    <div class="progress-bar" *ngIf="stats.totalItems > 0">
                         <div class="progress-fill" [style.width.%]="(stats.byCategory[key] / stats.totalItems) * 100">
                         </div>
                     </div>
@@ -98,7 +102,7 @@
                     <mat-icon>category</mat-icon>
                     <span>Kategóriák kezelése</span>
                 </button>
-                <button mat-stroked-button color="primary" (click)="loadDashboardData()">
+                <button mat-stroked-button color="primary" (click)="loadDashboardData(true)">
                     <mat-icon>refresh</mat-icon>
                     <span>Adatok frissítése</span>
                 </button>
@@ -109,6 +113,9 @@
         <div class="section">
             <div class="section-header">
                 <h2>Legutóbbi képek</h2>
+                <div class="last-refresh" *ngIf="lastRefreshAt">
+                    <small>Utolsó frissítés: {{ formatDateTime(lastRefreshAt.toISOString()) }}</small>
+                </div>
                 <button mat-raised-button color="primary" (click)="navigateToGallery()">Teljes galéria
                     megtekintése</button>
             </div>
@@ -118,12 +125,12 @@
                 @for (item of getRecentItems(); track item) {
                 <div class="recent-item">
                     <div class="item-image">
-                        <img [src]="getImageUrl(item.image_path)" [alt]="item.title" />
+                        <img [src]="item.thumb_url || item.url" [alt]="item.title" />
                     </div>
                     <div class="item-content">
                         <h4>{{ item.title }}</h4>
-                        <p class="item-category">{{ item.category | titlecase }}</p>
-                        <p class="item-date">{{ formatDateTime(item.created_at) }}</p>
+                        <p class="item-category">{{ getCategoryName(item) }}</p>
+                        <p class="item-date" *ngIf="item.created_at">{{ formatDateTime(item.created_at) }}</p>
                     </div>
                     <div class="item-status">
                         <span class="status-badge" [class]="item.is_active ? 'active' : 'inactive'">

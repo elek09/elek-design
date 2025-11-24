@@ -17,27 +17,12 @@ import { API_BASE_URL } from '../app.tokens';
 import { HeaderConfig, HeaderNavItem } from '../models/header.model';
 import { Category } from '../models/category.model';
 import { Slide } from '../models/slide.model';
+import { GalleryItemResource } from '../models/gallery.model';
 import { getOrigin, resolveToAbsolute } from '../utils/url.utils';
-
-// Backend bootstrap response shape
-interface GalleryItemResource {
-  id: string | number;
-  title?: string;
-  slug?: string;
-  section?: string; // Hungarian section id, e.g. 'eletter'
-  subcategory?: string | null; // Hungarian id or null
-  category?: string | null;
-  url?: string; // full image url
-  thumb_url?: string | null;
-  order?: number | null;
-  is_featured?: boolean;
-  is_active?: boolean;
-}
 
 interface BootstrapPayload {
   header?: {
-    items?: HeaderNavItem[];
-    logoUrl?: string;
+    items?: any[]; // raw items from backend; HeaderService normalizes
   };
   categories?: Category[];
   featured_gallery?: GalleryItemResource[];
@@ -86,17 +71,16 @@ export class BootstrapService {
   }
 
   getHeader$(): Observable<HeaderConfig | null> {
+    // Pass through raw header items; HeaderService will extract logo and routes
     return this.data$.pipe(
-      map((d) => {
-        if (!d?.header) return null;
-        const logo = d.header.logoUrl
-          ? resolveToAbsolute(this.apiOrigin, d.header.logoUrl)
-          : '';
-        return {
-          logoUrl: logo,
-          items: d.header.items ?? [],
-        } satisfies HeaderConfig;
-      }),
+      map((d) =>
+        d?.header
+          ? ({
+              logoUrl: '',
+              items: (d.header.items ?? []) as HeaderNavItem[],
+            } as HeaderConfig)
+          : (null as HeaderConfig | null),
+      ),
     );
   }
 
@@ -114,21 +98,18 @@ export class BootstrapService {
     );
   }
 
-  // --- helpers ---
-  private isPayload(obj: any): obj is BootstrapPayload {
-    return obj && typeof obj === 'object';
-  }
-
   private toSlide(item: GalleryItemResource): Slide | null {
     const imageUrl = resolveToAbsolute(this.apiOrigin, item.url || '');
     if (!imageUrl) return null;
+    const section = item.category?.type || undefined;
+    const subSlug = item.subcategory?.slug || undefined;
     return {
-      id: String(item.slug || item.id),
+      id: String(item.id),
       imageUrl,
       thumbUrl: resolveToAbsolute(this.apiOrigin, item.thumb_url || ''),
       title: item.title,
-      category: item.subcategory || undefined,
-      section: item.section,
+      category: subSlug, // use backend slug for matching
+      section,
       is_active: item.is_active ?? true,
       is_featured: item.is_featured ?? false,
     };

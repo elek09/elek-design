@@ -41,7 +41,7 @@ export class CategorySectionComponent {
         return { id: s, name: s };
       }
       const name = s?.name ?? String(s?.id ?? '');
-      const id = String(s?.id ?? '').trim();
+      const id = String(s?.slug ?? name).trim();
       return { id, name };
     });
   }

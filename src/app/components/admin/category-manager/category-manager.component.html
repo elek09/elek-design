@@ -66,45 +66,49 @@
             <p class="warn">Egy másik kategória már használja ezt a típust. A típusoknak egyedinek kell lenniük.</p>
             }
 
+            <div class="edit-actions" style="margin: 8px 0 16px;">
+                <button mat-raised-button color="primary" (click)="saveCategory(selectedCategory!)"
+                    [disabled]="isSaveDisabled">
+                    <mat-icon>save</mat-icon>
+                    Változtatások mentése
+                </button>
+            </div>
+
             <h4>Alkategóriák</h4>
+            <div class="subcats-actions" *ngIf="selectedCategory">
+                <button mat-raised-button color="primary" (click)="saveSubcategoryOrder()"
+                    [disabled]="!subOrderDirty">Alkategória sorrend mentése</button>
+            </div>
             <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
-                @for (sub of selectedSubcategories; track trackBySub($index, sub); let i = $index) {
+                @for (sub of selectedSubcategoriesView; track trackBySub($index, sub); let i = $index) {
                 <li cdkDrag>
                     <div class="subcategory-row">
-                        <div class="drag-handle" cdkDragHandle title="Húzza az átrendezéshez">
+                        <div class="drag-handle" cdkDragHandle title="Átrendezés">
                             <mat-icon>drag_indicator</mat-icon>
                         </div>
-                        <div class="fields">
-                            <div class="field">
-                                <mat-form-field appearance="fill">
-                                    <mat-label>Név</mat-label>
-                                    <input matInput [ngModel]="sub.name" (ngModelChange)="updateSubName(i, $event)" />
-                                </mat-form-field>
-                            </div>
-                            <div class="field">
-                                <mat-form-field appearance="fill">
-                                    <mat-label>Azonosító (slug)</mat-label>
-                                    <input matInput [ngModel]="sub.id" (ngModelChange)="updateSubId(i, $event)" />
-                                </mat-form-field>
-                            </div>
+                        <div class="sub-name">
+                            <span class="sub-text" title="{{ sub.name }}">{{ sub.name }}</span>
+                            <button mat-icon-button color="primary"
+                                (click)="$event.stopPropagation(); openEditSubNameDialog(i)"
+                                aria-label="Név szerkesztése">
+                                <mat-icon>edit</mat-icon>
+                            </button>
                         </div>
                         <div class="subcategory-actions">
-                            <button mat-stroked-button color="primary" (click)="addItemToSubcategory(sub)"
-                                [disabled]="isSaveDisabled">
-                                <mat-icon>add</mat-icon>
-                                Kép hozzáadása: {{ sub.name }}
+                            <button mat-icon-button color="primary" (click)="addItemToSubcategory(sub)"
+                                [disabled]="!sub.id" aria-label="Kép hozzáadása"
+                                title="Kép hozzáadása az alkategóriához">
+                                <mat-icon>add_photo_alternate</mat-icon>
                             </button>
-                            <button mat-stroked-button color="warn" (click)="removeSubcategory(i)">Eltávolítás</button>
+                            <button mat-icon-button color="warn" (click)="removeSubcategory(i)"
+                                aria-label="Eltávolítás">
+                                <mat-icon>delete</mat-icon>
+                            </button>
                         </div>
                     </div>
                 </li>
                 }
             </ul>
-            @if (hasDuplicateSubIds) {
-            <p class="warn">
-                Duplikált alkategória azonosítók. Kérjük, minden alkategória slugja legyen egyedi.
-            </p>
-            }
 
             <mat-form-field appearance="fill">
                 <mat-label>Új alkategória neve</mat-label>
@@ -114,17 +118,12 @@
 
             <hr />
             <div class="form-actions">
-                <button mat-raised-button color="primary" (click)="saveCategory(selectedCategory)"
-                    [disabled]="isSaveDisabled">
-                    Változtatások mentése
-                </button>
                 <button mat-stroked-button color="warn"
                     (click)="deleteCategory(selectedCategory._id || selectedCategory.id)">Kategória törlése</button>
                 <button mat-stroked-button color="primary" (click)="addItemToCategory()" [disabled]="isSaveDisabled">
                     <mat-icon>add</mat-icon>
-                    Elem hozzáadása: {{ selectedCategory.name }}
+                    Kép hozzáadása: {{ selectedCategory.name }}
                 </button>
-                <button mat-button (click)="resetForm()">Mégse</button>
             </div>
         </div>
         }

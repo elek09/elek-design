@@ -3,11 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, shareReplay, catchError, of } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
 import { joinUrl } from '../utils/url.utils';
-import {
-  ApiItemResponse,
-  ApiListResponse,
-  Product,
-} from '../models/product.model';
+import { Product } from '../models/product.model';
+import { ApiItemResponse, ApiListResponse } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -34,6 +31,4 @@ export class ProductService {
       catchError(() => of<Product | null>(null)),
     );
   }
-
-  // --- helpers ---
 }

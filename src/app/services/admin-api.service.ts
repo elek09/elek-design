@@ -12,16 +12,18 @@ import {
   merge,
   map,
   distinctUntilChanged,
+  of,
+  forkJoin,
 } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   GalleryItem,
-  ApiResponse,
   GalleryCreateRequest,
   GalleryUpdateRequest,
-  GalleryConfig,
 } from '../models/admin.models';
 import { API_BASE_URL, ADMIN_API_BASE_URL } from '../app.tokens';
+import { GalleryConfig } from '../models/gallery.model';
+import { ApiResponse, PaginatedApiResponse } from '../models/api.model';
 
 @Injectable({
   providedIn: 'root',
@@ -59,6 +61,46 @@ export class AdminApiService {
   // Gallery Management
   getGalleryItems(): Observable<ApiResponse<GalleryItem[]>> {
     return this.galleryItems$;
+  }
+
+  /** Fetch a specific page of gallery items (1-based page index). */
+  getGalleryItemsPage(
+    page: number,
+  ): Observable<PaginatedApiResponse<GalleryItem>> {
+    const url = `${this.adminApiUrl}/gallery?page=${page}`;
+    return this.http
+      .get<PaginatedApiResponse<GalleryItem>>(url)
+      .pipe(catchError(this.handleError));
+  }
+
+  /** Load all pages and merge items (for small total counts). */
+  getAllGalleryItems(): Observable<GalleryItem[]> {
+    return this.getGalleryItemsPage(1).pipe(
+      switchMap((first) => {
+        const meta = first.meta || first.pagination;
+        const initial = first.data || [];
+        if (!meta || meta.last_page <= 1) {
+          return of(initial);
+        }
+        const requests: Observable<PaginatedApiResponse<GalleryItem>>[] = [];
+        for (let p = 2; p <= meta.last_page; p++) {
+          requests.push(this.getGalleryItemsPage(p));
+        }
+        return forkJoin(requests).pipe(
+          map((responses) => {
+            const merged = [...initial];
+            for (const resp of responses) {
+              for (const it of resp.data || []) {
+                if (!merged.some((m) => m.id === it.id)) merged.push(it);
+              }
+            }
+            return merged;
+          }),
+          catchError(() => of(initial)),
+        );
+      }),
+      catchError(() => of([])),
+    );
   }
 
   getGalleryItem(id: number): Observable<ApiResponse<GalleryItem>> {
@@ -159,7 +201,10 @@ export class AdminApiService {
   private buildCreateFormData(item: GalleryCreateRequest): FormData {
     const fd = new FormData();
     fd.append('title', item.title);
-    fd.append('category', item.category);
+    fd.append('category_id', String(item.category_id));
+    if (item.subcategory_id !== undefined) {
+      fd.append('subcategory_id', String(item.subcategory_id));
+    }
     fd.append('is_active', item.is_active ? '1' : '0');
     fd.append('is_featured', item.is_featured ? '1' : '0');
     if (item.description) fd.append('description', item.description);
@@ -170,7 +215,10 @@ export class AdminApiService {
   private buildUpdateFormData(item: GalleryUpdateRequest): FormData {
     const fd = new FormData();
     if (item.title !== undefined) fd.append('title', item.title);
-    if (item.category !== undefined) fd.append('category', item.category);
+    if (item.category_id !== undefined)
+      fd.append('category_id', String(item.category_id));
+    if (item.subcategory_id !== undefined)
+      fd.append('subcategory_id', String(item.subcategory_id));
     if (item.description !== undefined)
       fd.append('description', item.description || '');
     if (item.is_active !== undefined)
