@@ -26,5 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Category::observe(CategoryObserver::class);
         GalleryItem::observe(GalleryItemObserver::class);
+
     }
 }

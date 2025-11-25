@@ -126,14 +126,14 @@ class OrderController extends Controller
         return new OrderResource($order->load('items.product'));
     }
 
-    /**
-     * Public submission endpoint (no session, no auth required).
-     * Accepts same payload as StoreOrderRequest; uses is_quote to determine kind.
-     */
-    public function storePublic(StoreOrderRequest $req)
-    {
-        return $this->store($req);
-    }
+        /**
+         * Public submission endpoint (no session, no auth required).
+         * Accepts same payload as StoreOrderRequest; uses is_quote to determine kind.
+         */
+        public function storePublic(StoreOrderRequest $req)
+        {
+            return $this->store($req);
+        }
 
     public function my(Request $r)
     {

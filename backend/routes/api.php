@@ -13,7 +13,6 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Models\Category;
 use App\Http\Resources\CategoryResource as PublicCategoryResource;
 use App\Http\Controllers\NavigationController;
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\SimpleOrderController;
 use App\Http\Controllers\ContactController;
 
@@ -48,26 +47,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/section/{section}', [GalleryController::class, 'section']);
     });
 
-    // Cart (session-based, guest-friendly). Attach session middleware only to these routes.
-    Route::prefix('cart')->middleware([
-        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-        \Illuminate\Session\Middleware\StartSession::class,
-    ])->group(function () {
-        Route::get('/', [CartController::class, 'index']);
-        Route::post('items', [CartController::class, 'add']);
-        Route::put('items/{productId}', [CartController::class, 'update']);
-        Route::delete('items/{productId}', [CartController::class, 'remove']);
-        Route::delete('/', [CartController::class, 'clear']);
-        Route::post('checkout', [CartController::class, 'checkout']);
-    });
 
-    // Public submit endpoint (no session cart): send entire payload once at submit
-    Route::post('orders/submit', [OrderController::class, 'storePublic']);
+    Route::post('orders/submit', [OrderController::class, 'storePublic'])->middleware('throttle:20,1');
     // Minimal example endpoint for simple email sending (name/email/product/quantity)
-    Route::post('orders/simple', [SimpleOrderController::class, 'store']);
 
     // Contact form endpoint (rate limited & public)
-    Route::post('contact', [ContactController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('contact', [ContactController::class, 'store'])->middleware('throttle:20,1');
 
     // Bejelentkezett
     Route::middleware('auth:sanctum')->group(function () {

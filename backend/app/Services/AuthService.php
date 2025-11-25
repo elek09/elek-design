@@ -24,12 +24,24 @@ class AuthService
 
     public function login(array $credentials): array
     {
-        if (!Auth::attempt($credentials)) {
+        $rememberRequested = (bool)($credentials['remember'] ?? false);
+        $attemptCredentials = [
+            'email' => $credentials['email'] ?? '',
+            'password' => $credentials['password'] ?? ''
+        ];
+
+        // Mindig remember nélkül próbálunk, majd utólag kezeljük, hogy adminnál ne legyen tartós cookie.
+        if (!Auth::attempt($attemptCredentials, false)) {
             return $this->error(['credentials' => ['Invalid credentials']], 401);
         }
 
         request()->session()->regenerate();
-        $user = request()->user();
+        $user = Auth::user();
+
+        // Ha nem admin és kérte a remember-t, újralogin tartós módban.
+        if ($user && !$user->admin && $rememberRequested) {
+            Auth::login($user, true);
+        }
 
         return $this->success(['user' => $this->userPayload($user)]);
     }
