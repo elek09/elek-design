@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-admin-login',
@@ -27,6 +28,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatCheckboxModule,
   ],
   templateUrl: './admin-login.component.html',
   styleUrl: './admin-login.component.scss',
@@ -44,6 +46,7 @@ export class AdminLoginComponent {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      remember: [false],
     });
 
     // Redirect if already authenticated
@@ -57,7 +60,7 @@ export class AdminLoginComponent {
       this.isLoading = true;
       this.errorMessage = '';
 
-      const credentials = this.loginForm.value;
+      const credentials = this.loginForm.value; // includes optional remember
 
       this.authService.login(credentials).subscribe({
         next: (user) => {

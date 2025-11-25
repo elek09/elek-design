@@ -31,10 +31,15 @@ export class AuthService {
   // Removed empty constructor (not needed with inject()).
 
   login(credentials: LoginRequest): Observable<User> {
+    const payload = {
+      email: credentials.email,
+      password: credentials.password,
+      remember: !!credentials.remember,
+    };
     return this.http
       .post<
         ApiResponse<{ user: User }>
-      >(`${this.apiBase}/api/v1/auth/login`, credentials, { withCredentials: true })
+      >(`${this.apiBase}/api/v1/auth/login`, payload, { withCredentials: true })
       .pipe(
         map((response) => {
           const user = response.data?.user;

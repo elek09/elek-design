@@ -10,6 +10,7 @@ export interface User {
 export interface LoginRequest {
   email: string;
   password: string;
+  remember?: boolean;
 }
 
 export type LoginResponse = AdminApiResponse<{ user: User }>;

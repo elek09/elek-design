@@ -45,7 +45,6 @@ export class WebshopComponent implements OnInit {
   private readonly productsApi = inject(ProductService);
   private readonly ordersApi = inject(OrdersService);
   protected readonly auth = inject(AuthService);
-  private readonly bootstrap = inject(BootstrapService);
   private readonly gallery = inject(GalleryDataService);
   private readonly localCart = inject(LocalCartService);
   private readonly toastr = inject(ToastrService);

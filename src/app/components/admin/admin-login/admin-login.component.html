@@ -19,6 +19,10 @@
                 @if (getFieldError('password')) {<mat-error>{{ getFieldError('password') }}</mat-error>}
             </mat-form-field>
 
+            <div class="remember-row">
+                <mat-checkbox formControlName="remember">Emlékezz rám</mat-checkbox>
+            </div>
+
             @if (errorMessage) {
             <div class="error-row">
                 <mat-icon color="warn">error</mat-icon>
