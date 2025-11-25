@@ -23,7 +23,16 @@ class BootstrapController extends Controller
      */
     public function __invoke(Request $request)
     {
-        $build = function () {
+        $isAdmin = $request->user()?->admin ?? false;
+        $bypassCache = $isAdmin && $request->boolean('fresh');
+
+        if ($bypassCache) {
+            Cache::forget(self::CACHE_KEY);
+        }
+
+        $ttl = (int) config('services.bootstrap_cache_ttl', 10);
+        
+        $payload = Cache::remember(self::CACHE_KEY, now()->addMinutes($ttl), function () {
             $headerItems = $this->nav->buildHeaderItems();
             $categories = Category::navOrdered()->with('subcategories')->get();
             $featured = $this->gallery->queryActive()
@@ -33,28 +42,16 @@ class BootstrapController extends Controller
                 ->get()
                 ->map(fn($item) => $this->gallery->mapItem($item))
                 ->values();
+
             return [
                 'header' => ['items' => $headerItems],
                 'categories' => CategoryResource::collection($categories)->resolve(),
                 'featured_gallery' => $featured,
             ];
-        };
-
-        $bypass = $request->boolean('fresh')
-            || $request->boolean('noCache')
-            || $request->header('X-Bypass-Cache')
-            || ($request->user()?->admin && $request->boolean('adminFresh'));
-
-        if ($bypass) {
-            $payload = $build();
-        } else {
-            $ttl = (int) config('services.bootstrap_cache_ttl', 10);
-            $payload = Cache::remember(self::CACHE_KEY, now()->addMinutes($ttl), $build);
-        }
+        });
 
         return response()->json([
             'success' => true,
-            'cache' => $bypass ? 'bypassed' : 'cached',
             'data' => $payload,
         ]);
     }
