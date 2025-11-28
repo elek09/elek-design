@@ -1,18 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {
-  Observable,
-  catchError,
-  throwError,
-  shareReplay,
-  Subject,
-  tap,
-  switchMap,
-  startWith,
-  merge,
-  map,
-  distinctUntilChanged,
-} from 'rxjs';
+import { Observable, catchError, throwError, tap, map } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   GalleryItem,
@@ -21,7 +9,7 @@ import {
   DashboardStats,
   GalleryFilterParams,
 } from '../models/admin.models';
-import { API_BASE_URL, ADMIN_API_BASE_URL } from '../app.tokens';
+import { API_BASE_URL } from '../app.tokens';
 import { GalleryConfig } from '../models/gallery.model';
 import { ApiResponse, PaginatedApiResponse } from '../models/api.model';
 import { Category, Subcategory } from '../models/category.model';
@@ -35,25 +23,18 @@ export class AdminApiService {
   private readonly authService = inject(AuthService);
   private readonly bootstrap = inject(BootstrapService);
   private readonly baseUrl = inject(API_BASE_URL);
-  private readonly adminApiUrl = inject(ADMIN_API_BASE_URL);
 
   private readonly categoriesAdminUrl = `${this.baseUrl}/api/v1/admin/categories`;
   private readonly subcategoriesAdminUrl = `${this.baseUrl}/api/v1/admin/subcategories`;
-  
-  private refresh$ = new Subject<void>();
-
-  /** Emits true while gallery operations are in-flight, else false. */
-  readonly loading$: Observable<boolean> = merge(
-    this.refresh$.pipe(map(() => true)),
-  ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
+  private readonly adminApiUrl = `${this.baseUrl}/api/v1/admin`;
 
   // Dashboard Stats
   getDashboardStats(): Observable<DashboardStats> {
     return this.http
       .get<ApiResponse<DashboardStats>>(`${this.adminApiUrl}/dashboard/stats`)
       .pipe(
-        map(response => response.data!),
-        catchError(this.handleError)
+        map((response) => response.data!),
+        catchError(this.handleError),
       );
   }
 
@@ -102,10 +83,7 @@ export class AdminApiService {
     const formData = this.buildCreateFormData(item);
     return this.http
       .post<ApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery`, formData)
-      .pipe(
-        tap(() => this.refresh$.next()), // Refresh the cache
-        catchError(this.handleError),
-      );
+      .pipe(catchError(this.handleError));
   }
 
   updateGalleryItem(
@@ -117,10 +95,7 @@ export class AdminApiService {
       .post<
         ApiResponse<GalleryItem>
       >(`${this.adminApiUrl}/gallery/${id}`, formData)
-      .pipe(
-        tap(() => this.refresh$.next()), // Refresh the cache
-        catchError(this.handleError),
-      );
+      .pipe(catchError(this.handleError));
   }
 
   updateGalleryItemStatus(
@@ -131,10 +106,7 @@ export class AdminApiService {
       .put<
         ApiResponse<GalleryItem>
       >(`${this.adminApiUrl}/gallery/${id}/status`, { is_active: isActive ? '1' : '0' })
-      .pipe(
-        tap(() => this.refresh$.next()), // Refresh the cache
-        catchError(this.handleError),
-      );
+      .pipe(catchError(this.handleError));
   }
 
   updateFeaturedStatus(
@@ -145,10 +117,7 @@ export class AdminApiService {
       .put<
         ApiResponse<GalleryItem>
       >(`${this.adminApiUrl}/gallery/${id}/featured`, { is_featured: isFeatured ? '1' : '0' })
-      .pipe(
-        tap(() => this.refresh$.next()), // Refresh the cache
-        catchError(this.handleError),
-      );
+      .pipe(catchError(this.handleError));
   }
 
   deleteGalleryItem(id: number): Observable<ApiResponse<{ message?: string }>> {
@@ -156,10 +125,7 @@ export class AdminApiService {
       .delete<
         ApiResponse<{ message?: string }>
       >(`${this.adminApiUrl}/gallery/${id}`)
-      .pipe(
-        tap(() => this.refresh$.next()), // Refresh the cache
-        catchError(this.handleError),
-      );
+      .pipe(catchError(this.handleError));
   }
 
   // Utility method to get full image URL
@@ -167,16 +133,13 @@ export class AdminApiService {
     return `${this.baseUrl}/storage/${imagePath}`;
   }
 
-  private handleError = (error: any) => {
+  private handleError(error: any) {
     console.error('API Error:', error);
-
-    // If unauthorized, logout user
     if (error.status === 401) {
       this.authService.logout();
     }
-
     return throwError(() => error);
-  };
+  }
 
   // --- FormData helpers ---
   private buildCreateFormData(item: GalleryCreateRequest): FormData {
@@ -250,9 +213,9 @@ export class AdminApiService {
         .put<Category>(`${this.categoriesAdminUrl}/${category._id}`, category)
         .pipe(tap(() => this.bootstrap.refresh()));
     } else {
-      return this.http.post<Category>(this.categoriesAdminUrl, category).pipe(
-        tap(() => this.bootstrap.refresh()),
-      );
+      return this.http
+        .post<Category>(this.categoriesAdminUrl, category)
+        .pipe(tap(() => this.bootstrap.refresh()));
     }
   }
 
@@ -279,9 +242,7 @@ export class AdminApiService {
       .post<any>(`${this.categoriesAdminUrl}/reorder`, { orders })
       .pipe(
         map((res) => {
-          const data = Array.isArray(res?.data)
-            ? res.data
-            : (res?.data ?? res);
+          const data = Array.isArray(res?.data) ? res.data : (res?.data ?? res);
           return (Array.isArray(data) ? data : []) as Category[];
         }),
         tap(() => this.bootstrap.refresh()),
@@ -291,9 +252,7 @@ export class AdminApiService {
   // Subcategory CRUD
   getSubcategories(): Observable<Subcategory[]> {
     return this.http
-      .get<Subcategory[] | { data: Subcategory[] }>(
-        this.subcategoriesAdminUrl,
-      )
+      .get<Subcategory[] | { data: Subcategory[] }>(this.subcategoriesAdminUrl)
       .pipe(map((res) => (Array.isArray(res) ? res : (res?.data ?? []))));
   }
 
@@ -301,9 +260,9 @@ export class AdminApiService {
     categoryId: number | string,
   ): Observable<Subcategory[]> {
     return this.http
-      .get<Subcategory[] | { data: Subcategory[] }>(
-        `${this.baseUrl}/api/v1/categories/${categoryId}/subcategories`,
-      )
+      .get<
+        Subcategory[] | { data: Subcategory[] }
+      >(`${this.baseUrl}/api/v1/categories/${categoryId}/subcategories`)
       .pipe(map((res) => (Array.isArray(res) ? res : (res?.data ?? []))));
   }
 

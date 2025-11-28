@@ -13,11 +13,7 @@ import {
   withInterceptors,
   withXsrfConfiguration,
 } from '@angular/common/http';
-import {
-  API_BASE_URL,
-  ADMIN_API_BASE_URL,
-  GALLERY_API_BASE_URL,
-} from './app.tokens';
+import { API_BASE_URL } from './app.tokens';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './services/auth.interceptor';
@@ -63,14 +59,6 @@ export const appConfig: ApplicationConfig = {
         firstValueFrom(bootstrap.getBootstrap$().pipe(take(1))),
     },
     { provide: API_BASE_URL, useValue: 'http://localhost:8000' },
-    {
-      provide: ADMIN_API_BASE_URL,
-      useValue: 'http://localhost:8000/api/v1/admin',
-    },
-    {
-      provide: GALLERY_API_BASE_URL,
-      useValue: 'http://localhost:8000/api/v1/gallery',
-    },
     { provide: LOCALE_ID, useValue: 'hu-HU' },
     provideAnimations(),
     provideToastr({

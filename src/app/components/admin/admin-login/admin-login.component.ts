@@ -100,15 +100,18 @@ export class AdminLoginComponent {
     const field = this.loginForm.get(fieldName);
     if (field?.errors && field.touched) {
       if (field.errors['required']) {
-        return `${
-          fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
-        } is required`;
+        const fieldNames: Record<string, string> = {
+          email: 'Email',
+          password: 'Jelszó',
+          remember: 'Emlékezz rám',
+        };
+        return `${fieldNames[fieldName] || fieldName} kötelező`;
       }
       if (field.errors['email']) {
-        return 'Please enter a valid email address';
+        return 'Kérlek adj meg egy érvényes email címet';
       }
       if (field.errors['minlength']) {
-        return `Password must be at least ${field.errors['minlength'].requiredLength} characters`;
+        return `A jelszónak legalább ${field.errors['minlength'].requiredLength} karakter hosszúnak kell lennie`;
       }
     }
     return '';

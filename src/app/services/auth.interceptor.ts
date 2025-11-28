@@ -2,24 +2,15 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
-import {
-  API_BASE_URL,
-  ADMIN_API_BASE_URL,
-  GALLERY_API_BASE_URL,
-} from '../app.tokens';
+import { API_BASE_URL } from '../app.tokens';
 import { AuthService } from './auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const api = inject(API_BASE_URL);
-  const adminApi = inject(ADMIN_API_BASE_URL);
-  const galleryApi = inject(GALLERY_API_BASE_URL);
+  const apiBase = inject(API_BASE_URL);
   const authService = inject(AuthService);
 
   const url = req.url;
-  const shouldAttach =
-    url.startsWith(api) ||
-    url.startsWith(adminApi) ||
-    url.startsWith(galleryApi);
+  const shouldAttach = url.startsWith(apiBase);
 
   if (!shouldAttach) {
     return next(req).pipe(

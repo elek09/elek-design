@@ -1,8 +1,3 @@
-/* Intentionally no transition for immediate reveal after preload */
-
-/* No local overlay styles; handled by shared LoadingOverlayComponent */
-
-/* Full-screen overlay for initial loading */
 .overlay {
   position: fixed;
   inset: 0;

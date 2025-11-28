@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Category } from '../../../../models/category.model';
 import { Slide } from '../../../../models/slide.model';
 import { CarouselComponent } from '../../../ui/carousel/carousel.component';
+import { normalizeSubcategories } from '../../../../utils/category.utils';
 
 @Component({
   selector: 'app-category-section',
@@ -13,9 +14,9 @@ import { CarouselComponent } from '../../../ui/carousel/carousel.component';
   styleUrls: ['./category-section.component.scss'],
 })
 export class CategorySectionComponent {
-  @Input() sectionType!: string; // 'eletter' | 'uzletter' | custom
-  @Input() categories$!: Observable<Category[]>;
-  @Input() slides$!: Observable<Slide[]>;
+  @Input({ required: true }) sectionType!: string;
+  @Input({ required: true }) categories$!: Observable<Category[]>;
+  @Input({ required: true }) slides$!: Observable<Slide[]>;
 
   @ViewChild('carousel') carousel!: CarouselComponent;
   selectedSubId: string | null = null;
@@ -26,23 +27,10 @@ export class CategorySectionComponent {
   }
 
   onSlideChanged(slideId: string) {
-    // preserve hash navigation like the original component
     history.replaceState(null, '', `#${slideId}`);
     this.selectedSubId = slideId;
   }
 
-  // Normalize subcategories so template bindings are safe
-  normalizeSubcategories(
-    subs: any[] | undefined | null,
-  ): { id: string; name: string }[] {
-    if (!Array.isArray(subs)) return [];
-    return subs.map((s: any) => {
-      if (typeof s === 'string') {
-        return { id: s, name: s };
-      }
-      const name = s?.name ?? String(s?.id ?? '');
-      const id = String(s?.slug ?? name).trim();
-      return { id, name };
-    });
-  }
+  // Use shared utility function
+  readonly normalizeSubcategories = normalizeSubcategories;
 }

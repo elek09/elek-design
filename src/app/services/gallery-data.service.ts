@@ -4,7 +4,7 @@ import { Observable, catchError, map, of, shareReplay } from 'rxjs';
 import { Slide } from '../models/slide.model';
 import { ApiImageItem } from '../models/gallery.model';
 import { PaginatedResponse } from '../models/api.model';
-import { API_BASE_URL, GALLERY_API_BASE_URL } from '../app.tokens';
+import { API_BASE_URL } from '../app.tokens';
 import { BootstrapService } from './bootstrap.service';
 import { getOrigin, resolveToAbsolute, joinUrl } from '../utils/url.utils';
 
@@ -12,7 +12,7 @@ import { getOrigin, resolveToAbsolute, joinUrl } from '../utils/url.utils';
 export class GalleryDataService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
-  private readonly galleryApiUrl = inject(GALLERY_API_BASE_URL);
+  private readonly galleryApiUrl = `${this.baseUrl}/api/v1/gallery`;
   private readonly apiOrigin = getOrigin(this.baseUrl);
   private readonly bootstrap = inject(BootstrapService);
   private sectionCache = new Map<string, Observable<Slide[]>>();
@@ -30,7 +30,6 @@ export class GalleryDataService {
         .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
         .pipe(
           map((resp) =>
-            // Preserve backend ordering exactly (remove global order sort)
             this.unwrap(resp)
               .map((i) => this.toSlide(i, key))
               .filter((s): s is Slide => !!s)
@@ -57,7 +56,6 @@ export class GalleryDataService {
     );
     if (!imageUrl) return null;
     const id = item.id != null ? String(item.id) : undefined;
-    // Use backend subcategory slug for matching
     const subcategorySlug = item.subcategory?.slug?.toString().trim();
     const section = item.category?.type?.toString().trim() || sectionKey;
     return {

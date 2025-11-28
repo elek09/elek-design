@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,7 +30,7 @@ export interface SubcategoryEditDialogData {
   templateUrl: './subcategory-edit-dialog.component.html',
   styleUrls: ['./subcategory-edit-dialog.component.scss'],
 })
-export class SubcategoryEditDialogComponent {
+export class SubcategoryEditDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<SubcategoryEditDialogComponent>);
   private adminApiService = inject(AdminApiService);
   private data = inject(MAT_DIALOG_DATA) as SubcategoryEditDialogData;

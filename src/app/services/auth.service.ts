@@ -28,8 +28,6 @@ export class AuthService {
   );
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  // Removed empty constructor (not needed with inject()).
-
   login(credentials: LoginRequest): Observable<User> {
     const payload = {
       email: credentials.email,
@@ -60,24 +58,18 @@ export class AuthService {
   }
 
   logout(): void {
-    // If not logged in, just ensure local cleanup and redirect
     if (!this.currentUserSubject.value) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(this.USER_KEY);
-      }
+      this.clearSession();
       this.router.navigate(['/admin/login']);
       return;
     }
 
-    // Call backend to invalidate session; ignore errors/401
     this.http
       .post(`${this.apiBase}/api/v1/auth/logout`, {}, { withCredentials: true })
       .pipe(catchError(() => of(null)))
       .subscribe(() => {
         this.currentUserSubject.next(null);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(this.USER_KEY);
-        }
+        this.clearSession();
         this.router.navigate(['/admin/login']);
       });
   }
@@ -94,7 +86,6 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // Called when backend returns 401 for a protected resource
   handleUnauthorized(): void {
     if (this.currentUserSubject.value) {
       this.currentUserSubject.next(null);
@@ -118,6 +109,4 @@ export class AuthService {
     }
     return null;
   }
-
-  // In cookie-based auth, token expiry is handled server-side.
 }

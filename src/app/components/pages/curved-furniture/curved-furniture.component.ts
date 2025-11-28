@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Slide } from '../../../models/slide.model';
 import { GalleryDataService } from '../../../services/gallery-data.service';
@@ -12,15 +12,11 @@ import { Observable } from 'rxjs';
   templateUrl: './curved-furniture.component.html',
   styleUrl: './curved-furniture.component.scss',
 })
-export class CurvedFurnitureComponent implements OnInit {
+export class CurvedFurnitureComponent {
   private readonly galleryDataService = inject(GalleryDataService);
 
-  protected topCarouselSlides$!: Observable<Slide[]>;
-  protected curvedFurnitureSlides$!: Observable<Slide[]>;
-
-  ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
-    this.curvedFurnitureSlides$ =
-      this.galleryDataService.getSlidesByCategory$('ives-butorok');
-  }
+  protected readonly topCarouselSlides$ =
+    this.galleryDataService.getFeaturedSlides$();
+  protected readonly curvedFurnitureSlides$ =
+    this.galleryDataService.getSlidesByCategory$('ives-butorok');
 }

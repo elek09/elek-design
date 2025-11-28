@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Slide } from '../../../models/slide.model';
 import { GalleryDataService } from '../../../services/gallery-data.service';
@@ -31,14 +31,15 @@ import { ToastrService } from 'ngx-toastr';
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })
-export class ContactComponent implements OnInit {
+export class ContactComponent {
   private readonly galleryDataService = inject(GalleryDataService);
   private readonly fb = inject(FormBuilder);
   private readonly contactService = inject(ContactService);
   private readonly toastr = inject(ToastrService);
 
-  protected topCarouselSlides$!: Observable<Slide[]>;
-  protected form = this.fb.nonNullable.group({
+  protected readonly topCarouselSlides$ =
+    this.galleryDataService.getFeaturedSlides$();
+  protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     subject: ['', [Validators.required, Validators.minLength(3)]],
@@ -46,12 +47,7 @@ export class ContactComponent implements OnInit {
   });
   protected sending = false;
   protected sent = false;
-  // Custom matcher: do not show errors just because form was submitted.
-  protected errorMatcher = new NoSubmitErrorStateMatcher();
-
-  ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
-  }
+  protected readonly errorMatcher = new NoSubmitErrorStateMatcher();
 
   protected submit(): void {
     if (this.form.invalid || this.sending) {

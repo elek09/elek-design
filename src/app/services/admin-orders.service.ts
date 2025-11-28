@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, shareReplay } from 'rxjs';
-import { ADMIN_API_BASE_URL } from '../app.tokens';
+import { API_BASE_URL } from '../app.tokens';
 import { Order, OrderStatus, OrderUpdatePayload } from '../models/order.model';
 
 export interface ApiListResponse<T> {
@@ -14,7 +14,8 @@ export interface ApiItemResponse<T> {
 @Injectable({ providedIn: 'root' })
 export class AdminOrdersService {
   private readonly http = inject(HttpClient);
-  private readonly adminApi = inject(ADMIN_API_BASE_URL);
+  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly adminApi = `${this.baseUrl}/api/v1/admin`;
 
   getOrder(orderId: number) {
     return this.http

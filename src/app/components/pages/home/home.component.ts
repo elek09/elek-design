@@ -29,45 +29,33 @@ export class HomeComponent implements OnInit {
 
   private readonly galleryDataService = inject(GalleryDataService);
   private readonly bootstrapService = inject(BootstrapService);
-
-  topCarouselSlides$!: Observable<Slide[]>;
-  eletterSlides$!: Observable<Slide[]>;
-  uzletterSlides$!: Observable<Slide[]>;
-
-  eletterCategories$!: Observable<Category[]>;
-  uzletterCategories$!: Observable<Category[]>;
-
-  // Page loading state: show spinner until all slider images are preloaded
-  loading = true;
-
-  // Header logo for the loader
   private readonly headerService = inject(HeaderService);
+
+  readonly topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
+  readonly eletterSlides$ =
+    this.galleryDataService.getSlidesByCategory$('eletter');
+  readonly uzletterSlides$ =
+    this.galleryDataService.getSlidesByCategory$('uzletter');
+
+  readonly eletterCategories$ = this.bootstrapService
+    .getCategories$()
+    .pipe(
+      map((cats: Category[]) =>
+        cats.filter((c) => String(c.type) === 'eletter'),
+      ),
+    );
+  readonly uzletterCategories$ = this.bootstrapService
+    .getCategories$()
+    .pipe(
+      map((cats: Category[]) =>
+        cats.filter((c) => String(c.type) === 'uzletter'),
+      ),
+    );
+
+  loading = true;
   readonly headerLogoUrl = this.headerService.headerConfig().logoUrl;
 
   ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
-    this.eletterSlides$ =
-      this.galleryDataService.getSlidesByCategory$('eletter');
-    this.uzletterSlides$ =
-      this.galleryDataService.getSlidesByCategory$('uzletter');
-
-    // Use backend categories as-is; filter by section type
-    this.eletterCategories$ = this.bootstrapService
-      .getCategories$()
-      .pipe(
-        map((cats: Category[]) =>
-          cats.filter((c) => String(c.type) === 'eletter'),
-        ),
-      );
-    this.uzletterCategories$ = this.bootstrapService
-      .getCategories$()
-      .pipe(
-        map((cats: Category[]) =>
-          cats.filter((c) => String(c.type) === 'uzletter'),
-        ),
-      );
-
-    // Wait for the first emission of all slide streams, then preload images
     void this.whenSlidesReadyAndPreloaded();
   }
 

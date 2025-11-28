@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Slide } from '../../../models/slide.model';
 import { GalleryDataService } from '../../../services/gallery-data.service';
@@ -12,15 +12,11 @@ import { Observable } from 'rxjs';
   templateUrl: './wall-cladding.component.html',
   styleUrls: ['./wall-cladding.component.scss'],
 })
-export class WallCladdingComponent implements OnInit {
+export class WallCladdingComponent {
   private readonly galleryDataService = inject(GalleryDataService);
 
-  protected topCarouselSlides$!: Observable<Slide[]>;
-  protected wallCladdingSlides$!: Observable<Slide[]>;
-
-  ngOnInit(): void {
-    this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
-    this.wallCladdingSlides$ =
-      this.galleryDataService.getSlidesByCategory$('3d-falboritas');
-  }
+  protected readonly topCarouselSlides$ =
+    this.galleryDataService.getFeaturedSlides$();
+  protected readonly wallCladdingSlides$ =
+    this.galleryDataService.getSlidesByCategory$('3d-falboritas');
 }

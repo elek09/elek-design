@@ -1,3 +1,12 @@
+// Admin-specific data models
+
+export interface NavItem {
+  route: string;
+  icon: string;
+  label: string;
+  exact?: boolean;
+}
+
 export interface GalleryItem {
   id: number;
   title: string;

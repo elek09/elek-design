@@ -75,10 +75,12 @@
             </div>
 
             <h4>Alkategóriák</h4>
-            <div class="subcats-actions" *ngIf="selectedCategory">
+            @if (selectedCategory) {
+            <div class="subcats-actions">
                 <button mat-raised-button color="primary" (click)="saveSubcategoryOrder()"
                     [disabled]="!subOrderDirty">Alkategória sorrend mentése</button>
             </div>
+            }
             <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
                 @for (sub of selectedSubcategoriesView; track trackBySub($index, sub); let i = $index) {
                 <li cdkDrag>

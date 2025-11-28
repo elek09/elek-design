@@ -63,11 +63,11 @@ export class AdminDashboardComponent implements OnInit {
     this.isLoading = true;
     // Load categories and backend-calculated stats
     const categories$ = this.adminApiService.getCategories(fresh);
-    
+
     categories$.subscribe({
       next: (cats: Category[]) => {
         this.categories = cats || [];
-        
+
         // Get pre-calculated stats from backend
         this.adminApiService.getDashboardStats().subscribe({
           next: (stats) => {
@@ -90,15 +90,13 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  // Stats now come from backend - no frontend calculation needed
-
   logout(): void {
     this.authService.logout();
   }
 
   getCategoryKeys(): string[] {
     if (!this.stats?.gallery?.byCategory) return [];
-    
+
     // Backend uses category names as keys, not type slugs
     // Return all keys from byCategory that exist
     return Object.keys(this.stats.gallery.byCategory);
@@ -130,6 +128,4 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   readonly formatDateTime = formatDateTime;
-
-  // normalization moved to utils/category.utils
 }

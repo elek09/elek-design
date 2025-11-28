@@ -16,7 +16,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AdminHeaderComponent } from '../admin-header/admin-header.component';
-import { slugify } from '../../../utils/category.utils';
+import { slugify, normalizeSubcategories } from '../../../utils/category.utils';
 import { SubcategoryEditDialogComponent } from './subcategory-edit-dialog/subcategory-edit-dialog.component';
 
 @Component({
@@ -72,34 +72,6 @@ export class CategoryManagerComponent implements OnInit {
     this.router.navigate(['/admin/dashboard']);
   }
 
-  // Internal normalized representation of a subcategory
-  private normalizeSubcategories(list: Category['subcategories']): {
-    id?: number | string;
-    slug: string;
-    name: string;
-    nav_order?: number;
-  }[] {
-    if (!Array.isArray(list)) return [];
-    return list
-      .map((raw) => {
-        if (typeof raw === 'string') {
-          const slug = slugify(raw)!;
-          return { slug, name: raw };
-        }
-        const name = raw.name ?? String(raw.slug ?? raw.id ?? '');
-        const slug = raw.slug ? slugify(raw.slug)! : slugify(name)!;
-        const nav_order =
-          typeof raw.nav_order === 'number' ? Number(raw.nav_order) : undefined;
-        return { id: raw.id, slug, name, nav_order };
-      })
-      .sort(
-        (a, b) =>
-          (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
-          (b.nav_order ?? Number.MAX_SAFE_INTEGER),
-      )
-      .map((s, idx) => ({ ...s, nav_order: idx + 1 }));
-  }
-
   selectCategory(category: Category): void {
     this.selectedCategory = JSON.parse(JSON.stringify(category));
     this.originalCategoryType = category.type;
@@ -118,7 +90,7 @@ export class CategoryManagerComponent implements OnInit {
       this.selectedSubcategories = [];
       return;
     }
-    
+
     // Use optimized backend endpoint to fetch only subcategories for this category
     // Backend already returns them ordered by nav_order
     this.adminApiService.getSubcategoriesByCategory(catId).subscribe({
@@ -138,7 +110,7 @@ export class CategoryManagerComponent implements OnInit {
     const isCreate = !category._id && !category.id;
     if (isCreate) {
       if (category.type) category.type = slugify(category.type)!; // slug only on create
-      const subs = this.normalizeSubcategories(category.subcategories).map(
+      const subs = normalizeSubcategories(category.subcategories).map(
         (s, idx) => ({
           id: s.id,
           slug: s.slug,
@@ -416,15 +388,15 @@ export class CategoryManagerComponent implements OnInit {
 
   saveSubcategoryOrder(): void {
     if (!this.subOrderDirty || this.selectedSubcategories.length === 0) return;
-    
+
     // Ensure current local order indices are set
     this.selectedSubcategories.forEach((s, idx) => (s.nav_order = idx + 1));
-    
+
     // Update all subcategory nav_order values in parallel
     const updates = this.selectedSubcategories.map((s) =>
-      this.adminApiService.updateSubcategory(s.id!, { nav_order: s.nav_order })
+      this.adminApiService.updateSubcategory(s.id!, { nav_order: s.nav_order }),
     );
-    
+
     forkJoin(updates).subscribe({
       next: () => {
         this.subOrderDirty = false;

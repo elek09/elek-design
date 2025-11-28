@@ -9,6 +9,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminHeaderComponent } from '../../admin-header/admin-header.component';
 import { AdminOrdersService } from '../../../../services/admin-orders.service';
 import { Order, OrderStatus } from '../../../../models/order.model';
+import { formatDateTime } from '../../../../utils/date.utils';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   ColDef,
@@ -63,7 +64,7 @@ export class OrdersListComponent implements OnInit {
       headerName: 'Dátum',
       minWidth: 180,
       valueFormatter: (p: ValueFormatterParams) =>
-        p.value ? new Date(p.value as string).toLocaleString('hu-HU') : '',
+        p.value ? formatDateTime(p.value as string, 'hu-HU') : '',
     },
     {
       headerName: 'Ügyfél',

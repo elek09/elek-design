@@ -75,7 +75,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   totalItems = 0;
   perPage = 0;
 
-  selectedCategory: string | 'all' = 'all'; // now holds category or subcategory numeric id as string
+  selectedCategory: string | 'all' = 'all';
   selectedStatus: 'all' | 'active' | 'inactive' = 'all';
   searchTerm = '';
 
@@ -192,34 +192,34 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   loadGalleryItems(): void {
     this.isLoading = true;
-    
+
     const filters: GalleryFilterParams = { page: this.currentPage };
-    
+
     if (this.selectedStatus !== 'all') {
       filters.status = this.selectedStatus;
     }
-    
+
     if (this.selectedCategory !== 'all') {
       const isMain = this.selectedCategory.startsWith('cat-');
       const isSub = this.selectedCategory.startsWith('sub-');
       const rawId = this.selectedCategory.replace(/^(cat-|sub-)/, '');
-      
+
       if (isMain) {
         filters.category_id = rawId;
       } else if (isSub) {
         filters.subcategory_id = rawId;
       }
     }
-    
+
     if (this.searchTerm.trim()) {
       filters.search = this.searchTerm.trim();
     }
-    
+
     this.adminApiService.getGalleryItemsFiltered(filters).subscribe({
       next: (resp) => {
         const meta = resp.meta || resp.pagination;
         this.galleryItems = resp.data || [];
-        
+
         if (meta) {
           this.currentPage = meta.current_page;
           this.lastPage = meta.last_page;

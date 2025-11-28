@@ -6,8 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { AdminNavComponent } from '../admin-nav/admin-nav.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BootstrapService } from '../../../services/bootstrap.service';
-import { AdminApiService } from '../../../services/admin-api.service';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-admin-header',
@@ -29,11 +28,7 @@ export class AdminHeaderComponent {
   @Input() backLink?: string | string[];
 
   private readonly bootstrap = inject(BootstrapService);
-  private readonly adminApi = inject(AdminApiService);
 
-  // Show spinner when either bootstrap or gallery list is refreshing
-  readonly isRefreshing$: Observable<boolean> = combineLatest([
-    this.bootstrap.loading$,
-    this.adminApi.loading$,
-  ]).pipe(map(([a, b]) => !!a || !!b));
+  // Show spinner when bootstrap is refreshing
+  readonly isRefreshing$: Observable<boolean> = this.bootstrap.loading$;
 }

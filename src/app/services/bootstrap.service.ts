@@ -40,16 +40,9 @@ export class BootstrapService {
     switchMap(() =>
       defer(() =>
         this.http
-          .get<
-            BootstrapPayload | { success?: boolean; data?: BootstrapPayload }
-          >(this.url)
+          .get<BootstrapPayload | { data: BootstrapPayload }>(this.url)
           .pipe(
-            map(
-              (res: any) =>
-                (res && typeof res === 'object' && 'data' in res
-                  ? res.data
-                  : res) as BootstrapPayload,
-            ),
+            map((res) => ('data' in res ? res.data : res)),
             catchError(() => of<BootstrapPayload>({})),
           ),
       ),
