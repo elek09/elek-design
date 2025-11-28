@@ -15,9 +15,36 @@ use App\Models\Category;
 
 class GalleryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = GalleryItem::with(['category','subcategory'])->latest()->paginate(20);
+        $query = GalleryItem::with(['category', 'subcategory']);
+
+        // Filter by active/inactive status
+        if ($request->has('status')) {
+            $isActive = $request->status === 'active';
+            $query->where('is_active', $isActive);
+        }
+
+        // Filter by category_id
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by subcategory_id
+        if ($request->has('subcategory_id')) {
+            $query->where('subcategory_id', $request->subcategory_id);
+        }
+
+        // Search in title or description
+        if ($request->has('search') && $search = $request->search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $items = $query->latest()->paginate($request->input('per_page', 20));
+
         return \App\Http\Resources\GalleryItemResource::collection($items)
             ->additional([
                 'success' => true,
@@ -59,7 +86,7 @@ class GalleryController extends Controller
             // Invalidate bootstrap cache as featured list might change
             Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
 
-            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category','subcategory']));
+            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category', 'subcategory']));
 
         } catch (\Exception $e) {
             return response()->json([
@@ -98,14 +125,15 @@ class GalleryController extends Controller
             $subs = Category::query()
                 ->pluck('subcategories')
                 ->filter()
-                ->flatMap(function ($arr) { return collect($arr)->pluck('id'); })
+                ->flatMap(function ($arr) {
+                    return collect($arr)->pluck('id'); })
                 ->filter()->unique()->values()->all();
             $validCategories = array_values(array_unique(array_merge($types, $subs, ['featured', 'egyeb'])));
 
             $validated = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
-                'category_id' => ['sometimes','nullable','integer','exists:categories,id','required_without:subcategory_id'],
-                'subcategory_id' => ['sometimes','nullable','integer','exists:category_subcategories,id','required_without:category_id'],
+                'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id', 'required_without:subcategory_id'],
+                'subcategory_id' => ['sometimes', 'nullable', 'integer', 'exists:category_subcategories,id', 'required_without:category_id'],
                 'description' => 'nullable|string|max:1000',
                 'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'file' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -140,7 +168,7 @@ class GalleryController extends Controller
             // Invalidate bootstrap cache as featured or active state might affect it
             Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
 
-            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category','subcategory']));
+            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category', 'subcategory']));
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -183,7 +211,7 @@ class GalleryController extends Controller
 
         $galleryItem->update(['is_active' => $validated['is_active']]);
         Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Gallery item status updated successfully.',
@@ -199,7 +227,7 @@ class GalleryController extends Controller
 
         $galleryItem->update(['is_featured' => $validated['is_featured']]);
         Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Gallery item featured status updated successfully.',

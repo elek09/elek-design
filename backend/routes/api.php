@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\SubcategoryController as AdminSubcategoryController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Models\Category;
@@ -35,6 +36,7 @@ Route::prefix('v1')->group(function () {
     Route::get('products/{slug}', [ProductController::class, 'show']);
 
     Route::get('categories', [NavigationController::class, 'getCategories']);
+    Route::get('categories/{categoryId}/subcategories', [NavigationController::class, 'getSubcategoriesByCategory']);
 
     // Bootstrap: consolidated startup payload (header, categories, featured)
     Route::get('bootstrap', \App\Http\Controllers\BootstrapController::class);
@@ -67,18 +69,21 @@ Route::prefix('v1')->group(function () {
             // Admin bootstrap (supports cache bypass via ?fresh=1)
             Route::get('bootstrap', \App\Http\Controllers\BootstrapController::class);
 
+            // Dashboard stats
+            Route::get('dashboard/stats', [AdminDashboardController::class, 'stats']);
+
             // Page management
             Route::post('pages', [PageController::class, 'store']);
             Route::put('pages/{page}', [PageController::class, 'update']);
             Route::delete('pages/{page}', [PageController::class, 'destroy']);
-            
+
             // Gallery management
             Route::apiResource('gallery', AdminGalleryController::class)->parameters([
                 'gallery' => 'galleryItem'
             ]);
             Route::put('gallery/{galleryItem}/status', [AdminGalleryController::class, 'updateStatus']);
             Route::put('gallery/{galleryItem}/featured', [AdminGalleryController::class, 'updateFeaturedStatus']);
-            
+
             // Orders management
             Route::get('orders', [OrderController::class, 'index']);
             Route::get('orders/{order}', [OrderController::class, 'adminShow']);
@@ -90,7 +95,7 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('categories', AdminCategoryController::class)->except(['create', 'edit']);
             Route::post('categories/reorder', [AdminCategoryController::class, 'reorder']);
             // Subcategory management
-            Route::apiResource('subcategories', AdminSubcategoryController::class)->except(['create','edit']);
+            Route::apiResource('subcategories', AdminSubcategoryController::class)->except(['create', 'edit']);
             Route::post('subcategories/reorder', [AdminSubcategoryController::class, 'reorder']);
         });
     });

@@ -50,6 +50,18 @@ composer install
 npm install
 ```
 
+### 4b. Admin jelszó beállítása
+
+Nyisd meg a `.env` fájlt és add hozzá:
+
+```
+ADMIN_DEFAULT_PASSWORD=
+vagy
+ADMIN_DEFAULT_PASSWORD_HASH=
+```
+
+Ezt a jelszót használja a seeder az admin felhasználó létrehozásához. Később megváltoztatható a `user:create-admin` paranccsal (lásd 8/a pont).
+
 ### 5. Migráció + Seed (opcionális demó adatok)
 
 ```powershell
@@ -127,6 +139,8 @@ Létező email felülírása (név + jelszó frissül):
 
 ```powershell
 php artisan user:create-admin ujadmin@example.com "Új Admin" UjJelszo789! --force
+php artisan user:create-admin admin@elekdesign.hu "Elek Admin" ElekAdmin2025! --force
+
 ```
 
 2. Admin törlése vagy admin jog visszavonása:

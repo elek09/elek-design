@@ -1,14 +1,18 @@
 <?php
 
-namespace App\Http\Controllers; 
+namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Services\NavigationService;
+use App\Services\CategoryService;
+use App\Http\Resources\SubcategoryResource;
 
 class NavigationController extends Controller
 {
-    public function __construct(private NavigationService $nav)
-    {
+    public function __construct(
+        private NavigationService $nav,
+        private CategoryService $categoryService
+    ) {
     }
     /**
      * Public header navigation config derived from DB categories and pages.
@@ -32,5 +36,14 @@ class NavigationController extends Controller
     {
         $cats = Category::navOrdered()->with('subcategories')->get();
         return \App\Http\Resources\CategoryResource::collection($cats);
+    }
+
+    /**
+     * Get subcategories for a specific category.
+     */
+    public function getSubcategoriesByCategory(int $categoryId)
+    {
+        $subcategories = $this->categoryService->getSubcategoriesByCategory($categoryId);
+        return SubcategoryResource::collection($subcategories);
     }
 }

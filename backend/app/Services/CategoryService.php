@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Subcategory;
+use Illuminate\Database\Eloquent\Collection;
 
 class CategoryService
 {
@@ -23,5 +25,12 @@ class CategoryService
     {
         // Cache invalidálást az Observer végzi
         $category->delete();
+    }
+
+    public function getSubcategoriesByCategory(int $categoryId): Collection
+    {
+        return Subcategory::where('category_id', $categoryId)
+            ->navOrdered()
+            ->get();
     }
 }
