@@ -7,10 +7,10 @@ import { AuthService } from '../../../services/auth.service';
 import {
   GalleryItem,
   GalleryCreateRequest,
+  GalleryFilterParams,
 } from '../../../models/admin.models';
 import { map, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { CategoryService } from '../../../services/category.service';
 import { Category } from '../../../models/category.model';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -50,7 +50,6 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private categoryService = inject(CategoryService);
 
   galleryConfig: GalleryConfig | null = null;
   showUploadForm = false;
@@ -69,14 +68,12 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   isLoading = true;
 
   galleryItems: GalleryItem[] = [];
-  filteredItems: GalleryItem[] = [];
 
   // Pagination state
   currentPage = 1;
   lastPage = 1;
   totalItems = 0;
   perPage = 0;
-  allPagesLoaded = false;
 
   selectedCategory: string | 'all' = 'all'; // now holds category or subcategory numeric id as string
   selectedStatus: 'all' | 'active' | 'inactive' = 'all';
@@ -95,25 +92,25 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   loadConfigAndItems(): void {
     this.isLoading = true;
-    this.categoryService
-      .getCategoriesFresh()
+    this.adminApiService
+      .getCategories(true)
       .pipe(
         map((categories: Category[]) => this.buildGalleryConfig(categories)),
         takeUntil(this.destroy$),
       )
       .subscribe({
-        next: (config) => {
+        next: (config: GalleryConfig) => {
           this.galleryConfig = config;
           const qp = this.route.snapshot.queryParamMap;
           const main = qp.get('mainCategory') || qp.get('main') || '';
           const sub = qp.get('subCategory') || qp.get('sub') || '';
 
-          const mainExists = !!this.galleryConfig.categories.find(
+          const mainExists = !!this.galleryConfig?.categories.find(
             (c) => c.value === main,
           );
           this.uploadForm.mainCategoryId = mainExists
             ? main!
-            : this.galleryConfig.categories[0]?.value || '';
+            : this.galleryConfig?.categories[0]?.value || '';
 
           this.onMainCategoryChange();
 
@@ -137,7 +134,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
           this.loadGalleryItems();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading categories for config:', error);
           this.error = 'Failed to load gallery configuration.';
           this.isLoading = false;
@@ -195,42 +192,45 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   loadGalleryItems(): void {
     this.isLoading = true;
-    this.adminApiService.getGalleryItemsPage(this.currentPage).subscribe({
+    
+    const filters: GalleryFilterParams = { page: this.currentPage };
+    
+    if (this.selectedStatus !== 'all') {
+      filters.status = this.selectedStatus;
+    }
+    
+    if (this.selectedCategory !== 'all') {
+      const isMain = this.selectedCategory.startsWith('cat-');
+      const isSub = this.selectedCategory.startsWith('sub-');
+      const rawId = this.selectedCategory.replace(/^(cat-|sub-)/, '');
+      
+      if (isMain) {
+        filters.category_id = rawId;
+      } else if (isSub) {
+        filters.subcategory_id = rawId;
+      }
+    }
+    
+    if (this.searchTerm.trim()) {
+      filters.search = this.searchTerm.trim();
+    }
+    
+    this.adminApiService.getGalleryItemsFiltered(filters).subscribe({
       next: (resp) => {
         const meta = resp.meta || resp.pagination;
-        if (resp.data) {
-          this.galleryItems = resp.data;
-        }
+        this.galleryItems = resp.data || [];
+        
         if (meta) {
           this.currentPage = meta.current_page;
           this.lastPage = meta.last_page;
           this.totalItems = meta.total;
           this.perPage = meta.per_page;
         }
-        this.onFilterChange();
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading gallery items page:', err);
+        console.error('Error loading gallery items:', err);
         this.error = 'Failed to load gallery items';
-        this.isLoading = false;
-      },
-    });
-  }
-
-  loadAllPages(): void {
-    if (this.allPagesLoaded) return;
-    this.isLoading = true;
-    this.adminApiService.getAllGalleryItems().subscribe({
-      next: (items) => {
-        this.galleryItems = items;
-        this.allPagesLoaded = true;
-        this.onFilterChange();
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading all gallery pages:', err);
-        this.error = 'Failed to load all pages';
         this.isLoading = false;
       },
     });
@@ -243,13 +243,8 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
-    this.filteredItems = filterGalleryItems(
-      this.galleryItems,
-      this.galleryConfig,
-      this.selectedCategory,
-      this.selectedStatus,
-      this.searchTerm,
-    );
+    this.currentPage = 1;
+    this.loadGalleryItems();
   }
 
   trackById(_index: number, item: GalleryItem): number | undefined {
@@ -468,50 +463,4 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
   }
-}
-
-// Pure filtering function kept outside the component class for easier unit testing and future migration to signals
-function filterGalleryItems(
-  items: GalleryItem[],
-  cfg: GalleryConfig | null,
-  selectedCategory: string | 'all',
-  selectedStatus: 'all' | 'active' | 'inactive',
-  searchTerm: string,
-): GalleryItem[] {
-  let out = [...items];
-
-  if (selectedStatus !== 'all') {
-    const isActive = selectedStatus === 'active';
-    out = out.filter((i) => i.is_active === isActive);
-  }
-
-  if (selectedCategory !== 'all' && cfg) {
-    const isMain = selectedCategory.startsWith('cat-');
-    const isSub = selectedCategory.startsWith('sub-');
-    const rawId = selectedCategory.replace(/^(cat-|sub-)/, '');
-    out = out.filter((item) => {
-      const catObj = typeof item.category === 'object' ? item.category : null;
-      const catId = catObj?.id != null ? String(catObj.id) : undefined;
-      const subId =
-        item.subcategory?.id != null ? String(item.subcategory.id) : undefined;
-      if (isMain) {
-        return catId === rawId; // include all subcategories under this main category
-      }
-      if (isSub) {
-        return subId === rawId; // only this specific subcategory
-      }
-      return true; // safety fallback
-    });
-  }
-
-  if (searchTerm.trim()) {
-    const lower = searchTerm.toLowerCase();
-    out = out.filter(
-      (i) =>
-        i.title.toLowerCase().includes(lower) ||
-        (i.description?.toLowerCase().includes(lower) ?? false),
-    );
-  }
-
-  return out;
 }

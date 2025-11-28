@@ -9,7 +9,7 @@ import {
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { SubcategoryService } from '../../../../services/subcategory.service';
+import { AdminApiService } from '../../../../services/admin-api.service';
 import { Subcategory } from '../../../../models/category.model';
 
 export interface SubcategoryEditDialogData {
@@ -32,7 +32,7 @@ export interface SubcategoryEditDialogData {
 })
 export class SubcategoryEditDialogComponent {
   private dialogRef = inject(MatDialogRef<SubcategoryEditDialogComponent>);
-  private subService = inject(SubcategoryService);
+  private adminApiService = inject(AdminApiService);
   private data = inject(MAT_DIALOG_DATA) as SubcategoryEditDialogData;
 
   loading = true;
@@ -46,13 +46,13 @@ export class SubcategoryEditDialogComponent {
       this.loading = false;
       return;
     }
-    this.subService.get(this.data.id).subscribe({
-      next: (sub) => {
+    this.adminApiService.getSubcategory(this.data.id).subscribe({
+      next: (sub: Subcategory) => {
         this.model = sub;
         this.nameInput = sub.name;
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         this.error = err?.error?.message || 'Betöltési hiba';
         this.loading = false;
       },
@@ -65,17 +65,16 @@ export class SubcategoryEditDialogComponent {
     if (!newName) return;
     this.error = '';
     this.loading = true;
-    this.subService
-      .update(this.model.id, {
+    this.adminApiService
+      .updateSubcategory(this.model.id, {
         name: newName,
-        category_id: this.model.category_id,
       })
       .subscribe({
-        next: (updated) => {
+        next: (updated: Subcategory) => {
           this.loading = false;
           this.dialogRef.close(updated);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.error = err?.error?.message || 'Mentési hiba';
           this.loading = false;
         },

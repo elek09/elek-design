@@ -33,3 +33,27 @@ export interface GalleryUpdateRequest {
   is_active?: boolean;
   is_featured?: boolean;
 }
+
+export interface DashboardStats {
+  gallery: {
+    total: number;
+    active: number;
+    inactive: number;
+    featured: number;
+    byCategory: Record<string, number>;
+    recent: GalleryItem[];
+  };
+  orders: {
+    total: number;
+    byStatus: Record<string, number>;
+    recent: any[];
+  };
+}
+
+export interface GalleryFilterParams {
+  status?: 'active' | 'inactive' | 'all';
+  category_id?: number | string;
+  subcategory_id?: number | string;
+  search?: string;
+  page?: number;
+}

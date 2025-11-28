@@ -2,13 +2,14 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import {
   CdkDragDrop,
   DragDropModule,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
-import { Category } from '../../../models/category.model';
-import { CategoryService } from '../../../services/category.service';
+import { Category, Subcategory } from '../../../models/category.model';
+import { AdminApiService } from '../../../services/admin-api.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,8 +17,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AdminHeaderComponent } from '../admin-header/admin-header.component';
 import { slugify } from '../../../utils/category.utils';
-import { SubcategoryService } from '../../../services/subcategory.service';
-import { Subcategory } from '../../../models/category.model';
 import { SubcategoryEditDialogComponent } from './subcategory-edit-dialog/subcategory-edit-dialog.component';
 
 @Component({
@@ -39,8 +38,7 @@ import { SubcategoryEditDialogComponent } from './subcategory-edit-dialog/subcat
   styleUrls: ['./category-manager.component.scss'],
 })
 export class CategoryManagerComponent implements OnInit {
-  private categoryService = inject(CategoryService);
-  private subcategoryService = inject(SubcategoryService);
+  private adminApiService = inject(AdminApiService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
 
@@ -63,12 +61,9 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   loadCategories(): void {
-    this.categoryService.getCategoriesFresh().subscribe((data) => {
-      this.categories = [...(data || [])].sort(
-        (a, b) =>
-          (a.nav_order ?? Number.MAX_SAFE_INTEGER) -
-          (b.nav_order ?? Number.MAX_SAFE_INTEGER),
-      );
+    this.adminApiService.getCategories(true).subscribe((data: Category[]) => {
+      // Backend already returns categories ordered by nav_order
+      this.categories = data || [];
       this.orderDirty = false;
     });
   }
@@ -105,16 +100,6 @@ export class CategoryManagerComponent implements OnInit {
       .map((s, idx) => ({ ...s, nav_order: idx + 1 }));
   }
 
-  private getSelectedSubs(): {
-    id?: number | string;
-    slug: string;
-    name: string;
-    nav_order?: number;
-  }[] {
-    if (!this.selectedCategory) return [];
-    return (this.selectedCategory.subcategories || []) as any;
-  }
-
   selectCategory(category: Category): void {
     this.selectedCategory = JSON.parse(JSON.stringify(category));
     this.originalCategoryType = category.type;
@@ -133,14 +118,15 @@ export class CategoryManagerComponent implements OnInit {
       this.selectedSubcategories = [];
       return;
     }
-    this.subcategoryService.listByCategory(catId).subscribe({
-      next: (subs) => {
-        this.selectedSubcategories = [...subs]
-          .sort((a, b) => (a.nav_order ?? 999999) - (b.nav_order ?? 999999))
-          .map((s, idx) => ({ ...s, nav_order: idx + 1 }));
+    
+    // Use optimized backend endpoint to fetch only subcategories for this category
+    // Backend already returns them ordered by nav_order
+    this.adminApiService.getSubcategoriesByCategory(catId).subscribe({
+      next: (subs: Subcategory[]) => {
+        this.selectedSubcategories = subs;
         this.subOrderDirty = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         this.lastError =
           err?.error?.message || 'Alkategóriák betöltése sikertelen';
       },
@@ -164,12 +150,12 @@ export class CategoryManagerComponent implements OnInit {
         ...category,
         subcategories: subs as any,
       };
-      this.categoryService.saveCategory(createPayload).subscribe({
+      this.adminApiService.saveCategory(createPayload).subscribe({
         next: () => {
           this.loadCategories();
           this.resetForm();
         },
-        error: (err) => {
+        error: (err: any) => {
           const msg = err?.error?.message || err?.message || 'Save failed';
           this.lastError = msg;
         },
@@ -200,7 +186,7 @@ export class CategoryManagerComponent implements OnInit {
       this.lastError = 'Hiányzó kategória azonosító';
       return;
     }
-    this.categoryService.patchCategory(id, patch).subscribe({
+    this.adminApiService.patchCategory(id, patch).subscribe({
       next: () => {
         this.loadCategories();
         this.resetForm();
@@ -214,7 +200,7 @@ export class CategoryManagerComponent implements OnInit {
 
   deleteCategory(id: string | number | undefined): void {
     if (id) {
-      this.categoryService.deleteCategory(id).subscribe(() => {
+      this.adminApiService.deleteCategory(id).subscribe(() => {
         this.loadCategories();
         this.resetForm();
       });
@@ -239,14 +225,14 @@ export class CategoryManagerComponent implements OnInit {
     if (!name) return;
     const catId = this.selectedCategory._id || this.selectedCategory.id;
     if (!catId) return;
-    this.subcategoryService
-      .create({ category_id: catId, name, slug: slugify(name)! })
+    this.adminApiService
+      .createSubcategory({ category_id: catId, name, slug: slugify(name)! })
       .subscribe({
         next: () => {
           this.newSubcategoryName = '';
           this.loadSubcategoriesForSelected();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.lastError =
             err?.error?.message || 'Alkategória létrehozás sikertelen';
         },
@@ -256,9 +242,9 @@ export class CategoryManagerComponent implements OnInit {
   removeSubcategory(index: number): void {
     const sub = this.selectedSubcategories[index];
     if (!sub?.id) return;
-    this.subcategoryService.delete(sub.id).subscribe({
+    this.adminApiService.deleteSubcategory(sub.id).subscribe({
       next: () => this.loadSubcategoriesForSelected(),
-      error: (err) =>
+      error: (err: any) =>
         (this.lastError = err?.error?.message || 'Alkategória törlés hiba'),
     });
   }
@@ -314,12 +300,10 @@ export class CategoryManagerComponent implements OnInit {
     if (!this.orderDirty) return;
     // Ensure nav_order is sequential before save
     this.categories.forEach((c, idx) => (c.nav_order = idx + 1));
-    this.categoryService.reorderCategories(this.categories).subscribe({
-      next: (updated) => {
-        // Replace local state with returned ordered list
-        this.categories = [...(updated || [])].sort(
-          (a, b) => (a.nav_order ?? 999999) - (b.nav_order ?? 999999),
-        );
+    this.adminApiService.reorderCategories(this.categories).subscribe({
+      next: (updated: Category[]) => {
+        // Backend already returns categories ordered by nav_order
+        this.categories = updated || [];
         this.orderDirty = false;
       },
       error: (err) => {
@@ -431,15 +415,22 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   saveSubcategoryOrder(): void {
-    if (!this.subOrderDirty) return;
+    if (!this.subOrderDirty || this.selectedSubcategories.length === 0) return;
+    
     // Ensure current local order indices are set
     this.selectedSubcategories.forEach((s, idx) => (s.nav_order = idx + 1));
-    this.subcategoryService.reorder(this.selectedSubcategories).subscribe({
+    
+    // Update all subcategory nav_order values in parallel
+    const updates = this.selectedSubcategories.map((s) =>
+      this.adminApiService.updateSubcategory(s.id!, { nav_order: s.nav_order })
+    );
+    
+    forkJoin(updates).subscribe({
       next: () => {
         this.subOrderDirty = false;
         this.loadSubcategoriesForSelected();
       },
-      error: (err) => {
+      error: (err: any) => {
         this.lastError =
           err?.error?.message || 'Alkategória sorrend mentés hiba';
       },

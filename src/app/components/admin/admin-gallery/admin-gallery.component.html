@@ -150,20 +150,15 @@
         </div>
 
         <div class="results-info">
-            Megjelenítve {{ filteredItems.length }} / {{ allPagesLoaded ? totalItems : galleryItems.length }} kép
+            Megjelenítve {{ galleryItems.length }} kép (oldal {{ currentPage }} / {{ lastPage }})
         </div>
-        <div class="pagination-controls" *ngIf="!error">
-            <div class="pager" *ngIf="lastPage > 1">
+        <div class="pagination-controls" *ngIf="!error && lastPage > 1">
+            <div class="pager">
                 <button mat-stroked-button color="primary" (click)="goToPage(currentPage - 1)"
                     [disabled]="currentPage === 1">Előző</button>
                 <span class="page-info">Oldal {{ currentPage }} / {{ lastPage }}</span>
                 <button mat-stroked-button color="primary" (click)="goToPage(currentPage + 1)"
                     [disabled]="currentPage === lastPage">Következő</button>
-                <button mat-raised-button color="primary" (click)="loadAllPages()" *ngIf="!allPagesLoaded"
-                    [disabled]="isLoading">Összes betöltése</button>
-            </div>
-            <div class="pager" *ngIf="allPagesLoaded">
-                <span class="page-info">Összes oldal betöltve ({{ totalItems }} kép)</span>
             </div>
         </div>
     </div>
@@ -183,9 +178,9 @@
     <!-- Gallery Grid -->
     @if (!error) {
     <div class="gallery-content">
-        @if (filteredItems.length > 0) {
+        @if (galleryItems.length > 0) {
         <div class="gallery-grid">
-            @for (item of filteredItems; track item.id) {
+            @for (item of galleryItems; track item.id) {
             <div class="gallery-item">
                 <div class="item-image">
                     <img [src]="getThumbOrImage(item)" [alt]="item.title">
@@ -232,7 +227,7 @@
         }
 
         <!-- Empty State -->
-        @if (!error && filteredItems.length === 0) {
+        @if (!error && galleryItems.length === 0) {
         <div class="empty-state">
             <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>
             <h3>Nem található galéria kép</h3>

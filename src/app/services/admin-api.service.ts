@@ -12,18 +12,20 @@ import {
   merge,
   map,
   distinctUntilChanged,
-  of,
-  forkJoin,
 } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   GalleryItem,
   GalleryCreateRequest,
   GalleryUpdateRequest,
+  DashboardStats,
+  GalleryFilterParams,
 } from '../models/admin.models';
 import { API_BASE_URL, ADMIN_API_BASE_URL } from '../app.tokens';
 import { GalleryConfig } from '../models/gallery.model';
 import { ApiResponse, PaginatedApiResponse } from '../models/api.model';
+import { Category, Subcategory } from '../models/category.model';
+import { BootstrapService } from './bootstrap.service';
 
 @Injectable({
   providedIn: 'root',
@@ -31,76 +33,55 @@ import { ApiResponse, PaginatedApiResponse } from '../models/api.model';
 export class AdminApiService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
+  private readonly bootstrap = inject(BootstrapService);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly adminApiUrl = inject(ADMIN_API_BASE_URL);
 
+  private readonly categoriesAdminUrl = `${this.baseUrl}/api/v1/admin/categories`;
+  private readonly subcategoriesAdminUrl = `${this.baseUrl}/api/v1/admin/subcategories`;
+  
   private refresh$ = new Subject<void>();
 
-  private galleryItems$: Observable<ApiResponse<GalleryItem[]>>;
-  /** Emits true while gallery list refresh request is in-flight, else false. */
-  readonly loading$: Observable<boolean>;
+  /** Emits true while gallery operations are in-flight, else false. */
+  readonly loading$: Observable<boolean> = merge(
+    this.refresh$.pipe(map(() => true)),
+  ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
 
-  constructor() {
-    this.galleryItems$ = this.refresh$.pipe(
-      startWith(null), // Trigger initial fetch
-      switchMap(() =>
-        this.http.get<ApiResponse<GalleryItem[]>>(
-          `${this.adminApiUrl}/gallery`,
-        ),
-      ),
-      shareReplay(1), // Cache the result
-    );
-
-    // loading$ toggles true on refresh trigger and false when galleryItems$ emits
-    this.loading$ = merge(
-      this.refresh$.pipe(map(() => true)),
-      this.galleryItems$.pipe(map(() => false)),
-    ).pipe(startWith(false), distinctUntilChanged(), shareReplay(1));
-  }
-
-  // Gallery Management
-  getGalleryItems(): Observable<ApiResponse<GalleryItem[]>> {
-    return this.galleryItems$;
-  }
-
-  /** Fetch a specific page of gallery items (1-based page index). */
-  getGalleryItemsPage(
-    page: number,
-  ): Observable<PaginatedApiResponse<GalleryItem>> {
-    const url = `${this.adminApiUrl}/gallery?page=${page}`;
+  // Dashboard Stats
+  getDashboardStats(): Observable<DashboardStats> {
     return this.http
-      .get<PaginatedApiResponse<GalleryItem>>(url)
-      .pipe(catchError(this.handleError));
+      .get<ApiResponse<DashboardStats>>(`${this.adminApiUrl}/dashboard/stats`)
+      .pipe(
+        map(response => response.data!),
+        catchError(this.handleError)
+      );
   }
 
-  /** Load all pages and merge items (for small total counts). */
-  getAllGalleryItems(): Observable<GalleryItem[]> {
-    return this.getGalleryItemsPage(1).pipe(
-      switchMap((first) => {
-        const meta = first.meta || first.pagination;
-        const initial = first.data || [];
-        if (!meta || meta.last_page <= 1) {
-          return of(initial);
-        }
-        const requests: Observable<PaginatedApiResponse<GalleryItem>>[] = [];
-        for (let p = 2; p <= meta.last_page; p++) {
-          requests.push(this.getGalleryItemsPage(p));
-        }
-        return forkJoin(requests).pipe(
-          map((responses) => {
-            const merged = [...initial];
-            for (const resp of responses) {
-              for (const it of resp.data || []) {
-                if (!merged.some((m) => m.id === it.id)) merged.push(it);
-              }
-            }
-            return merged;
-          }),
-          catchError(() => of(initial)),
-        );
-      }),
-      catchError(() => of([])),
-    );
+  // Gallery with filters (optimized backend endpoint)
+  getGalleryItemsFiltered(
+    filters: GalleryFilterParams,
+  ): Observable<PaginatedApiResponse<GalleryItem>> {
+    let params: any = {};
+    if (filters.status && filters.status !== 'all') {
+      params.status = filters.status;
+    }
+    if (filters.category_id) {
+      params.category_id = filters.category_id;
+    }
+    if (filters.subcategory_id) {
+      params.subcategory_id = filters.subcategory_id;
+    }
+    if (filters.search) {
+      params.search = filters.search;
+    }
+    if (filters.page) {
+      params.page = filters.page;
+    }
+    return this.http
+      .get<PaginatedApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery`, {
+        params,
+      })
+      .pipe(catchError(this.handleError));
   }
 
   getGalleryItem(id: number): Observable<ApiResponse<GalleryItem>> {
@@ -228,5 +209,131 @@ export class AdminApiService {
     if (item.image) fd.append('image', item.image);
     fd.append('_method', 'PUT');
     return fd;
+  }
+
+  // ========== CATEGORY & SUBCATEGORY ADMIN OPERATIONS ==========
+
+  // Get categories (optionally fresh from server)
+  getCategories(fresh: boolean = false): Observable<Category[]> {
+    if (fresh) {
+      return this.getCategoriesFresh();
+    }
+    return this.bootstrap.getCategories$();
+  }
+
+  // Get all categories (admin with nav_order)
+  getCategoriesFresh(): Observable<Category[]> {
+    return this.http
+      .get<{
+        data?: { categories?: Category[] };
+        categories?: Category[];
+      }>(`${this.baseUrl}/api/v1/admin/bootstrap?fresh=1`)
+      .pipe(
+        map((res) => res.data?.categories ?? res.categories ?? []),
+        catchError(() => this.bootstrap.getCategories$()),
+      );
+  }
+
+  getAdminCategories(): Observable<Category[]> {
+    return this.http
+      .get<Category[] | { data: Category[] }>(this.categoriesAdminUrl)
+      .pipe(
+        map((res) => (Array.isArray(res) ? res : (res?.data ?? []))),
+        catchError(() => this.bootstrap.getCategories$()),
+      );
+  }
+
+  // Category CRUD
+  saveCategory(category: Category): Observable<Category> {
+    if (category._id) {
+      return this.http
+        .put<Category>(`${this.categoriesAdminUrl}/${category._id}`, category)
+        .pipe(tap(() => this.bootstrap.refresh()));
+    } else {
+      return this.http.post<Category>(this.categoriesAdminUrl, category).pipe(
+        tap(() => this.bootstrap.refresh()),
+      );
+    }
+  }
+
+  patchCategory(
+    id: number | string,
+    payload: Partial<Category>,
+  ): Observable<Category> {
+    return this.http
+      .patch<Category>(`${this.categoriesAdminUrl}/${id}`, payload)
+      .pipe(tap(() => this.bootstrap.refresh()));
+  }
+
+  deleteCategory(id: string | number): Observable<any> {
+    return this.http
+      .delete(`${this.categoriesAdminUrl}/${id}`)
+      .pipe(tap(() => this.bootstrap.refresh()));
+  }
+
+  reorderCategories(categories: Category[]): Observable<Category[]> {
+    const orders = categories
+      .filter((c) => (c.id ?? c._id) != null)
+      .map((c, idx) => ({ id: c.id ?? c._id, nav_order: idx + 1 }));
+    return this.http
+      .post<any>(`${this.categoriesAdminUrl}/reorder`, { orders })
+      .pipe(
+        map((res) => {
+          const data = Array.isArray(res?.data)
+            ? res.data
+            : (res?.data ?? res);
+          return (Array.isArray(data) ? data : []) as Category[];
+        }),
+        tap(() => this.bootstrap.refresh()),
+      );
+  }
+
+  // Subcategory CRUD
+  getSubcategories(): Observable<Subcategory[]> {
+    return this.http
+      .get<Subcategory[] | { data: Subcategory[] }>(
+        this.subcategoriesAdminUrl,
+      )
+      .pipe(map((res) => (Array.isArray(res) ? res : (res?.data ?? []))));
+  }
+
+  getSubcategoriesByCategory(
+    categoryId: number | string,
+  ): Observable<Subcategory[]> {
+    return this.http
+      .get<Subcategory[] | { data: Subcategory[] }>(
+        `${this.baseUrl}/api/v1/categories/${categoryId}/subcategories`,
+      )
+      .pipe(map((res) => (Array.isArray(res) ? res : (res?.data ?? []))));
+  }
+
+  getSubcategory(id: number | string): Observable<Subcategory> {
+    return this.http.get<Subcategory>(`${this.subcategoriesAdminUrl}/${id}`);
+  }
+
+  createSubcategory(payload: {
+    category_id: number | string;
+    name: string;
+    slug?: string;
+    nav_order?: number;
+  }): Observable<Subcategory> {
+    return this.http
+      .post<Subcategory>(this.subcategoriesAdminUrl, payload)
+      .pipe(tap(() => this.bootstrap.refresh()));
+  }
+
+  updateSubcategory(
+    id: number | string,
+    payload: { name?: string; slug?: string; nav_order?: number },
+  ): Observable<Subcategory> {
+    return this.http
+      .put<Subcategory>(`${this.subcategoriesAdminUrl}/${id}`, payload)
+      .pipe(tap(() => this.bootstrap.refresh()));
+  }
+
+  deleteSubcategory(id: number | string): Observable<{ message?: string }> {
+    return this.http
+      .delete<{ message?: string }>(`${this.subcategoriesAdminUrl}/${id}`)
+      .pipe(tap(() => this.bootstrap.refresh()));
   }
 }

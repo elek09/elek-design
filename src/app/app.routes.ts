@@ -1,21 +1,50 @@
-// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { HomeComponent } from './components/pages/home/home.component';
-import { ContactComponent } from './components/pages/contact/contact.component';
-import { WallCladdingComponent } from './components/pages/wall-cladding/wall-cladding.component';
-import { CurvedFurnitureComponent } from './components/pages/curved-furniture/curved-furniture.component';
-import { WebshopComponent } from './components/pages/webshop/webshop.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent, pathMatch: 'full' },
+  {
+    path: '',
+    component: HomeComponent,
+    pathMatch: 'full',
+  },
   // Hungarian section routes now have dedicated paths
-  { path: 'eletter', component: HomeComponent },
-  { path: 'uzletter', component: HomeComponent },
-  { path: 'kapcsolat', component: ContactComponent },
-  { path: '3d-falboritas', component: WallCladdingComponent },
-  { path: 'ives-butorok', component: CurvedFurnitureComponent },
-  { path: 'webshop', component: WebshopComponent },
+  {
+    path: 'eletter',
+    component: HomeComponent,
+  },
+  {
+    path: 'uzletter',
+    component: HomeComponent,
+  },
+  {
+    path: 'kapcsolat',
+    loadComponent: () =>
+      import('./components/pages/contact/contact.component').then(
+        (m) => m.ContactComponent,
+      ),
+  },
+  {
+    path: '3d-falboritas',
+    loadComponent: () =>
+      import('./components/pages/wall-cladding/wall-cladding.component').then(
+        (m) => m.WallCladdingComponent,
+      ),
+  },
+  {
+    path: 'ives-butorok',
+    loadComponent: () =>
+      import('./components/pages/curved-furniture/curved-furniture.component').then(
+        (m) => m.CurvedFurnitureComponent,
+      ),
+  },
+  {
+    path: 'webshop',
+    loadComponent: () =>
+      import('./components/pages/webshop/webshop.component').then(
+        (m) => m.WebshopComponent,
+      ),
+  },
 
   // Admin routes
   {

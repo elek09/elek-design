@@ -22,13 +22,16 @@ export class AdminOrdersService {
       .pipe(map((resp) => ((resp as any)?.data ?? resp) as Order));
   }
 
-  listOrders(): Observable<Order[]> {
+  listOrders(status?: OrderStatus | 'all'): Observable<Order[]> {
+    const params: any = {};
+    if (status && status !== 'all') {
+      params.status = status;
+    }
     return this.http
-      .get<ApiListResponse<Order> | Order[]>(`${this.adminApi}/orders`)
-      .pipe(
-        map((resp) => (Array.isArray(resp) ? resp : resp.data || [])),
-        shareReplay(1),
-      );
+      .get<ApiListResponse<Order> | Order[]>(`${this.adminApi}/orders`, {
+        params,
+      })
+      .pipe(map((resp) => (Array.isArray(resp) ? resp : resp.data || [])));
   }
 
   updateStatus(

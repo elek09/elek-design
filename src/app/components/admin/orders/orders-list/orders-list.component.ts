@@ -111,34 +111,29 @@ export class OrdersListComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.api.listOrders().subscribe((list) => {
+    this.loadOrders();
+  }
+
+  private loadOrders(): void {
+    const status = this.filterStatus();
+    this.api.listOrders(status).subscribe((list) => {
       this.orders.set(list);
-      this.updateRowData();
+      this.rowData = list; // Backend already filtered
     });
   }
 
   reload(): void {
-    this.api.listOrders().subscribe((list) => {
-      this.orders.set(list);
-      this.updateRowData();
-    });
+    this.loadOrders();
   }
 
   onGridReady(event: GridReadyEvent): void {
     // Ensure initial data sizing after grid API available
-    this.updateRowData();
     // Optional: fit columns to available width
     event.api.sizeColumnsToFit();
   }
 
   onStatusChange(value: 'all' | OrderStatus) {
     this.filterStatus.set(value);
-    this.updateRowData();
-  }
-
-  private updateRowData() {
-    const s = this.filterStatus();
-    const arr = this.orders();
-    this.rowData = s === 'all' ? arr : arr.filter((o) => o.status === s);
+    this.loadOrders(); // Reload from backend with new filter
   }
 }

@@ -5,7 +5,7 @@ import { CarouselComponent } from '../../ui/carousel/carousel.component';
 import { Slide } from '../../../models/slide.model';
 import { Observable, combineLatest, firstValueFrom, take } from 'rxjs';
 import { Category } from '../../../models/category.model';
-import { CategoryService } from '../../../services/category.service';
+import { BootstrapService } from '../../../services/bootstrap.service';
 import { map } from 'rxjs/operators';
 import { CategorySectionComponent } from './category-section/category-section.component';
 import { HeaderService } from '../../../services/header.service';
@@ -28,7 +28,7 @@ export class HomeComponent implements OnInit {
   @ViewChild('uzletterCarousel') uzletterCarousel!: CarouselComponent;
 
   private readonly galleryDataService = inject(GalleryDataService);
-  private readonly categoryService = inject(CategoryService);
+  private readonly bootstrapService = inject(BootstrapService);
 
   topCarouselSlides$!: Observable<Slide[]>;
   eletterSlides$!: Observable<Slide[]>;
@@ -52,12 +52,12 @@ export class HomeComponent implements OnInit {
       this.galleryDataService.getSlidesByCategory$('uzletter');
 
     // Use backend categories as-is; filter by section type
-    this.eletterCategories$ = this.categoryService
-      .getCategories()
-      .pipe(map((cats) => cats.filter((c) => String(c.type) === 'eletter')));
-    this.uzletterCategories$ = this.categoryService
-      .getCategories()
-      .pipe(map((cats) => cats.filter((c) => String(c.type) === 'uzletter')));
+    this.eletterCategories$ = this.bootstrapService
+      .getCategories$()
+      .pipe(map((cats: Category[]) => cats.filter((c) => String(c.type) === 'eletter')));
+    this.uzletterCategories$ = this.bootstrapService
+      .getCategories$()
+      .pipe(map((cats: Category[]) => cats.filter((c) => String(c.type) === 'uzletter')));
 
     // Wait for the first emission of all slide streams, then preload images
     void this.whenSlidesReadyAndPreloaded();
