@@ -1,28 +1,21 @@
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { BootstrapService } from './bootstrap.service';
 import { HeaderConfig } from '../models/header.model';
 
 @Injectable({ providedIn: 'root' })
 export class HeaderService {
   private readonly bootstrap = inject(BootstrapService);
-  private readonly headerConfig$: Observable<HeaderConfig> = this.bootstrap
-    .getHeader$()
-    .pipe(
-      map((cfg) =>
-        this.normalizeConfig(
-          (cfg as HeaderConfig) ?? {
-            logoUrl: '',
-            items: [],
-          },
-        ),
-      ),
-      shareReplay(1),
-    );
+  private readonly rawConfig = signal<HeaderConfig | null>(null);
 
-  getHeaderConfig(): Observable<HeaderConfig> {
-    return this.headerConfig$;
+  readonly headerConfig = computed(() =>
+    this.normalizeConfig(this.rawConfig() ?? { logoUrl: '', items: [] }),
+  );
+
+  constructor() {
+    // Subscribe once to populate signal from bootstrap
+    this.bootstrap.getHeader$().subscribe((cfg) => {
+      this.rawConfig.set(cfg as HeaderConfig);
+    });
   }
 
   private normalizeConfig(cfg: HeaderConfig): HeaderConfig {

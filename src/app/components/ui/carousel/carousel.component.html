@@ -1,14 +1,14 @@
 <div class="carousel-wrapper">
   <div class="carousel" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
     <div class="carousel__track-container">
-      <ul class="carousel__track" [style.transform]="transformValue">
-        @for (slide of slides; track slide; let i = $index) {
-        <li class="carousel__slide" [class.current-slide]="i === currentSlideIndex">
+      <ul class="carousel__track" [style.transform]="transformValue()">
+        @for (slide of slides(); track slide; let i = $index) {
+        <li class="carousel__slide" [class.current-slide]="i === currentSlideIndex()">
           <img class="carousel__images" [src]="slide.imageUrl"
             [attr.srcset]="slide.thumbUrl ? (slide.thumbUrl + ' 480w, ' + slide.imageUrl + ' 1024w') : null"
             [attr.sizes]="slide.thumbUrl ? '(max-width: 600px) 480px, 1024px' : null"
             [alt]="slide.title || 'slide ' + i" loading="lazy" decoding="async" />
-          @if (hasTextOverlay && slide.title) {
+          @if (hasTextOverlay() && slide.title) {
           <div class="text">
             {{ slide.title }}
           </div>
@@ -18,7 +18,7 @@
       </ul>
     </div>
 
-    @if (showManualControls) {
+    @if (showManualControls()) {
     <button class="carousel_button carousel__button--left" (click)="previousSlide()" aria-label="Previous slide">
       <mat-icon>keyboard_double_arrow_left</mat-icon>
     </button>

@@ -73,32 +73,13 @@ export class WebshopComponent implements OnInit {
 
   protected productImages = signal<Record<number, string[]>>({});
 
-  protected cartItems = signal<
-    {
-      product: Product;
-      quantity: number;
-      hardware_type?: string | null;
-      color_scheme?: string | null;
-      extra?: Record<string, string | null>;
-    }[]
-  >([]);
+  // Cart items directly from LocalCartService - no need to duplicate
+  protected readonly cartItems = this.localCart.items;
 
   private slidesCache: Slide[] | null = null;
   protected imagesLoading = signal(true);
 
   ngOnInit(): void {
-    const stored = this.localCart.getItems();
-    if (stored.length) {
-      this.cartItems.set(
-        stored.map((i) => ({
-          product: i.product,
-          quantity: i.quantity,
-          hardware_type: i.hardware_type || undefined,
-          color_scheme: i.color_scheme || undefined,
-          extra: i.extra || {},
-        })),
-      );
-    }
     this.productsApi.getProducts$().subscribe({
       next: (list) => {
         const active = list.filter((p) => p.is_active !== false);
@@ -206,17 +187,6 @@ export class WebshopComponent implements OnInit {
   addToCart(product: Product): void {
     const sel = this.selections()[product.id] ?? { quantity: 1 };
 
-    this.cartItems.update((items) => [
-      ...items,
-      {
-        product,
-        quantity: sel.quantity || 1,
-        hardware_type: sel.hardware_type || undefined,
-        color_scheme: sel.color_scheme || undefined,
-        extra: sel.extra || {},
-      },
-    ]);
-
     this.localCart.add({
       product,
       quantity: sel.quantity || 1,
@@ -235,7 +205,6 @@ export class WebshopComponent implements OnInit {
   }
 
   removeItem(index: number): void {
-    this.cartItems.update((items) => items.filter((_, i) => i !== index));
     this.localCart.removeAt(index);
     this.toastr.info('Termék eltávolítva a kosárból.', 'Eltávolítva');
   }
@@ -267,7 +236,6 @@ export class WebshopComponent implements OnInit {
           'Árajánlat kérés elküldve. Email elküldve.',
           'Siker',
         );
-        this.cartItems.set([]);
         this.localCart.clear();
         this.checkoutForm.reset();
         this.checkoutForm.markAsPristine();

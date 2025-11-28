@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
@@ -11,8 +11,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 })
 export class LoadingOverlayComponent {
   // Optional label under the spinner
-  @Input() label: string | null = null;
+  readonly label = input<string | null>(null);
   // Optional logo above the spinner
-  @Input() logoUrl: string | null | undefined = null;
-  @Input() logoAlt = 'Elek Design';
+  readonly logoUrl = input<string | null | undefined>(null);
+  readonly logoAlt = input('Elek Design');
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed, effect } from '@angular/core';
 import { Product } from '../models/product.model';
 
 export type LocalCartExtra = Record<string, string | null>;
@@ -17,63 +17,118 @@ export class LocalCartService {
   private readonly KEY = 'webshop_cart_v1';
   private readonly TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-  getItems(): LocalCartItem[] {
+  // Reactive cart state
+  private readonly _items = signal<LocalCartItem[]>(this.loadFromStorage());
+
+  // Public readonly signals
+  readonly items = this._items.asReadonly();
+  readonly itemCount = computed(() =>
+    this._items().reduce((sum, item) => sum + item.quantity, 0),
+  );
+  readonly isEmpty = computed(() => this._items().length === 0);
+
+  constructor() {
+    // Auto-save to localStorage on any change
+    effect(() => {
+      const items = this._items();
+      this.saveToStorage(items);
+    });
+
+    // Auto-cleanup expired items periodically
+    if (typeof window !== 'undefined') {
+      setInterval(() => this.cleanupExpired(), 60000); // every minute
+    }
+  }
+
+  add(item: Omit<LocalCartItem, 'expiresAt'>): void {
+    const expiresAt = Date.now() + this.TTL_MS;
+
+    this._items.update((items) => {
+      const idx = items.findIndex((i) => this.matchesItem(i, item));
+
+      if (idx >= 0) {
+        // Update existing item
+        const updated = [...items];
+        updated[idx] = {
+          ...updated[idx],
+          quantity: updated[idx].quantity + item.quantity,
+          expiresAt,
+        };
+        return updated;
+      }
+      // Add new item
+      return [...items, { ...item, expiresAt }];
+    });
+  }
+
+  private matchesItem(
+    a: LocalCartItem,
+    b: Omit<LocalCartItem, 'expiresAt'>,
+  ): boolean {
+    return (
+      a.product.id === b.product.id &&
+      (a.hardware_type || null) === (b.hardware_type || null) &&
+      (a.color_scheme || null) === (b.color_scheme || null) &&
+      this.sameExtra(a.extra, b.extra)
+    );
+  }
+
+  removeAt(index: number): void {
+    this._items.update((items) => items.filter((_, i) => i !== index));
+  }
+
+  updateQuantity(index: number, quantity: number): void {
+    if (quantity <= 0) {
+      this.removeAt(index);
+      return;
+    }
+
+    this._items.update((items) => {
+      const updated = [...items];
+      if (updated[index]) {
+        updated[index] = {
+          ...updated[index],
+          quantity,
+          expiresAt: Date.now() + this.TTL_MS,
+        };
+      }
+      return updated;
+    });
+  }
+
+  clear(): void {
+    this._items.set([]);
+  }
+
+  private cleanupExpired(): void {
+    const now = Date.now();
+    this._items.update((items) => items.filter((i) => i.expiresAt > now));
+  }
+
+  private loadFromStorage(): LocalCartItem[] {
+    if (typeof window === 'undefined') return [];
+
     try {
       const raw = localStorage.getItem(this.KEY);
       const arr: LocalCartItem[] = raw ? JSON.parse(raw) : [];
       const now = Date.now();
-      const filtered = arr.filter((i) => i && i.expiresAt > now);
-      if (filtered.length !== arr.length) {
-        this.save(filtered);
-      }
-      return filtered;
+      return arr.filter((i) => i && i.expiresAt > now);
     } catch {
       return [];
     }
   }
 
-  add(item: Omit<LocalCartItem, 'expiresAt'>): void {
-    const now = Date.now();
-    const expiresAt = now + this.TTL_MS;
-    const items = this.getItems();
-    // merge same product with same options by increasing quantity
-    const idx = items.findIndex(
-      (i) =>
-        i.product.id === item.product.id &&
-        (i.hardware_type || null) === (item.hardware_type || null) &&
-        (i.color_scheme || null) === (item.color_scheme || null) &&
-        this.sameExtra(i.extra, item.extra),
-    );
-    if (idx >= 0) {
-      items[idx].quantity += item.quantity;
-      items[idx].expiresAt = expiresAt; // refresh TTL
-    } else {
-      items.push({ ...item, expiresAt });
+  private saveToStorage(items: LocalCartItem[]): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify(items));
+    } catch (err) {
+      console.error('Failed to save cart to localStorage:', err);
     }
-    this.save(items);
-  }
-
-  removeAt(index: number): void {
-    const items = this.getItems();
-    if (index >= 0 && index < items.length) {
-      items.splice(index, 1);
-      this.save(items);
-    }
-  }
-
-  clear(): void {
-    localStorage.removeItem(this.KEY);
-  }
-
-  private save(items: LocalCartItem[]): void {
-    localStorage.setItem(this.KEY, JSON.stringify(items));
   }
 
   private sameExtra(a?: LocalCartExtra, b?: LocalCartExtra): boolean {
-    const aKeys = Object.keys(a || {});
-    const bKeys = Object.keys(b || {});
-    if (aKeys.length !== bKeys.length) return false;
-    for (const k of aKeys) if ((a || {})[k] !== (b || {})[k]) return false;
-    return true;
+    return JSON.stringify(a || {}) === JSON.stringify(b || {});
   }
 }

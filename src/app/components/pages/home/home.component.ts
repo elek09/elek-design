@@ -41,8 +41,8 @@ export class HomeComponent implements OnInit {
   loading = true;
 
   // Header logo for the loader
-  headerLogoUrl$!: Observable<string>;
   private readonly headerService = inject(HeaderService);
+  readonly headerLogoUrl = this.headerService.headerConfig().logoUrl;
 
   ngOnInit(): void {
     this.topCarouselSlides$ = this.galleryDataService.getFeaturedSlides$();
@@ -54,18 +54,21 @@ export class HomeComponent implements OnInit {
     // Use backend categories as-is; filter by section type
     this.eletterCategories$ = this.bootstrapService
       .getCategories$()
-      .pipe(map((cats: Category[]) => cats.filter((c) => String(c.type) === 'eletter')));
+      .pipe(
+        map((cats: Category[]) =>
+          cats.filter((c) => String(c.type) === 'eletter'),
+        ),
+      );
     this.uzletterCategories$ = this.bootstrapService
       .getCategories$()
-      .pipe(map((cats: Category[]) => cats.filter((c) => String(c.type) === 'uzletter')));
+      .pipe(
+        map((cats: Category[]) =>
+          cats.filter((c) => String(c.type) === 'uzletter'),
+        ),
+      );
 
     // Wait for the first emission of all slide streams, then preload images
     void this.whenSlidesReadyAndPreloaded();
-
-    // Get header logo for overlay
-    this.headerLogoUrl$ = this.headerService
-      .getHeaderConfig()
-      .pipe(map((cfg) => cfg.logoUrl));
   }
 
   private async whenSlidesReadyAndPreloaded() {

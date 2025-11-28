@@ -1,13 +1,11 @@
 import {
   Component,
-  Input,
-  OnInit,
-  OnDestroy,
+  input,
+  output,
+  signal,
+  computed,
+  effect,
   HostListener,
-  SimpleChanges,
-  OnChanges,
-  Output,
-  EventEmitter,
 } from '@angular/core';
 
 import { Slide } from '../../../models/slide.model';
@@ -20,70 +18,78 @@ import { MatIconModule } from '@angular/material/icon';
   templateUrl: './carousel.component.html',
   styleUrl: './carousel.component.scss',
 })
-export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
+export class CarouselComponent {
   // --- INPUTS: How we configure the carousel from the outside ---
-  @Input() slides: Slide[] = [];
-  @Input() showManualControls = true;
-  @Input() autoPlay = false;
-  @Input() autoPlayInterval = 3000;
-  @Input() hasTextOverlay = false;
-  @Output() slideChanged = new EventEmitter<string>();
+  readonly slides = input<Slide[]>([]);
+  readonly showManualControls = input(true);
+  readonly autoPlay = input(false);
+  readonly autoPlayInterval = input(3000);
+  readonly hasTextOverlay = input(false);
+  readonly slideChanged = output<string>();
 
   // --- INTERNAL STATE ---
-  currentSlideIndex = 0;
-  transformValue = 'translateX(0px)';
+  readonly currentSlideIndex = signal(0);
+  readonly transformValue = computed(
+    () => `translateX(-${this.currentSlideIndex() * 100}%)`,
+  );
   private intervalId?: number;
 
-  // --- LIFECYCLE HOOKS ---
-  ngOnInit(): void {
-    this.startAutoPlay();
-  }
+  constructor() {
+    // Auto-start autoplay when enabled
+    effect(() => {
+      if (this.autoPlay()) {
+        this.startAutoPlay();
+      } else {
+        this.stopAutoPlay();
+      }
+    });
 
-  ngOnChanges(changes: SimpleChanges): void {
-    // If slides data changes, recalculate the transform
-    if (changes['slides']) {
-      this.updateTransform();
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.stopAutoPlay();
+    // React to slides changes
+    effect(() => {
+      const slides = this.slides();
+      if (slides.length > 0 && this.currentSlideIndex() >= slides.length) {
+        this.currentSlideIndex.set(0);
+      }
+    });
   }
 
   // --- EVENT LISTENERS ---
   @HostListener('window:resize')
   onResize(): void {
-    // Recalculate transform on window resize to keep it responsive
-    this.updateTransform();
+    // Transform is computed, will auto-update
   }
 
   // --- PUBLIC METHODS ---
   nextSlide(): void {
-    this.currentSlideIndex = (this.currentSlideIndex + 1) % this.slides.length;
-    this.updateTransform();
+    const slides = this.slides();
+    if (slides.length === 0) return;
+    this.currentSlideIndex.update((idx) => (idx + 1) % slides.length);
     this.emitSlideChanged();
   }
 
   previousSlide(): void {
-    this.currentSlideIndex =
-      (this.currentSlideIndex - 1 + this.slides.length) % this.slides.length;
-    this.updateTransform();
+    const slides = this.slides();
+    if (slides.length === 0) return;
+    this.currentSlideIndex.update(
+      (idx) => (idx - 1 + slides.length) % slides.length,
+    );
     this.emitSlideChanged();
   }
 
   // Method to be called from a parent component (e.g., side menu)
   public goToById(id: string) {
-    if (!this.slides?.length) return;
-    const idx = this.slides.findIndex((s) => s.id === id || s.category === id);
+    const slides = this.slides();
+    if (!slides?.length) return;
+    const idx = slides.findIndex((s) => s.id === id || s.category === id);
     if (idx >= 0) {
-      this.currentSlideIndex = idx;
-      this.updateTransform();
+      this.currentSlideIndex.set(idx);
       this.emitSlideChanged();
     }
   }
 
   private emitSlideChanged(): void {
-    const currentSlide = this.slides[this.currentSlideIndex];
+    const slides = this.slides();
+    const currentSlide = slides[this.currentSlideIndex()];
     if (currentSlide) {
       // Emit subcategory id when available so parent menus can stay in sync
       const key = currentSlide.category || currentSlide.id || '';
@@ -101,15 +107,12 @@ export class CarouselComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   // --- PRIVATE HELPERS ---
-  private updateTransform(): void {
-    this.transformValue = `translateX(-${this.currentSlideIndex * 100}%)`;
-  }
-
   private startAutoPlay(): void {
-    if (this.autoPlay && !this.intervalId) {
+    this.stopAutoPlay(); // Clear any existing interval
+    if (this.autoPlay() && !this.intervalId) {
       this.intervalId = window.setInterval(
         () => this.nextSlide(),
-        this.autoPlayInterval,
+        this.autoPlayInterval(),
       );
     }
   }
