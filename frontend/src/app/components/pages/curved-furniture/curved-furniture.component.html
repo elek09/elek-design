@@ -1,0 +1,22 @@
+<div class="main">
+<app-carousel
+  [slides]="(topCarouselSlides$ | async) ?? []"
+  [autoPlay]="true"
+  [showManualControls]="false"
+  [hasTextOverlay]="true"
+></app-carousel>
+
+<hr>
+<div class="part">
+  <h1 class="sub-head" id="ives-butorok">Íves bútorok</h1>
+</div>
+<hr>
+
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+  <app-carousel [slides]="(curvedFurnitureSlides$ | async) ?? []"></app-carousel>
+    </div>
+  </div>
+</div>
+</div>

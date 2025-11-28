@@ -1,0 +1,30 @@
+<div class="header-bg">
+  <div class="topnav" [class.responsive]="isMenuOpen()" id="myTopnav" aria-label="Main navigation">
+    <!-- Logo / Home link -->
+    <a class="logo-link" routerLink="/" routerLinkActive="active" #rlaLogo="routerLinkActive" aria-label="Home"
+      [attr.aria-current]="rlaLogo.isActive ? 'page' : null">
+      <img class="logo-img" [src]="headerConfig().logoUrl" alt="Elek Design Logo" loading="lazy" decoding="async" />
+    </a>
+
+    <!-- Navigation items -->
+    @for (item of headerConfig().items; track trackByNavItem($index, item)) {
+    <a [routerLink]="item.routerLink" [routerLinkActiveOptions]="{ exact: true }"
+      [fragment]="item.fragment || undefined" class="options" routerLinkActive="active" #rla="routerLinkActive"
+      [ngClass]="item.class || null" [attr.aria-current]="rla.isActive ? 'page' : null">
+      {{ item.label }}
+    </a>
+    }
+
+    <!-- CTA: Árajánlatot Kérek! (wrapped for stable two-line layout) -->
+    <a class="options cta" routerLink="/webshop" routerLinkActive="active" #rlaCta="routerLinkActive"
+      aria-label="Árajánlatot Kérek" [attr.aria-current]="rlaCta.isActive ? 'page' : null">
+      <span class="cta-lines">Árajánlatot<br>Kérek!</span>
+    </a>
+
+    <!-- Mobile menu toggle -->
+    <button type="button" class="icon" (click)="toggleMenu()" aria-label="Toggle menu"
+      [attr.aria-expanded]="isMenuOpen()" aria-controls="myTopnav">
+      <mat-icon>menu</mat-icon>
+    </button>
+  </div>
+</div>

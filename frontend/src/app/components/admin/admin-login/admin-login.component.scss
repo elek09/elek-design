@@ -1,0 +1,68 @@
+.admin-login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-card {
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+
+  h2 {
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  p {
+    color: #666;
+    margin: 0;
+  }
+}
+
+.login-form {
+  display: grid;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.submit-btn {
+  width: 100%;
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.error-row {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 6px;
+  color: #c62828;
+}
+
+// Responsive design
+@media (max-width: 480px) {
+  .admin-login-container {
+    padding: 10px;
+  }
+
+  .login-card {
+    padding: 30px 20px;
+  }
+}

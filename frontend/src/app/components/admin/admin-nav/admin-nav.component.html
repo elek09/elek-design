@@ -1,0 +1,16 @@
+<nav class="admin-nav">
+    <div class="nav-inner">
+        @for (item of navItems(); track item.route) {
+        <a mat-button [routerLink]="item.route" routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.exact || false }">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+        </a>
+        }
+        <span class="spacer"></span>
+        <a mat-stroked-button color="primary" routerLink="/">
+            <mat-icon>home</mat-icon>
+            <span>Elek-Design Főoldal</span>
+        </a>
+    </div>
+</nav>

@@ -1,0 +1,246 @@
+<div class="admin-gallery">
+    <app-admin-header [backLink]="['/admin/dashboard']" title="Galéria kezelése">
+        <span header-actions>
+            <button mat-raised-button color="primary" class="btn btn-primary" (click)="toggleUploadForm()">
+                <mat-icon>add</mat-icon>
+                {{ showUploadForm ? 'Mégse' : 'Új kép hozzáadása' }}
+            </button>
+            <button mat-stroked-button color="primary" class="btn btn-outline" (click)="logout()">
+                <mat-icon>logout</mat-icon>
+                Kijelentkezés
+            </button>
+        </span>
+    </app-admin-header>
+
+    <!-- Upload Form -->
+    @if (showUploadForm && galleryConfig) {
+    <div class="upload-section">
+        <div class="upload-form">
+            <h3>Új galéria elem hozzáadása</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>Cím *</mat-label>
+                        <input matInput type="text" id="title" [(ngModel)]="uploadForm.title"
+                            placeholder="Kép címének megadása" required>
+                    </mat-form-field>
+                </div>
+
+                <div class="form-group">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>Fő kategória *</mat-label>
+                        <mat-select id="mainCategory" [(ngModel)]="uploadForm.mainCategoryId"
+                            (selectionChange)="onMainCategoryChange()" required>
+                            @for (cat of galleryConfig.categories; track cat.value) {
+                            <mat-option [value]="cat.value">
+                                {{ cat.label }}
+                            </mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+
+                @if (availableSubcategories.length > 0) {
+                <div class="form-group">
+                    <mat-form-field appearance="fill" class="w-100">
+                        <mat-label>Alkategória</mat-label>
+                        <mat-select id="subCategory" [(ngModel)]="uploadForm.subCategoryId">
+                            @for (subCat of availableSubcategories; track subCat.value) {
+                            <mat-option [value]="subCat.value">
+                                {{ subCat.label }}
+                            </mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                }
+            </div>
+
+            <div class="form-group">
+                <mat-form-field appearance="fill" class="w-100">
+                    <mat-label>Leírás</mat-label>
+                    <textarea matInput id="description" [(ngModel)]="uploadForm.description" rows="3"
+                        placeholder="Kép leírása (opcionális)"></textarea>
+                </mat-form-field>
+            </div>
+
+            <div class="form-group file-group">
+                <mat-label>Kép *</mat-label>
+                <div class="file-row">
+                    <input #fileInput type="file" id="image" (change)="onFileSelected($event)" accept="image/*" hidden>
+                    <button type="button" mat-stroked-button color="primary" (click)="fileInput.click()">
+                        <mat-icon>upload_file</mat-icon>
+                        Kép kiválasztása
+                    </button>
+                    @let img = uploadForm.image;
+                    @if (img) {<span class="file-name">{{ img.name }}</span>}
+                </div>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <mat-checkbox [(ngModel)]="uploadForm.is_active">Aktív (látható a weboldalon)</mat-checkbox>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <mat-checkbox [(ngModel)]="uploadForm.is_featured">Kiemelt (megjelenik a kezdőlap
+                    karusszelben)</mat-checkbox>
+            </div>
+
+            <div class="form-actions">
+                <button mat-raised-button color="primary" class="btn btn-primary" (click)="onUpload()"
+                    [disabled]="isUploading || !uploadForm.title.trim() || !uploadForm.image">
+                    @if (isUploading) {<mat-progress-spinner mode="indeterminate" diameter="18"></mat-progress-spinner>}
+                    <span>{{ isUploading ? 'Feltöltés…' : 'Kép feltöltése' }}</span>
+                </button>
+                <button mat-stroked-button color="primary" class="btn btn-secondary" (click)="toggleUploadForm()">
+                    Mégse
+                </button>
+            </div>
+
+            @if (uploadError) {
+            <div class="alert alert-danger">
+                {{ uploadError }}
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- Filters -->
+    @if (galleryConfig) {
+    <div class="filters-section">
+        <div class="filters">
+            <div class="filter-group">
+                <mat-form-field appearance="outline">
+                    <mat-label>Kategória</mat-label>
+                    <mat-select [(ngModel)]="selectedCategory" (selectionChange)="onFilterChange()">
+                        <mat-option value="all">Összes kategória</mat-option>
+                        @for (cat of galleryConfig.categories; track cat.value) {
+                        <mat-optgroup [label]="cat.label">
+                            <mat-option [value]="'cat-' + cat.value">{{ cat.label }} (Fő)</mat-option>
+                            @for (subCat of (cat.subcategories || []); track subCat.value) {
+                            <mat-option [value]="'sub-' + subCat.value">
+                                {{ subCat.label }}
+                            </mat-option>
+                            }
+                        </mat-optgroup>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="filter-group">
+                <mat-form-field appearance="outline">
+                    <mat-label>Státusz</mat-label>
+                    <mat-select [(ngModel)]="selectedStatus" (selectionChange)="onFilterChange()">
+                        <mat-option value="all">Összes kép</mat-option>
+                        <mat-option value="active">Csak aktív</mat-option>
+                        <mat-option value="inactive">Csak inaktív</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="filter-group search-group">
+                <mat-form-field appearance="outline" class="search-field">
+                    <mat-label>Keresés</mat-label>
+                    <input matInput type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()"
+                        placeholder="Keresés cím vagy leírás alapján...">
+                </mat-form-field>
+            </div>
+        </div>
+
+        <div class="results-info">
+            Megjelenítve {{ galleryItems.length }} kép (oldal {{ currentPage }} / {{ lastPage }})
+        </div>
+        <div class="pagination-controls" *ngIf="!error && lastPage > 1">
+            <div class="pager">
+                <button mat-stroked-button color="primary" (click)="goToPage(currentPage - 1)"
+                    [disabled]="currentPage === 1">Előző</button>
+                <span class="page-info">Oldal {{ currentPage }} / {{ lastPage }}</span>
+                <button mat-stroked-button color="primary" (click)="goToPage(currentPage + 1)"
+                    [disabled]="currentPage === lastPage">Következő</button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Error state -->
+    @if (error) {
+    <div class="error-container">
+        <div class="alert alert-danger">
+            <p><strong>Hiba:</strong> {{ error }}</p>
+            <p>Próbálja meg frissíteni az oldalt. Ha a probléma továbbra is fennáll, lépjen kapcsolatba a támogatással.
+            </p>
+        </div>
+    </div>
+    }
+
+    <!-- Gallery Grid -->
+    @if (!error) {
+    <div class="gallery-content">
+        @if (galleryItems.length > 0) {
+        <div class="gallery-grid">
+            @for (item of galleryItems; track item.id) {
+            <div class="gallery-item">
+                <div class="item-image">
+                    <img [src]="getThumbOrImage(item)" [alt]="item.title">
+                </div>
+                <div class="item-content">
+                    <div class="item-header">
+                        <h4>{{ item.title }}</h4>
+                        <div class="item-actions">
+                            <button mat-stroked-button color="primary" class="action-btn toggle-btn"
+                                [class.active]="item.is_active" [class.inactive]="!item.is_active"
+                                (click)="updateItemStatus(item)" [title]="item.is_active ? 'Deaktiválás' : 'Aktiválás'">
+                                <mat-icon>{{ item.is_active ? 'visibility_off' : 'visibility' }}</mat-icon>
+                                <span>{{ item.is_active ? 'Deaktiválás' : 'Aktiválás' }}</span>
+                            </button>
+                            <button mat-stroked-button color="primary" class="action-btn feature-btn"
+                                [class.featured]="item.is_featured" (click)="updateFeaturedStatus(item)"
+                                [title]="item.is_featured ? 'Kiemelés visszavonása' : 'Kiemelés'">
+                                <mat-icon>{{ item.is_featured ? 'star' : 'star_border' }}</mat-icon>
+                                <span>{{ item.is_featured ? 'Kiemelés visszavonása' : 'Kiemelés' }}</span>
+                            </button>
+                            <button mat-stroked-button color="warn" class="action-btn delete-btn"
+                                (click)="deleteItem(item.id)" title="Törlés">
+                                <mat-icon>delete</mat-icon>
+                                <span>Törlés</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="item-category">
+                        <span class="status-badge" [class.active]="item.is_active" [class.inactive]="!item.is_active">
+                            {{ item.is_active ? 'Aktív' : 'Inaktív' }}
+                        </span>
+                        {{ getCategoryLabel(typeof item.category === 'string' ? item.category : (item.category?.type ||
+                        '—')) }}
+                    </p>
+                    <p class="item-description">{{ item.description || 'Nincs leírás.' }}</p>
+                    <div class="item-meta" *ngIf="item.created_at || item.updated_at">
+                        <small *ngIf="item.created_at">Feltöltve: {{ formatDateTime(item.created_at) }}</small>
+                        <small *ngIf="item.updated_at">Frissítve: {{ formatDateTime(item.updated_at) }}</small>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+        }
+
+        <!-- Empty State -->
+        @if (!error && galleryItems.length === 0) {
+        <div class="empty-state">
+            <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>
+            <h3>Nem található galéria kép</h3>
+            @if (galleryItems.length > 0) {<p>Nincs találat a jelenlegi szűrőkre. Próbálja módosítani a keresést.</p>}
+            @if (galleryItems.length === 0) {<p>Kezdje egy új galéria kép hozzáadásával.</p>}
+            @if (!showUploadForm) {
+            <button mat-raised-button color="primary" class="btn" (click)="toggleUploadForm()">
+                <mat-icon>add</mat-icon>
+                Új kép hozzáadása
+            </button>
+            }
+        </div>
+        }
+    </div>
+    }
+</div>

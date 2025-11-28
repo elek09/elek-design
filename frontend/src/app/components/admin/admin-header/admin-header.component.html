@@ -1,0 +1,19 @@
+<header class="admin-header">
+    <div class="header-content">
+        <div class="header-left">
+            <div class="titles">
+                <h1>{{ title }}</h1>
+                @if (subtitle) {
+                <p class="subtitle">{{ subtitle }}</p>
+                }
+            </div>
+        </div>
+        <div class="header-right">
+            @if ((isRefreshing$ | async)) {
+            <mat-progress-spinner class="header-spinner" mode="indeterminate" diameter="16"></mat-progress-spinner>
+            }
+            <ng-content select="[header-actions]"></ng-content>
+        </div>
+    </div>
+    <app-admin-nav></app-admin-nav>
+</header>

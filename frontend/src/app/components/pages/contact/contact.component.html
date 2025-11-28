@@ -1,0 +1,102 @@
+<div class="main">
+  <app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true" [showManualControls]="false"
+    [hasTextOverlay]="true"></app-carousel>
+
+  <hr>
+  <div class="part">
+    <h1 class="sub-head" id="Kapcsolat">Kapcsolat</h1>
+  </div>
+  <hr>
+
+  <div class="contacts">
+    <div class="contact-grid">
+      <div class="about">
+        <p>
+          Elek Imre vagyok, 25 éve foglalkozom egyedi bútorok, design
+          bútorok tervezésével és
+          gyártásával. Arra törekszem, hogy munkáimban bármilyen belsőépítészeti kihívásnak eleget
+          tegyek. A lehető
+          legmagasabb, professzionális színvonalon. A kreatív megoldások, az egyediség létrehozása
+          a hivatásom.
+          <br> <br>
+          Vállaljuk bármilyen furnéros, felületkezelt egyedi bútor
+          gyártását, konyha bútor
+          tervezését és kivitelezését, formabontó belsőépítészeti megoldások, design bútorok
+          megvalósítását nappaliba,
+          előszobába, fürdőszobába. Különleges gyerekszoba bútorok készítése. Íves palástú ajtók,
+          idomok gyártása.
+          Irodai
+          design bútor, egyedi üzletberendezés, látványos kiállítási-, rendezvénybútor, stand
+          tervezése, szerelése.
+        </p>
+      </div>
+      <div class="pictures">
+        <img src="assets/images/kepek/elek_imre.jpg" alt="">
+        <img src="assets/images/elek_alairas.png" alt="">
+      </div>
+    </div>
+  </div>
+
+  <section class="form">
+    <p class="form-intro">Van kérdése? Lépjen kapcsolatba velünk!</p>
+    <div class="form-grid">
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Név</mat-label>
+            <input matInput formControlName="name" placeholder="Név" (blur)="onFieldBlur('name')"
+              [errorStateMatcher]="errorMatcher">
+            @if (form.get('name')?.touched && form.get('name')?.invalid) {
+            <mat-error>Adj meg legalább 2 karaktert.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" placeholder="Email" type="email" (blur)="onFieldBlur('email')"
+              [errorStateMatcher]="errorMatcher">
+            @if (form.get('email')?.touched && form.get('email')?.invalid) {
+            <mat-error>Érvényes email címet adj meg.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tárgy</mat-label>
+            <input matInput formControlName="subject" placeholder="Tárgy" (blur)="onFieldBlur('subject')"
+              [errorStateMatcher]="errorMatcher">
+            @if (form.get('subject')?.touched && form.get('subject')?.invalid) {
+            <mat-error>Legalább 3 karakter.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Üzenet</mat-label>
+            <textarea matInput formControlName="message" rows="4" placeholder="Üzenet..."
+              (blur)="onFieldBlur('message')" [errorStateMatcher]="errorMatcher"></textarea>
+            @if (form.get('message')?.touched && form.get('message')?.invalid) {
+            <mat-error>Legalább 10 karakter legyen.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <p class="consent-note" style="font-size:12px; line-height:1.4; margin:12px 0 4px; color:#555;">
+          Az ajánlatkérés elküldésével hozzájárulok, hogy az Elek-Design a megadott adataimat az ajánlatkérés
+          feldolgozásának céljából kezelje, és ezzel kapcsolatban e-mailben vagy telefonon megkeressen. Az adatkezelés a
+          kapcsolatfelvételi folyamat lezárultáig tart.
+        </p>
+        <div class="actions">
+          <button mat-raised-button color="primary" type="submit" [disabled]="sending">
+            {{ sending ? 'Küldés...' : 'Küldés' }}
+          </button>
+        </div>
+        @if (sent) {
+        <div style="text-align:center; margin-top:8px; color:#4caf50; font-weight:500;">
+          Üzenet sikeresen elküldve.
+        </div>
+        }
+      </form>
+
+    </div>
+  </section>
+</div>

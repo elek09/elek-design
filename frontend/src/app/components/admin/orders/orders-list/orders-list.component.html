@@ -1,0 +1,27 @@
+<app-admin-header [title]="'Megrendelések'" [subtitle]="'Rendelések és árajánlatok kezelése'">
+    <span header-actions class="header-actions">
+        <mat-form-field appearance="fill" class="status-filter">
+            <mat-label>Státusz</mat-label>
+            <mat-select [value]="filterStatus()" (selectionChange)="onStatusChange($event.value)">
+                <mat-option value="all">Mind</mat-option>
+                <mat-option value="new">Új</mat-option>
+                <mat-option value="accepted">Elfogadott</mat-option>
+                <mat-option value="rejected">Elutasított</mat-option>
+            </mat-select>
+        </mat-form-field>
+        <button mat-stroked-button color="primary" (click)="reload()">
+            <mat-icon>refresh</mat-icon>
+            Frissítés
+        </button>
+    </span>
+</app-admin-header>
+
+<div class="orders-list">
+    <div class="card">
+        <ag-grid-angular class="grid" [theme]="theme" [rowData]="rowData" [columnDefs]="columnDefs"
+            [context]="gridContext" [defaultColDef]="defaultColDef" [pagination]="true" [paginationPageSize]="10"
+            [paginationPageSizeSelector]="[10, 25, 50]" [domLayout]="'autoHeight'" [animateRows]="true"
+            [alwaysShowHorizontalScroll]="true" (gridReady)="onGridReady($event)">
+        </ag-grid-angular>
+    </div>
+</div>

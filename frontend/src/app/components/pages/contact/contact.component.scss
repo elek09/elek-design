@@ -1,0 +1,94 @@
+/* Top section container */
+.contacts {
+  background-color: #323538;
+  width: 100%;
+}
+
+/* Layout for top section (about + pictures) */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr; /* give pictures a bit more space */
+  gap: 16px;
+  align-items: start;
+}
+
+.about p {
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 300;
+  padding: 6px 12px;
+  color: #b5b5b5;
+}
+
+.pictures {
+  max-width: 100%;
+  text-align: center;
+  padding: 15px 0;
+}
+
+.pictures img {
+  width: 100%;
+  max-width: 560px; /* make pics a bit bigger, but keep reasonable cap */
+  height: auto;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+@media screen and (max-width: 770px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form section */
+.form {
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.form-intro {
+  text-align: center;
+  color: #b5b5b5;
+  font-size: 1.4rem; /* enlarged for prominence */
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 600px) {
+  .form-intro {
+    font-size: 1.2rem; /* slightly smaller on narrow screens */
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* single column after removing contact info */
+  gap: 0; /* no column gap needed */
+}
+
+@media screen and (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-row .full-width {
+  grid-column: 1 / -1;
+}
+
+@media screen and (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actions {
+  text-align: center;
+  margin-top: 8px;
+}

@@ -1,0 +1,138 @@
+<div class="admin-category">
+    <app-admin-header [backLink]="['/admin/dashboard']" title="Kategóriák kezelése">
+        <span header-actions>
+            <button mat-raised-button color="primary" (click)="saveCategoryOrder()" [disabled]="!orderDirty">
+                <mat-icon>save</mat-icon>
+                Sorrend mentése
+            </button>
+        </span>
+    </app-admin-header>
+    <div class="category-manager-container">
+
+        <!-- List of existing categories -->
+        <div class="category-list">
+            <h3>Létező kategóriák</h3>
+            <p class="hint">Húzással módosítható a fejléc navigáció sorrendje. A Logo és Kapcsolat rögzítettek.</p>
+            <ul cdkDropList (cdkDropListDropped)="dropCategory($event)">
+                @for (category of categories; track trackByCategory($index, category); let i = $index) {
+                <li cdkDrag>
+                    <div class="category-row" (click)="selectCategory(category)" cdkDragHandle role="button"
+                        tabindex="0" (keydown.enter)="selectCategory(category)"
+                        (keydown.space)="selectCategory(category)">
+                        <mat-icon class="handle" title="Drag to reorder">drag_indicator</mat-icon>
+                        <span class="name">{{ i + 1 }}. {{ category.name }}</span>
+                        <span class="type">({{ category.type }})</span>
+                    </div>
+                </li>
+                }
+            </ul>
+        </div>
+
+        <!-- Form for creating a new category -->
+        <div class="category-form">
+            <h3>Új kategória létrehozása</h3>
+            <mat-form-field appearance="fill">
+                <mat-label>Kategória neve</mat-label>
+                <input matInput [(ngModel)]="newCategory.name" />
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+                <mat-label>Egyedi típus (slug, pl. egyeb)</mat-label>
+                <input matInput [(ngModel)]="newCategory.type" (ngModelChange)="onNewTypeInput()" />
+            </mat-form-field>
+            <small>A típusnak egyedinek kell lennie, azonosítóként lesz használva (pl. eletter, uzletter,
+                egyeb).</small>
+            @if (isCreateTypeTaken) {
+            <p class="warn">Ez a típus már létezik. Válasszon másikat.</p>
+            }
+            <button mat-raised-button color="primary" (click)="saveCategory(newCategory)"
+                [disabled]="!newCategory.name || !newCategory.type || isCreateTypeTaken">
+                Kategória létrehozása
+            </button>
+        </div>
+
+        <!-- Form for editing a selected category -->
+        @if (selectedCategory) {
+        <div class="category-edit-form">
+            <h3>Szerkesztés: {{ selectedCategory.name }}</h3>
+            <mat-form-field appearance="fill">
+                <mat-label>Kategória neve</mat-label>
+                <input matInput [(ngModel)]="selectedCategory.name" />
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+                <mat-label>Egyedi típus (slug)</mat-label>
+                <input matInput [ngModel]="selectedCategory.type" (ngModelChange)="onEditTypeInput($event)" />
+            </mat-form-field>
+            @if (isEditTypeTaken) {
+            <p class="warn">Egy másik kategória már használja ezt a típust. A típusoknak egyedinek kell lenniük.</p>
+            }
+
+            <div class="edit-actions" style="margin: 8px 0 16px;">
+                <button mat-raised-button color="primary" (click)="saveCategory(selectedCategory!)"
+                    [disabled]="isSaveDisabled">
+                    <mat-icon>save</mat-icon>
+                    Változtatások mentése
+                </button>
+            </div>
+
+            <h4>Alkategóriák</h4>
+            @if (selectedCategory) {
+            <div class="subcats-actions">
+                <button mat-raised-button color="primary" (click)="saveSubcategoryOrder()"
+                    [disabled]="!subOrderDirty">Alkategória sorrend mentése</button>
+            </div>
+            }
+            <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
+                @for (sub of selectedSubcategoriesView; track trackBySub($index, sub); let i = $index) {
+                <li cdkDrag>
+                    <div class="subcategory-row">
+                        <div class="drag-handle" cdkDragHandle title="Átrendezés">
+                            <mat-icon>drag_indicator</mat-icon>
+                        </div>
+                        <div class="sub-name">
+                            <span class="sub-text" title="{{ sub.name }}">{{ sub.name }}</span>
+                            <button mat-icon-button color="primary"
+                                (click)="$event.stopPropagation(); openEditSubNameDialog(i)"
+                                aria-label="Név szerkesztése">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                        </div>
+                        <div class="subcategory-actions">
+                            <button mat-icon-button color="primary" (click)="addItemToSubcategory(sub)"
+                                [disabled]="!sub.id" aria-label="Kép hozzáadása"
+                                title="Kép hozzáadása az alkategóriához">
+                                <mat-icon>add_photo_alternate</mat-icon>
+                            </button>
+                            <button mat-icon-button color="warn" (click)="removeSubcategory(i)"
+                                aria-label="Eltávolítás">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </li>
+                }
+            </ul>
+
+            <mat-form-field appearance="fill">
+                <mat-label>Új alkategória neve</mat-label>
+                <input matInput [(ngModel)]="newSubcategoryName" />
+            </mat-form-field>
+            <button mat-stroked-button color="primary" (click)="addSubcategory()">Alkategória hozzáadása</button>
+
+            <hr />
+            <div class="form-actions">
+                <button mat-stroked-button color="warn"
+                    (click)="deleteCategory(selectedCategory._id || selectedCategory.id)">Kategória törlése</button>
+                <button mat-stroked-button color="primary" (click)="addItemToCategory()" [disabled]="isSaveDisabled">
+                    <mat-icon>add</mat-icon>
+                    Kép hozzáadása: {{ selectedCategory.name }}
+                </button>
+            </div>
+        </div>
+        }
+        @if (lastError) {
+        <p class="danger" style="margin-top: 1rem;">
+            {{ lastError }}
+        </p>
+        }
+    </div>
+</div>

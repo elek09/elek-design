@@ -1,0 +1,25 @@
+/* Layout: sidebar menu beside carousel */
+.category-layout {
+  display: grid;
+  /* Menu list ~20% (min 180px) | Slider fills remaining */
+  grid-template-columns: minmax(180px, 20%) 1fr;
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+/* Allow grid children to shrink so content doesn't overflow the 960px container */
+.category-layout .content,
+.category-layout .menu-list {
+  min-width: 0;
+}
+
+@media screen and (max-width: 900px) {
+  .category-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.menu-list a.active {
+  color: var(--color-accent);
+}

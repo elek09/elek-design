@@ -1,0 +1,53 @@
+.footer {
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 16px 40px;
+  text-align: center;
+  font-weight: 350;
+  position: relative;
+  background-color: var(--color-footer-bg);
+  color: var(--color-footer-text);
+}
+
+/* Top title/link styling */
+.footer > span a {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 1.25rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  color: var(--color-footer-text);
+  margin-bottom: 12px;
+}
+
+.footer > span a:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+/* List reset and rhythm */
+.footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 5px;
+  font-size: 0.95rem;
+}
+
+.footer ul li {
+  line-height: 1.6;
+  margin: 5px 0;
+}
+
+/* Section title inside list */
+.footer ul li.section-title {
+  text-decoration: underline;
+  font-weight: 600;
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
+
+/* Optional slight emphasis on the name */
+#name {
+  font-weight: 600;
+  color: var(--color-accent);
+}

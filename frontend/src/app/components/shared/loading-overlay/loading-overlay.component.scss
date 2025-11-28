@@ -1,0 +1,49 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; // above app content
+}
+
+.logo {
+  max-width: 220px;
+  width: 40vw;
+  height: auto;
+  margin-bottom: 16px;
+  object-fit: contain;
+}
+
+.spinner {
+  margin-bottom: 12px;
+}
+
+.label {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Gray-ish spinner stroke override, scoped to this component */
+:host
+  ::ng-deep
+  .mat-mdc-progress-spinner
+  .mdc-circular-progress__indeterminate-circle-graphic {
+  stroke: #9e9e9e; /* gray-ish */
+}
+
+/* No fade-out; overlay hides immediately when removed from DOM */
