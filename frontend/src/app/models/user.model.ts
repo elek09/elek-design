@@ -1,4 +1,4 @@
-import { AdminApiResponse } from './api.model';
+import { ApiResponse } from './api.model';
 
 export interface User {
   id: number;
@@ -13,4 +13,4 @@ export interface LoginRequest {
   remember?: boolean;
 }
 
-export type LoginResponse = AdminApiResponse<{ user: User }>;
+export type LoginResponse = ApiResponse<{ user: User }>;

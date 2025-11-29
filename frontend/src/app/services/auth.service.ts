@@ -23,47 +23,52 @@ export class AuthService {
 
   private readonly USER_KEY = 'admin_user';
 
+  // Aktuális bejelentkezett felhasználó állapota
   private currentUserSubject = new BehaviorSubject<User | null>(
     this.getUserFromStorage(),
   );
   public currentUser$ = this.currentUserSubject.asObservable();
 
   login(credentials: LoginRequest): Observable<User> {
-    const payload = {
-      email: credentials.email,
-      password: credentials.password,
-      remember: !!credentials.remember,
-    };
     return this.http
-      .post<
-        ApiResponse<{ user: User }>
-      >(`${this.apiBase}/api/v1/auth/login`, payload, { withCredentials: true })
+      .post<ApiResponse<{ user: User }>>(
+        `${this.apiBase}/api/v1/auth/login`,
+        {
+          email: credentials.email,
+          password: credentials.password,
+          remember: !!credentials.remember,
+        },
+        { withCredentials: true },
+      )
       .pipe(
         map((response) => {
           const user = response.data?.user;
           if (response.success && user) {
+            // Felhasználó állapot frissítése és localStorage-ba mentés
             this.currentUserSubject.next(user);
             if (typeof window !== 'undefined') {
               localStorage.setItem(this.USER_KEY, JSON.stringify(user));
             }
             return user;
           }
-          throw new Error('Login failed');
+          throw new Error('Bejelentkezés sikertelen');
         }),
         catchError((error) => {
-          console.error('Login error:', error);
+          console.error('Bejelentkezési hiba:', error);
           return throwError(() => error);
         }),
       );
   }
 
   logout(): void {
+    // Ha nincs bejelentkezett felhasználó, csak töröljük a session-t
     if (!this.currentUserSubject.value) {
       this.clearSession();
       this.router.navigate(['/admin/login']);
       return;
     }
 
+    // Kijelentkezés a szerverről
     this.http
       .post(`${this.apiBase}/api/v1/auth/logout`, {}, { withCredentials: true })
       .pipe(catchError(() => of(null)))
@@ -86,6 +91,7 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  // 401-es hiba esetén hívódik meg (lejárt session, érvénytelen token)
   handleUnauthorized(): void {
     if (this.currentUserSubject.value) {
       this.currentUserSubject.next(null);
@@ -102,11 +108,11 @@ export class AuthService {
     }
   }
 
+  // LocalStorage-ból tölti be a felhasználót (SSR-kompatibilis)
   private getUserFromStorage(): User | null {
-    if (typeof window !== 'undefined') {
-      const userStr = localStorage.getItem(this.USER_KEY);
-      return userStr ? JSON.parse(userStr) : null;
-    }
-    return null;
+    if (typeof window === 'undefined') return null;
+
+    const storedUser = localStorage.getItem(this.USER_KEY);
+    return storedUser ? JSON.parse(storedUser) : null;
   }
 }

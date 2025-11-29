@@ -8,7 +8,6 @@ export const routes: Routes = [
     component: HomeComponent,
     pathMatch: 'full',
   },
-  // Hungarian section routes now have dedicated paths
   {
     path: 'eletter',
     component: HomeComponent,
@@ -34,9 +33,9 @@ export const routes: Routes = [
   {
     path: 'ives-butorok',
     loadComponent: () =>
-      import('./components/pages/curved-furniture/curved-furniture.component').then(
-        (m) => m.CurvedFurnitureComponent,
-      ),
+      import(
+        './components/pages/curved-furniture/curved-furniture.component'
+      ).then((m) => m.CurvedFurnitureComponent),
   },
   {
     path: 'webshop',
@@ -46,7 +45,7 @@ export const routes: Routes = [
       ),
   },
 
-  // Admin routes
+  // Admin útvonalak
   {
     path: 'admin/login',
     loadComponent: () =>
@@ -96,6 +95,6 @@ export const routes: Routes = [
   },
   { path: 'admin', redirectTo: 'admin/dashboard', pathMatch: 'full' },
 
-  // Redirect any other route to the home page
+  // Minden egyéb útvonal átirányítása a főoldalra
   { path: '**', redirectTo: '' },
 ];

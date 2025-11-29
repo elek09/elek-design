@@ -1,4 +1,3 @@
-// Admin order models
 export type OrderStatus = 'new' | 'accepted' | 'rejected';
 export type OrderKind = 'order' | 'quote';
 
@@ -22,7 +21,6 @@ export interface OrderItem {
 export interface Order {
   id: number;
   kind: OrderKind;
-  is_quote?: boolean;
   status: OrderStatus;
   customer: { name: string; email: string; phone?: string | null };
   items: OrderItem[];

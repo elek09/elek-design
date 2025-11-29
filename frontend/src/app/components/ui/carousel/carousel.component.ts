@@ -6,6 +6,7 @@ import {
   computed,
   effect,
   HostListener,
+  OnDestroy,
 } from '@angular/core';
 
 import { Slide } from '../../../models/slide.model';
@@ -18,8 +19,8 @@ import { MatIconModule } from '@angular/material/icon';
   templateUrl: './carousel.component.html',
   styleUrl: './carousel.component.scss',
 })
-export class CarouselComponent {
-  // --- INPUTS: How we configure the carousel from the outside ---
+export class CarouselComponent implements OnDestroy {
+  // --- INPUT PARAMÉTEREK: Konfigurálás kívülről ---
   readonly slides = input<Slide[]>([]);
   readonly showManualControls = input(true);
   readonly autoPlay = input(false);
@@ -27,7 +28,7 @@ export class CarouselComponent {
   readonly hasTextOverlay = input(false);
   readonly slideChanged = output<string>();
 
-  // --- INTERNAL STATE ---
+  // --- BELSŐ ÁLLAPOT ---
   readonly currentSlideIndex = signal(0);
   readonly transformValue = computed(
     () => `translateX(-${this.currentSlideIndex() * 100}%)`,
@@ -35,7 +36,7 @@ export class CarouselComponent {
   private intervalId?: number;
 
   constructor() {
-    // Auto-start autoplay when enabled
+    // Autoplay automatikus indítása amikor engedélyezve van
     effect(() => {
       if (this.autoPlay()) {
         this.startAutoPlay();
@@ -44,7 +45,7 @@ export class CarouselComponent {
       }
     });
 
-    // React to slides changes
+    // Slide-ok változására reagálás
     effect(() => {
       const slides = this.slides();
       if (slides.length > 0 && this.currentSlideIndex() >= slides.length) {
@@ -53,13 +54,13 @@ export class CarouselComponent {
     });
   }
 
-  // --- EVENT LISTENERS ---
+  // --- ESEMÉNYKEZELŐK ---
   @HostListener('window:resize')
   onResize(): void {
-    // Transform is computed, will auto-update
+    // A transform automatikusan frissül (computed)
   }
 
-  // --- PUBLIC METHODS ---
+  // --- PUBLIKUS METÓDUSOK ---
   nextSlide(): void {
     const slides = this.slides();
     if (slides.length === 0) return;
@@ -76,11 +77,13 @@ export class CarouselComponent {
     this.emitSlideChanged();
   }
 
-  // Method to be called from a parent component (e.g., side menu)
+  // Szülő komponensből hívható metódus (pl. oldalsó menü)
   public goToById(id: string) {
     const slides = this.slides();
     if (!slides?.length) return;
-    const idx = slides.findIndex((s) => s.id === id || s.category === id);
+    const idx = slides.findIndex(
+      (s) => String(s.id) === String(id) || String(s.category) === String(id),
+    );
     if (idx >= 0) {
       this.currentSlideIndex.set(idx);
       this.emitSlideChanged();
@@ -91,13 +94,13 @@ export class CarouselComponent {
     const slides = this.slides();
     const currentSlide = slides[this.currentSlideIndex()];
     if (currentSlide) {
-      // Emit subcategory id when available so parent menus can stay in sync
+      // Alkategória id kibocsátása, hogy a szülő menük szinkronban maradjanak
       const key = currentSlide.category || currentSlide.id || '';
       this.slideChanged.emit(String(key));
     }
   }
 
-  // --- MOUSE HOVER FOR AUTOPLAY ---
+  // --- EGÉR HOVER AUTOPLAY-HEZ ---
   onMouseEnter(): void {
     this.stopAutoPlay();
   }
@@ -106,9 +109,9 @@ export class CarouselComponent {
     this.startAutoPlay();
   }
 
-  // --- PRIVATE HELPERS ---
+  // --- PRIVÁT SEGÉDFÜGGVÉNYEK ---
   private startAutoPlay(): void {
-    this.stopAutoPlay(); // Clear any existing interval
+    this.stopAutoPlay(); // Meglévő interval törlése
     if (this.autoPlay() && !this.intervalId) {
       this.intervalId = window.setInterval(
         () => this.nextSlide(),
@@ -122,5 +125,9 @@ export class CarouselComponent {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoPlay();
   }
 }

@@ -3,13 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, shareReplay } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
 import { Order, OrderStatus, OrderUpdatePayload } from '../models/order.model';
-
-export interface ApiListResponse<T> {
-  data: T[];
-}
-export interface ApiItemResponse<T> {
-  data: T;
-}
+import { ApiListResponse, ApiResponse } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminOrdersService {
@@ -19,8 +13,8 @@ export class AdminOrdersService {
 
   getOrder(orderId: number) {
     return this.http
-      .get<ApiItemResponse<Order> | Order>(`${this.adminApi}/orders/${orderId}`)
-      .pipe(map((resp) => ((resp as any)?.data ?? resp) as Order));
+      .get<ApiResponse<Order> | Order>(`${this.adminApi}/orders/${orderId}`)
+      .pipe(map((response) => ((response as any)?.data ?? response) as Order));
   }
 
   listOrders(status?: OrderStatus | 'all'): Observable<Order[]> {
@@ -32,14 +26,18 @@ export class AdminOrdersService {
       .get<ApiListResponse<Order> | Order[]>(`${this.adminApi}/orders`, {
         params,
       })
-      .pipe(map((resp) => (Array.isArray(resp) ? resp : resp.data || [])));
+      .pipe(
+        map((response) =>
+          Array.isArray(response) ? response : response.data || [],
+        ),
+      );
   }
 
   updateStatus(
     orderId: number,
     status: OrderStatus,
-  ): Observable<ApiItemResponse<Order>> {
-    return this.http.put<ApiItemResponse<Order>>(
+  ): Observable<ApiResponse<Order>> {
+    return this.http.put<ApiResponse<Order>>(
       `${this.adminApi}/orders/${orderId}/status`,
       { status },
     );
@@ -48,8 +46,8 @@ export class AdminOrdersService {
   updateOrder(
     orderId: number,
     payload: OrderUpdatePayload,
-  ): Observable<ApiItemResponse<Order>> {
-    return this.http.put<ApiItemResponse<Order>>(
+  ): Observable<ApiResponse<Order>> {
+    return this.http.put<ApiResponse<Order>>(
       `${this.adminApi}/orders/${orderId}`,
       payload,
     );
@@ -62,8 +60,8 @@ export class AdminOrdersService {
     );
   }
 
-  rejectQuote(orderId: number): Observable<ApiItemResponse<Order>> {
-    return this.http.put<ApiItemResponse<Order>>(
+  rejectQuote(orderId: number): Observable<ApiResponse<Order>> {
+    return this.http.put<ApiResponse<Order>>(
       `${this.adminApi}/orders/${orderId}/status`,
       { status: 'rejected' },
     );

@@ -14,19 +14,13 @@ import {
   distinctUntilChanged,
 } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
-import { HeaderConfig, HeaderNavItem } from '../models/header.model';
+import { HeaderConfig } from '../models/header.model';
 import { Category } from '../models/category.model';
 import { Slide } from '../models/slide.model';
 import { GalleryItemResource } from '../models/gallery.model';
-import { getOrigin, resolveToAbsolute } from '../utils/url.utils';
-
-interface BootstrapPayload {
-  header?: {
-    items?: any[]; // raw items from backend; HeaderService normalizes
-  };
-  categories?: Category[];
-  featured_gallery?: GalleryItemResource[];
-}
+import { BootstrapPayload } from '../models/bootstrap.model';
+import { getOrigin } from '../utils/url.utils';
+import { convertToSlide } from '../utils/gallery.utils';
 
 @Injectable({ providedIn: 'root' })
 export class BootstrapService {
@@ -34,7 +28,13 @@ export class BootstrapService {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly url: string = `${this.baseUrl}/api/v1/bootstrap`;
   private readonly apiOrigin: string = getOrigin(this.baseUrl);
+
   private readonly refresh$ = new Subject<void>();
+
+  // Cache-elt bootstrap adat stream
+  // - startWith: azonnal indul az első betöltéssel
+  // - switchMap + defer: refresh() hívásakor új HTTP kérés indul
+  // - shareReplay(1): cache-eli az utolsó eredményt
   private readonly data$: Observable<BootstrapPayload> = this.refresh$.pipe(
     startWith(void 0),
     switchMap(() =>
@@ -42,14 +42,15 @@ export class BootstrapService {
         this.http
           .get<BootstrapPayload | { data: BootstrapPayload }>(this.url)
           .pipe(
-            map((res) => ('data' in res ? res.data : res)),
+            map((response) => ('data' in response ? response.data : response)),
             catchError(() => of<BootstrapPayload>({})),
           ),
       ),
     ),
     shareReplay(1),
   );
-  /** Emits true while a refresh HTTP request is in-flight, else false. */
+
+  // loading spinnerhez
   readonly loading$: Observable<boolean> = merge(
     this.refresh$.pipe(map(() => true)),
     this.data$.pipe(map(() => false)),
@@ -64,47 +65,29 @@ export class BootstrapService {
   }
 
   getHeader$(): Observable<HeaderConfig | null> {
-    // Pass through raw header items; HeaderService will extract logo and routes
     return this.data$.pipe(
-      map((d) =>
-        d?.header
+      map((data) =>
+        data?.header
           ? ({
               logoUrl: '',
-              items: (d.header.items ?? []) as HeaderNavItem[],
+              items: data.header.items ?? [],
             } as HeaderConfig)
-          : (null as HeaderConfig | null),
+          : null,
       ),
     );
   }
 
   getCategories$(): Observable<Category[]> {
-    return this.data$.pipe(map((d) => d.categories ?? []));
+    return this.data$.pipe(map((data) => data.categories ?? []));
   }
 
   getFeaturedSlides$(): Observable<Slide[]> {
     return this.data$.pipe(
-      map((d) =>
-        (d.featured_gallery ?? [])
-          .map((g) => this.toSlide(g))
-          .filter((s): s is Slide => !!s),
+      map((data) =>
+        (data.featured_gallery ?? [])
+          .map((galleryItem) => convertToSlide(galleryItem, this.apiOrigin))
+          .filter((slide): slide is Slide => !!slide),
       ),
     );
-  }
-
-  private toSlide(item: GalleryItemResource): Slide | null {
-    const imageUrl = resolveToAbsolute(this.apiOrigin, item.url || '');
-    if (!imageUrl) return null;
-    const section = item.category?.type || undefined;
-    const subSlug = item.subcategory?.slug || undefined;
-    return {
-      id: String(item.id),
-      imageUrl,
-      thumbUrl: resolveToAbsolute(this.apiOrigin, item.thumb_url || ''),
-      title: item.title,
-      category: subSlug, // use backend slug for matching
-      section,
-      is_active: item.is_active ?? true,
-      is_featured: item.is_featured ?? false,
-    };
   }
 }

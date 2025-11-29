@@ -11,7 +11,7 @@ import {
 } from '../models/admin.models';
 import { API_BASE_URL } from '../app.tokens';
 import { GalleryConfig } from '../models/gallery.model';
-import { ApiResponse, PaginatedApiResponse } from '../models/api.model';
+import { ApiResponse, PaginatedResponse } from '../models/api.model';
 import { Category, Subcategory } from '../models/category.model';
 import { BootstrapService } from './bootstrap.service';
 
@@ -28,7 +28,7 @@ export class AdminApiService {
   private readonly subcategoriesAdminUrl = `${this.baseUrl}/api/v1/admin/subcategories`;
   private readonly adminApiUrl = `${this.baseUrl}/api/v1/admin`;
 
-  // Dashboard Stats
+  // Dashboard statisztikák
   getDashboardStats(): Observable<DashboardStats> {
     return this.http
       .get<ApiResponse<DashboardStats>>(`${this.adminApiUrl}/dashboard/stats`)
@@ -38,10 +38,10 @@ export class AdminApiService {
       );
   }
 
-  // Gallery with filters (optimized backend endpoint)
+  // Galéria szűrőkkel (optimalizált backend endpoint)
   getGalleryItemsFiltered(
     filters: GalleryFilterParams,
-  ): Observable<PaginatedApiResponse<GalleryItem>> {
+  ): Observable<PaginatedResponse<GalleryItem>> {
     let params: any = {};
     if (filters.status && filters.status !== 'all') {
       params.status = filters.status;
@@ -59,7 +59,7 @@ export class AdminApiService {
       params.page = filters.page;
     }
     return this.http
-      .get<PaginatedApiResponse<GalleryItem>>(`${this.adminApiUrl}/gallery`, {
+      .get<PaginatedResponse<GalleryItem>>(`${this.adminApiUrl}/gallery`, {
         params,
       })
       .pipe(catchError(this.handleError));
@@ -128,7 +128,7 @@ export class AdminApiService {
       .pipe(catchError(this.handleError));
   }
 
-  // Utility method to get full image URL
+  // Segéd metódus a teljes kép URL létrehozásához
   getImageUrl(imagePath: string): string {
     return `${this.baseUrl}/storage/${imagePath}`;
   }
@@ -141,7 +141,7 @@ export class AdminApiService {
     return throwError(() => error);
   }
 
-  // --- FormData helpers ---
+  // FormData segéd metódusok
   private buildCreateFormData(item: GalleryCreateRequest): FormData {
     const fd = new FormData();
     fd.append('title', item.title);
@@ -174,9 +174,8 @@ export class AdminApiService {
     return fd;
   }
 
-  // ========== CATEGORY & SUBCATEGORY ADMIN OPERATIONS ==========
+  // ========== KATEGÓRIA & ALKATEGÓRIA ADMIN MŰVELETEK ==========
 
-  // Get categories (optionally fresh from server)
   getCategories(fresh: boolean = false): Observable<Category[]> {
     if (fresh) {
       return this.getCategoriesFresh();
@@ -184,7 +183,6 @@ export class AdminApiService {
     return this.bootstrap.getCategories$();
   }
 
-  // Get all categories (admin with nav_order)
   getCategoriesFresh(): Observable<Category[]> {
     return this.http
       .get<{
@@ -192,7 +190,9 @@ export class AdminApiService {
         categories?: Category[];
       }>(`${this.baseUrl}/api/v1/admin/bootstrap?fresh=1`)
       .pipe(
-        map((res) => res.data?.categories ?? res.categories ?? []),
+        map(
+          (response) => response.data?.categories ?? response.categories ?? [],
+        ),
         catchError(() => this.bootstrap.getCategories$()),
       );
   }
@@ -201,12 +201,13 @@ export class AdminApiService {
     return this.http
       .get<Category[] | { data: Category[] }>(this.categoriesAdminUrl)
       .pipe(
-        map((res) => (Array.isArray(res) ? res : (res?.data ?? []))),
+        map((response) =>
+          Array.isArray(response) ? response : (response?.data ?? []),
+        ),
         catchError(() => this.bootstrap.getCategories$()),
       );
   }
 
-  // Category CRUD
   saveCategory(category: Category): Observable<Category> {
     if (category._id) {
       return this.http
@@ -241,19 +242,24 @@ export class AdminApiService {
     return this.http
       .post<any>(`${this.categoriesAdminUrl}/reorder`, { orders })
       .pipe(
-        map((res) => {
-          const data = Array.isArray(res?.data) ? res.data : (res?.data ?? res);
+        map((response) => {
+          const data = Array.isArray(response?.data)
+            ? response.data
+            : (response?.data ?? response);
           return (Array.isArray(data) ? data : []) as Category[];
         }),
         tap(() => this.bootstrap.refresh()),
       );
   }
 
-  // Subcategory CRUD
   getSubcategories(): Observable<Subcategory[]> {
     return this.http
       .get<Subcategory[] | { data: Subcategory[] }>(this.subcategoriesAdminUrl)
-      .pipe(map((res) => (Array.isArray(res) ? res : (res?.data ?? []))));
+      .pipe(
+        map((response) =>
+          Array.isArray(response) ? response : (response?.data ?? []),
+        ),
+      );
   }
 
   getSubcategoriesByCategory(
@@ -263,7 +269,11 @@ export class AdminApiService {
       .get<
         Subcategory[] | { data: Subcategory[] }
       >(`${this.baseUrl}/api/v1/categories/${categoryId}/subcategories`)
-      .pipe(map((res) => (Array.isArray(res) ? res : (res?.data ?? []))));
+      .pipe(
+        map((response) =>
+          Array.isArray(response) ? response : (response?.data ?? []),
+        ),
+      );
   }
 
   getSubcategory(id: number | string): Observable<Subcategory> {

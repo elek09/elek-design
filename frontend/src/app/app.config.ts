@@ -39,7 +39,7 @@ export const appConfig: ApplicationConfig = {
       }),
       withInterceptors([authInterceptor]),
     ),
-    // Fetch CSRF cookie once at app startup for Sanctum
+    // CSRF cookie betöltése az alkalmazás indításakor (Laravel Sanctum)
     {
       provide: APP_INITIALIZER,
       multi: true,

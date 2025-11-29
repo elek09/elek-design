@@ -12,7 +12,6 @@ class OrderResource extends JsonResource
         return [
             'id' => $this->id,
             'kind' => $this->kind,
-            'is_quote' => $this->kind === 'quote',
             'status' => $this->status,
             'total' => $this->total,
             'note' => $this->admin_note,

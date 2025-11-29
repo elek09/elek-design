@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild } from '@angular/core';
+import { Component, Input, QueryList, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { Category } from '../../../../models/category.model';
@@ -18,12 +18,25 @@ export class CategorySectionComponent {
   @Input({ required: true }) categories$!: Observable<Category[]>;
   @Input({ required: true }) slides$!: Observable<Slide[]>;
 
-  @ViewChild('carousel') carousel!: CarouselComponent;
+  @ViewChildren('carousel') carousels!: QueryList<CarouselComponent>;
   selectedSubId: string | null = null;
 
   onMenuClick(key: string) {
     this.selectedSubId = key;
-    this.carousel?.goToById(key);
+    // Megkeressük azt a carousel-t, amelyik tartalmazza ezt az alkategóriát
+    const carouselsArray = this.carousels?.toArray() ?? [];
+    for (const carousel of carouselsArray) {
+      const slides = carousel.slides();
+      // Összehasonlítás id vagy category (slug) alapján
+      const found = slides.some(
+        (s) =>
+          String(s.id) === String(key) || String(s.category) === String(key),
+      );
+      if (found) {
+        carousel.goToById(key);
+        break;
+      }
+    }
   }
 
   onSlideChanged(slideId: string) {
@@ -31,6 +44,6 @@ export class CategorySectionComponent {
     this.selectedSubId = slideId;
   }
 
-  // Use shared utility function
+  // Közös segédfüggvény használata
   readonly normalizeSubcategories = normalizeSubcategories;
 }

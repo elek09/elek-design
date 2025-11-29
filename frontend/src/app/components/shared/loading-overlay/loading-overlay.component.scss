@@ -6,7 +6,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 1000; // above app content
+  z-index: 1000;
 }
 
 .logo {
@@ -38,12 +38,9 @@
   border: 0;
 }
 
-/* Gray-ish spinner stroke override, scoped to this component */
 :host
   ::ng-deep
   .mat-mdc-progress-spinner
   .mdc-circular-progress__indeterminate-circle-graphic {
-  stroke: #9e9e9e; /* gray-ish */
+  stroke: #9e9e9e;
 }
-
-/* No fade-out; overlay hides immediately when removed from DOM */

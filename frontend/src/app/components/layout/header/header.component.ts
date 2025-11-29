@@ -21,7 +21,6 @@ export class HeaderComponent {
     this.isMenuOpen.update((v) => !v);
   }
 
-  // TrackBy for header items to avoid unnecessary DOM updates
   trackByNavItem = (_: number, item: { id?: string; label?: string }) =>
     item?.id ?? item?.label ?? _;
 }

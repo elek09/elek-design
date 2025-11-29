@@ -9,7 +9,6 @@
   color: var(--color-footer-text);
 }
 
-/* Top title/link styling */
 .footer > span a {
   display: inline-block;
   font-weight: 600;
@@ -25,7 +24,6 @@
   text-decoration: underline;
 }
 
-/* List reset and rhythm */
 .footer ul {
   list-style: none;
   margin: 0;
@@ -38,7 +36,6 @@
   margin: 5px 0;
 }
 
-/* Section title inside list */
 .footer ul li.section-title {
   text-decoration: underline;
   font-weight: 600;
@@ -46,7 +43,6 @@
   margin-bottom: 6px;
 }
 
-/* Optional slight emphasis on the name */
 #name {
   font-weight: 600;
   color: var(--color-accent);

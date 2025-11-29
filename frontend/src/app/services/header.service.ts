@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { BootstrapService } from './bootstrap.service';
-import { HeaderConfig } from '../models/header.model';
+import { HeaderConfig, HeaderNavItem } from '../models/header.model';
+import { ensureLeadingSlash } from '../utils/url.utils';
 
 @Injectable({ providedIn: 'root' })
 export class HeaderService {
@@ -12,41 +13,39 @@ export class HeaderService {
   );
 
   constructor() {
-    // Subscribe once to populate signal from bootstrap
-    this.bootstrap.getHeader$().subscribe((cfg) => {
-      this.rawConfig.set(cfg as HeaderConfig);
+    this.bootstrap.getHeader$().subscribe((config) => {
+      this.rawConfig.set(config);
     });
   }
 
-  private normalizeConfig(cfg: HeaderConfig): HeaderConfig {
-    const mappedItems = (cfg.items || []).map((item: any) => {
-      // Prefer semantic section paths (e.g., '/eletter', '/uzletter')
-      const rawRoute: string = (item.route ?? '').toString().trim();
-      const section: string = (item.section ?? '').toString().trim();
-      let routerLink = '/';
-      if (section) {
-        routerLink = this.ensureLeadingSlash(section);
-      } else if (rawRoute) {
-        routerLink = this.ensureLeadingSlash(rawRoute);
-      }
+  // route-ok generálása és rendezés, logó URL kinyerése
+  private normalizeConfig(config: HeaderConfig): HeaderConfig {
+    const logoItem = (config.items || []).find((item) => item.id === 'logo');
+    const logoUrl = (logoItem as any)?.image_url || config.logoUrl || '';
 
-      const fragment = item.fragment
-        ? item.fragment.toString().trim()
-        : undefined;
-      return { ...item, routerLink, fragment };
-    });
+    const items = (config.items || [])
+      .filter((item) => item.id !== 'logo')
+      .map((item) => this.normalizeNavItem(item))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-    const logoItem = mappedItems.find(
-      (i: any) => i?.is_logo || i?.id === 'logo',
-    );
-    const logoUrl = (logoItem?.image_url ?? '').toString().trim();
-    const items = mappedItems.filter(
-      (i: any) => !(i?.is_logo || i?.id === 'logo'),
-    );
-    return { ...cfg, logoUrl, items };
+    return { ...config, logoUrl, items };
   }
 
-  private ensureLeadingSlash(path: string): string {
-    return path.startsWith('/') ? path : `/${path}`;
+  // routerLink generálása section vagy route alapján
+  private normalizeNavItem(item: HeaderNavItem): HeaderNavItem {
+    // Szemantikus szekció útvonalak előnyben részesítése (pl. '/eletter', '/uzletter')
+    const rawRoute = item.routerLink || '';
+    const section = item.section || '';
+
+    let routerLink = '/';
+    if (section) {
+      routerLink = ensureLeadingSlash(section);
+    } else if (rawRoute) {
+      routerLink = ensureLeadingSlash(rawRoute);
+    }
+
+    const fragment = item.fragment?.trim() || undefined;
+
+    return { ...item, routerLink, fragment };
   }
 }

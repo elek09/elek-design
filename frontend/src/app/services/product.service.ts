@@ -4,7 +4,7 @@ import { Observable, map, shareReplay, catchError, of } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
 import { joinUrl } from '../utils/url.utils';
 import { Product } from '../models/product.model';
-import { ApiItemResponse, ApiListResponse } from '../models/api.model';
+import { ApiResponse, ApiListResponse } from '../models/api.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -15,7 +15,9 @@ export class ProductService {
   getProducts$(): Observable<Product[]> {
     const url = joinUrl(this.apiV1, '/products');
     return this.http.get<ApiListResponse<Product> | Product[]>(url).pipe(
-      map((resp) => (Array.isArray(resp) ? resp : resp.data || [])),
+      map((response) =>
+        Array.isArray(response) ? response : response.data || [],
+      ),
       catchError(() => of<Product[]>([])),
       shareReplay(1),
     );
@@ -23,10 +25,12 @@ export class ProductService {
 
   getProductBySlug$(slug: string): Observable<Product | null> {
     const url = joinUrl(this.apiV1, `/products/${encodeURIComponent(slug)}`);
-    return this.http.get<ApiItemResponse<Product> | Product>(url).pipe(
+    return this.http.get<ApiResponse<Product> | Product>(url).pipe(
       map(
-        (resp) =>
-          (resp as ApiItemResponse<Product>)?.data ?? (resp as Product) ?? null,
+        (response) =>
+          (response as ApiResponse<Product>)?.data ??
+          (response as Product) ??
+          null,
       ),
       catchError(() => of<Product | null>(null)),
     );

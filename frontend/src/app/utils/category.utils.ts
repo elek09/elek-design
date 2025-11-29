@@ -1,9 +1,9 @@
 import { Category } from '../models/category.model';
 
 export interface NormalizedSubcategory {
-  id: string; // backend id as string or fallback
+  id: string;
   name: string;
-  slug: string; // backend slug or derived slugified name
+  slug: string;
   nav_order?: number;
 }
 
