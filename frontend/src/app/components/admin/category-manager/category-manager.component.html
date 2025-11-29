@@ -1,5 +1,5 @@
 <div class="admin-category">
-    <app-admin-header [backLink]="['/admin/dashboard']" title="Kategóriák kezelése">
+    <app-admin-header title="Kategóriák kezelése">
         <span header-actions>
             <button mat-raised-button color="primary" (click)="saveCategoryOrder()" [disabled]="!orderDirty">
                 <mat-icon>save</mat-icon>
@@ -19,7 +19,7 @@
                     <div class="category-row" (click)="selectCategory(category)" cdkDragHandle role="button"
                         tabindex="0" (keydown.enter)="selectCategory(category)"
                         (keydown.space)="selectCategory(category)">
-                        <mat-icon class="handle" title="Drag to reorder">drag_indicator</mat-icon>
+                        <mat-icon class="handle" title="Átrendezés">drag_indicator</mat-icon>
                         <span class="name">{{ i + 1 }}. {{ category.name }}</span>
                         <span class="type">({{ category.type }})</span>
                     </div>
@@ -82,7 +82,7 @@
             </div>
             }
             <ul cdkDropList (cdkDropListDropped)="dropSubcategory($event)">
-                @for (sub of selectedSubcategoriesView; track trackBySub($index, sub); let i = $index) {
+                @for (sub of selectedSubcategories; track trackBySub($index, sub); let i = $index) {
                 <li cdkDrag>
                     <div class="subcategory-row">
                         <div class="drag-handle" cdkDragHandle title="Átrendezés">

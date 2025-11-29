@@ -15,7 +15,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { AdminOrdersService } from '../../../../services/admin-orders.service';
 import { AdminHeaderComponent } from '../../admin-header/admin-header.component';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Order, OrderItem, OrderStatus } from '../../../../models/order.model';
+import { Order, OrderStatus } from '../../../../models/order.model';
+import { extractData } from '../../../../utils/api.utils';
+import {
+  renderOrderItemOptions,
+  toNumberOrUndefined,
+} from '../../../../utils/order.utils';
 
 @Component({
   selector: 'app-order-detail',
@@ -56,177 +61,150 @@ export class OrderDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.api.getOrder(id).subscribe({
-      next: (o) => {
-        this.order.set(o);
-        if (o) this.patchForm(o);
+      next: (order) => {
+        this.order.set(order);
+        if (order) this.patchForm(order);
       },
-      error: () =>
-        this.snack.open('Rendelés betöltése sikertelen', 'Bezár', {
-          duration: 3000,
-        }),
+      error: () => this.showError('Rendelés betöltése sikertelen'),
     });
   }
 
-  private patchForm(o: Order) {
-    this.form.patchValue({ status: o.status, admin_note: o.note || '' });
+  private showSuccess(message: string): void {
+    this.snack.open(message, 'OK', { duration: 2000 });
+  }
+
+  private showError(message: string): void {
+    this.snack.open(message, 'Bezár', { duration: 3000 });
+  }
+
+  private patchForm(order: Order): void {
+    this.form.patchValue({
+      status: order.status,
+      admin_note: order.note || '',
+    });
     this.itemsFA.clear();
-    for (const it of o.items) {
+    for (const item of order.items) {
       this.itemsFA.push(
         this.fb.group({
-          id: [it.id, Validators.required],
+          id: [item.id, Validators.required],
           product_name: [
             {
-              value: it.product?.name || it.product_name || '',
+              value: item.product?.name || item.product_name || '',
               disabled: true,
             },
           ],
-          quantity: [it.quantity, [Validators.required, Validators.min(1)]],
-          unit_price: [it.unit_price ?? null],
-          options: [{ value: this.renderOptions(it), disabled: true }],
+          quantity: [item.quantity, [Validators.required, Validators.min(1)]],
+          unit_price: [item.unit_price ?? null],
+          options: [{ value: renderOrderItemOptions(item), disabled: true }],
         }),
       );
     }
   }
 
-  private renderOptions(it: OrderItem): string {
-    const hw = it.options?.hardware_type
-      ? `Vasalat: ${it.options.hardware_type}`
-      : '';
-    const cs = it.options?.color_scheme
-      ? `Szín: ${it.options.color_scheme}`
-      : '';
-    return [hw, cs].filter(Boolean).join(' | ');
-  }
-
   save(): void {
-    const o = this.order();
-    if (!o || this.form.invalid) return;
+    const currentOrder = this.order();
+    if (!currentOrder || this.form.invalid) return;
+
     this.saving.set(true);
     const value = this.form.getRawValue();
+
     this.api
-      .updateOrder(o.id, {
+      .updateOrder(currentOrder.id, {
         status: (value.status as OrderStatus) || undefined,
         admin_note: value.admin_note || undefined,
         items: (value.items || []).map((raw) => {
-          const i = raw as {
+          const rawItem = raw as {
             id: unknown;
             quantity?: unknown;
             unit_price?: unknown;
           };
           return {
-            id: Number(i.id),
-            quantity:
-              i.quantity != null && i.quantity !== ''
-                ? Number(i.quantity)
-                : undefined,
-            unit_price:
-              i.unit_price != null && i.unit_price !== ''
-                ? Number(i.unit_price)
-                : undefined,
+            id: Number(rawItem.id),
+            quantity: toNumberOrUndefined(rawItem.quantity),
+            unit_price: toNumberOrUndefined(rawItem.unit_price),
           };
         }),
       })
       .subscribe({
         next: (resp) => {
-          const updated: Order =
-            (resp as { data?: Order }).data ?? (resp as unknown as Order);
+          const updated = extractData<Order>(resp);
           this.order.set(updated);
           this.patchForm(updated);
           this.saving.set(false);
-          this.snack.open('Mentve', 'OK', { duration: 2000 });
+          this.showSuccess('Mentve');
         },
         error: () => {
           this.saving.set(false);
-          this.snack.open('Hiba a mentés közben', 'Bezár', { duration: 3000 });
+          this.showError('Hiba a mentés közben');
         },
       });
   }
 
   setStatus(status: OrderStatus): void {
-    const o = this.order();
-    if (!o) return;
+    const currentOrder = this.order();
+    if (!currentOrder) return;
 
-    // Use email-sending endpoints for accept/reject
+    // Elfogadás/elutasítás emailt küld
     if (status === 'accepted') {
       this.sendConfirmation();
     } else if (status === 'rejected') {
       this.sendRejection();
     } else {
-      // For other statuses, just update without email
-      this.api.updateStatus(o.id, status).subscribe({
+      this.api.updateStatus(currentOrder.id, status).subscribe({
         next: (resp) => {
-          const updated: Order =
-            (resp as { data?: Order }).data ?? (resp as unknown as Order);
+          const updated = extractData<Order>(resp);
           this.order.set(updated);
           this.form.patchValue({ status: updated.status });
-          this.snack.open('Státusz frissítve', 'OK', { duration: 2000 });
+          this.showSuccess('Státusz frissítve');
         },
-        error: () =>
-          this.snack.open('Hiba: státusz frissítése sikertelen', 'Bezár', {
-            duration: 3000,
-          }),
+        error: () => this.showError('Hiba: státusz frissítése sikertelen'),
       });
     }
   }
 
   sendConfirmation(): void {
-    const o = this.order();
-    if (!o) return;
-    this.api.sendConfirmation(o.id).subscribe({
-      next: (resp) => {
-        this.snack.open('Megerősítő email elküldve', 'OK', {
-          duration: 2500,
-        });
-      },
-      error: () =>
-        this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
-          duration: 3000,
-        }),
+    const currentOrder = this.order();
+    if (!currentOrder) return;
+
+    this.api.sendConfirmation(currentOrder.id).subscribe({
+      next: () => this.showSuccess('Megerősítő email elküldve'),
+      error: () => this.showError('Hiba: email küldése sikertelen'),
     });
   }
 
   sendRejection(): void {
-    const o = this.order();
-    if (!o) return;
+    const currentOrder = this.order();
+    if (!currentOrder) return;
 
-    this.api.rejectQuote(o.id).subscribe({
+    this.api.rejectQuote(currentOrder.id).subscribe({
       next: (resp) => {
-        const rejected: Order =
-          (resp as { data?: Order }).data ?? (resp as unknown as Order);
+        const rejected = extractData<Order>(resp);
         this.order.set(rejected);
         this.form.patchValue({ status: rejected.status });
-        this.snack.open('Elutasító email elküldve', 'OK', {
-          duration: 2500,
-        });
+        this.showSuccess('Elutasító email elküldve');
       },
-      error: () =>
-        this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
-          duration: 3000,
-        }),
+      error: () => this.showError('Hiba: email küldése sikertelen'),
     });
   }
 
   deleteOrder(): void {
-    const o = this.order();
-    if (!o) return;
+    const currentOrder = this.order();
+    if (!currentOrder) return;
 
+    const itemType =
+      currentOrder.kind === 'quote' ? 'árajánlatot' : 'rendelést';
     if (
-      !confirm(
-        `Biztosan törölni szeretnéd a ${o.kind === 'quote' ? 'árajánlatot' : 'rendelést'} #${o.id}?`,
-      )
+      !confirm(`Biztosan törölni szeretnéd a ${itemType} #${currentOrder.id}?`)
     ) {
       return;
     }
 
-    this.api.deleteOrder(o.id).subscribe({
+    this.api.deleteOrder(currentOrder.id).subscribe({
       next: () => {
-        this.snack.open('Törölve', 'OK', { duration: 2000 });
+        this.showSuccess('Törölve');
         this.router.navigate(['/admin/orders']);
       },
-      error: () =>
-        this.snack.open('Hiba: törlés sikertelen', 'Bezár', {
-          duration: 3000,
-        }),
+      error: () => this.showError('Hiba: törlés sikertelen'),
     });
   }
 

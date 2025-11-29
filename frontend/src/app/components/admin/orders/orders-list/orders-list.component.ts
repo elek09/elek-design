@@ -60,7 +60,7 @@ export class OrdersListComponent implements OnInit {
     const status = this.filterStatus();
     this.api.listOrders(status).subscribe((list) => {
       this.orders.set(list);
-      this.rowData = list; // Backend already filtered
+      this.rowData = list;
     });
   }
 
@@ -69,13 +69,11 @@ export class OrdersListComponent implements OnInit {
   }
 
   onGridReady(event: GridReadyEvent): void {
-    // Ensure initial data sizing after grid API available
-    // Optional: fit columns to available width
     event.api.sizeColumnsToFit();
   }
 
   onStatusChange(value: 'all' | OrderStatus) {
     this.filterStatus.set(value);
-    this.loadOrders(); // Reload from backend with new filter
+    this.loadOrders();
   }
 }

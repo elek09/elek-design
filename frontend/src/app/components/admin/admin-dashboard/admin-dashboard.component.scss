@@ -186,7 +186,9 @@
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
 
     &:hover {
       transform: translateY(-2px);
@@ -231,7 +233,7 @@
 
     .item-status {
       padding: 0 15px 15px 15px;
-      
+
       .status-badge {
         padding: 4px 12px;
         border-radius: 20px;
@@ -321,16 +323,6 @@
   }
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-// Responsive design
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;

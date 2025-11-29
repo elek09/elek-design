@@ -1,9 +1,9 @@
-import { Component, ViewChild, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
 import { Slide } from '../../../models/slide.model';
-import { Observable, combineLatest, firstValueFrom, take } from 'rxjs';
+import { combineLatest, firstValueFrom, take } from 'rxjs';
 import { Category } from '../../../models/category.model';
 import { BootstrapService } from '../../../services/bootstrap.service';
 import { map } from 'rxjs/operators';
@@ -24,9 +24,6 @@ import { LoadingOverlayComponent } from '../../shared/loading-overlay/loading-ov
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
-  @ViewChild('eletterCarousel') eletterCarousel!: CarouselComponent;
-  @ViewChild('uzletterCarousel') uzletterCarousel!: CarouselComponent;
-
   private readonly galleryDataService = inject(GalleryDataService);
   private readonly bootstrapService = inject(BootstrapService);
   private readonly headerService = inject(HeaderService);
@@ -77,9 +74,8 @@ export class HomeComponent implements OnInit {
 
       await this.preloadImages(urls);
     } catch {
-      // On any failure, don't block the UI
+      // Hiba esetén ne blokkoljuk a UI-t
     } finally {
-      // Preload done: hide overlay and show content immediately
       this.loading = false;
     }
   }
@@ -107,7 +103,7 @@ export class HomeComponent implements OnInit {
       urls.forEach((url) => {
         const img = new Image();
         img.onload = done;
-        img.onerror = done; // treat errors as done to avoid blocking forever
+        img.onerror = done;
         img.src = url;
       });
     });

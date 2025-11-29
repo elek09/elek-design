@@ -31,21 +31,33 @@ export class HeaderService {
     return { ...config, logoUrl, items };
   }
 
-  // routerLink generálása section vagy route alapján
   private normalizeNavItem(item: HeaderNavItem): HeaderNavItem {
-    // Szemantikus szekció útvonalak előnyben részesítése (pl. '/eletter', '/uzletter')
-    const rawRoute = item.routerLink || '';
+    const rawRoute = item.routerLink || (item as any).route || '';
     const section = item.section || '';
+    const fragment =
+      (item as any).fragment?.trim() || item.fragment?.trim() || undefined;
 
-    let routerLink = '/';
-    if (section) {
-      routerLink = ensureLeadingSlash(section);
-    } else if (rawRoute) {
-      routerLink = ensureLeadingSlash(rawRoute);
+    if (rawRoute && rawRoute !== '/') {
+      return {
+        ...item,
+        routerLink: ensureLeadingSlash(rawRoute),
+        fragment: undefined,
+      };
     }
 
-    const fragment = item.fragment?.trim() || undefined;
+    if (section && rawRoute === '/') {
+      return {
+        ...item,
+        routerLink: '/',
+        fragment: fragment || section,
+      };
+    }
 
-    return { ...item, routerLink, fragment };
+    // Alapértelmezett: főoldal
+    return {
+      ...item,
+      routerLink: '/',
+      fragment,
+    };
   }
 }

@@ -1,13 +1,15 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import {
-  ReactiveFormsModule,
-  FormBuilder,
-  Validators,
-  FormControl,
-} from '@angular/forms';
-import { ErrorStateMatcher } from '@angular/material/core';
+  NoSubmitErrorStateMatcher,
+  getCheckoutErrorMessage,
+} from '../../../utils/form.utils';
+import {
+  composeProductOptions,
+  extractExtraOptionGroups,
+} from '../../../utils/product.utils';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -53,7 +55,7 @@ export class WebshopComponent implements OnInit {
     customer_email: ['', [Validators.required, Validators.email]],
     customer_phone: [''],
   });
-  protected errorMatcher = new NoSubmitErrorStateMatcher();
+  protected readonly errorMatcher = new NoSubmitErrorStateMatcher();
 
   protected selections = signal<
     Record<
@@ -72,12 +74,12 @@ export class WebshopComponent implements OnInit {
   ngOnInit(): void {
     this.productsApi.getProducts$().subscribe({
       next: (list) => {
-        const active = list.filter((p) => p.is_active !== false);
+        const active = list.filter((product) => product.is_active !== false);
         this.products.set(active);
 
         const defaults: Record<number, any> = {};
-        for (const p of active) {
-          defaults[p.id] = {
+        for (const product of active) {
+          defaults[product.id] = {
             quantity: 1,
             hardware_type: null,
             color_scheme: null,
@@ -88,7 +90,7 @@ export class WebshopComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.toastr.error('Nem sikerült betölteni a termékeket.', 'Hiba');
+        this.toastr.error('Nem sikerült betölteni a termékeket', 'Hiba');
         this.loading.set(false);
       },
     });
@@ -133,7 +135,7 @@ export class WebshopComponent implements OnInit {
       extra: sel.extra || {},
     });
 
-    this.toastr.success('Termék hozzáadva a kosárhoz.', 'Siker');
+    this.toastr.success('Termék hozzáadva a kosárhoz', 'Siker');
     setTimeout(() => {
       const cartEl = document.getElementById('cart-card');
       if (cartEl) {
@@ -144,7 +146,7 @@ export class WebshopComponent implements OnInit {
 
   removeItem(index: number): void {
     this.localCart.removeAt(index);
-    this.toastr.info('Termék eltávolítva a kosárból.', 'Eltávolítva');
+    this.toastr.info('Termék eltávolítva a kosárból', 'Eltávolítva');
   }
 
   requestQuote(): void {
@@ -161,7 +163,7 @@ export class WebshopComponent implements OnInit {
       items: this.cartItems().map((ci) => ({
         product_id: ci.product.id,
         quantity: ci.quantity,
-        options: this.composeOptions({
+        options: composeProductOptions({
           hardware_type: ci.hardware_type ?? null,
           color_scheme: ci.color_scheme ?? null,
           extra: ci.extra || {},
@@ -171,7 +173,7 @@ export class WebshopComponent implements OnInit {
     this.ordersApi.submitPublicOrder(payload).subscribe({
       next: () => {
         this.toastr.success(
-          'Árajánlat kérés elküldve. Email elküldve.',
+          'Árajánlat kérés elküldve. Email elküldve',
           'Siker',
         );
         this.localCart.clear();
@@ -180,79 +182,24 @@ export class WebshopComponent implements OnInit {
         this.checkoutForm.markAsUntouched();
       },
       error: () =>
-        this.toastr.error(
-          'Nem sikerült elküldeni az árajánlat kérést.',
-          'Hiba',
-        ),
+        this.toastr.error('Nem sikerült elküldeni az árajánlat kérést', 'Hiba'),
     });
   }
 
   protected onCheckoutBlur(field: string): void {
-    const c = this.checkoutForm.get(field);
-    if (!c) return;
-    c.markAsTouched();
-    if (c.invalid) {
-      const msg = this.composeCheckoutError(field, c.errors || {});
-      this.toastr.warning(msg, 'Hibás mező');
-    }
-  }
+    const control = this.checkoutForm.get(field);
+    if (!control) return;
 
-  private composeCheckoutError(
-    field: string,
-    errors: Record<string, any>,
-  ): string {
-    if (errors['required']) {
-      switch (field) {
-        case 'customer_name':
-          return 'A név mező kötelező.';
-        case 'customer_email':
-          return 'Az email mező kötelező.';
-      }
+    control.markAsTouched();
+    if (control.invalid) {
+      const message = getCheckoutErrorMessage(field, control.errors || {});
+      this.toastr.warning(message, 'Hibás mező');
     }
-    if (errors['email']) return 'Érvényes email címet adjon meg.';
-    return 'Érvénytelen mező.';
-  }
-
-  private composeOptions(sel: {
-    hardware_type?: string | null;
-    color_scheme?: string | null;
-    extra?: Record<string, string | null>;
-  }): Record<string, string> {
-    const out: Record<string, string> = {};
-    if (sel.hardware_type) out['hardware_type'] = sel.hardware_type;
-    if (sel.color_scheme) out['color_scheme'] = sel.color_scheme;
-    const extra = sel.extra || {};
-    for (const [k, v] of Object.entries(extra)) {
-      if (v) out[k] = v;
-    }
-    return out;
   }
 
   protected extraOptionGroups(
-    p: Product,
+    product: Product,
   ): { key: string; label: string; values: string[] }[] {
-    const groups: { key: string; label: string; values: string[] }[] = [];
-    const opts = p.options || ({} as any);
-    for (const [key, value] of Object.entries(opts)) {
-      if (key === 'hardware_types' || key === 'color_schemes') continue;
-      if (Array.isArray(value) && value.length) {
-        groups.push({ key, label: this.toLabel(key), values: value });
-      }
-    }
-    return groups;
-  }
-
-  private toLabel(key: string): string {
-    return key
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/\b\w/g, (m) => m.toUpperCase());
-  }
-}
-
-class NoSubmitErrorStateMatcher implements ErrorStateMatcher {
-  isErrorState(control: FormControl | null): boolean {
-    return !!(control && control.invalid && (control.dirty || control.touched));
+    return extractExtraOptionGroups(product);
   }
 }

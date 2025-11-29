@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, shareReplay } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '../app.tokens';
 import { Order, OrderStatus, OrderUpdatePayload } from '../models/order.model';
 import { ApiListResponse, ApiResponse } from '../models/api.model';

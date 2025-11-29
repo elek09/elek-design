@@ -27,7 +27,7 @@ export function convertToSlide(
     id,
     imageUrl,
     thumbUrl: resolveToAbsolute(apiOrigin, item.thumb_url || undefined),
-    title: item.title,
+    title: item.subcategory?.name || item.category?.name || item.title,
     category: subcategorySlug,
     section,
     is_active: item.is_active ?? true,

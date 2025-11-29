@@ -23,14 +23,12 @@
   width: 100%;
 }
 
-/* Truncate long notes in cells */
 .note-cell {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Vertically center the action button in its cell and align icon+label nicely */
 .ag-cell.action-cell {
   display: flex;
   align-items: center;
@@ -45,7 +43,6 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Optional: reduce icon button size slightly to fit more */
 .ag-cell.action-cell button[mat-icon-button] {
   width: 32px;
   height: 32px;

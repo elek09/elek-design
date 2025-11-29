@@ -17,7 +17,6 @@ import { API_BASE_URL } from '../app.tokens';
 import { HeaderConfig } from '../models/header.model';
 import { Category } from '../models/category.model';
 import { Slide } from '../models/slide.model';
-import { GalleryItemResource } from '../models/gallery.model';
 import { BootstrapPayload } from '../models/bootstrap.model';
 import { getOrigin } from '../utils/url.utils';
 import { convertToSlide } from '../utils/gallery.utils';

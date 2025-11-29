@@ -1,21 +1,18 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Slide } from '../../../models/slide.model';
 import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import {
-  ReactiveFormsModule,
-  FormBuilder,
-  Validators,
-  FormControl,
-} from '@angular/forms';
-import { ErrorStateMatcher } from '@angular/material/core';
-import { Observable } from 'rxjs';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ContactService } from '../../../services/contact.service';
 import { ToastrService } from 'ngx-toastr';
+import { parseBackendErrors } from '../../../utils/api.utils';
+import {
+  NoSubmitErrorStateMatcher,
+  getCheckoutErrorMessage,
+} from '../../../utils/form.utils';
 
 @Component({
   selector: 'app-contact',
@@ -55,23 +52,24 @@ export class ContactComponent {
       return;
     }
     this.sending = true;
+    this.sent = false;
     this.contactService.sendMessage(this.form.getRawValue()).subscribe({
       next: (resp) => {
         this.sending = false;
-        this.sent = !!resp?.success;
-        if (this.sent) {
-          this.toastr.success('Üzenet elküldve');
-          // Reset form and ensure pristine/untouched so fields are not red.
+        if (resp?.success) {
+          this.sent = true;
+          this.toastr.success('Üzenet sikeresen elküldve');
           this.form.reset();
           this.form.markAsPristine();
           this.form.markAsUntouched();
         } else {
-          this.toastr.error('Nem sikerült elküldeni az üzenetet.');
+          this.toastr.error('Nem sikerült elküldeni az üzenetet');
         }
       },
-      error: () => {
+      error: (err) => {
         this.sending = false;
-        this.toastr.error('Hiba az üzenet küldésekor');
+        const errorMsg = parseBackendErrors(err);
+        this.toastr.error(errorMsg || 'Hiba az üzenet küldésekor');
       },
     });
   }
@@ -79,46 +77,11 @@ export class ContactComponent {
   protected onFieldBlur(field: keyof typeof this.form.controls): void {
     const control = this.form.get(field);
     if (!control) return;
-    // Mark as touched so mat-error still works
+
     control.markAsTouched();
     if (control.invalid) {
-      const msg = this.composeErrorMessage(field, control.errors || {});
-      if (msg) this.toastr.warning(msg, 'Hibás mező');
+      const message = getCheckoutErrorMessage(field, control.errors || {});
+      this.toastr.warning(message, 'Hibás mező');
     }
-  }
-
-  private composeErrorMessage(
-    field: string,
-    errors: Record<string, unknown>,
-  ): string {
-    if (errors['required']) {
-      switch (field) {
-        case 'name':
-          return 'A név mező kötelező.';
-        case 'email':
-          return 'Az email mező kötelező.';
-        case 'subject':
-          return 'A tárgy mező kötelező.';
-        case 'message':
-          return 'Az üzenet mező kötelező.';
-      }
-    }
-    if (errors['email']) return 'Érvényes email címet adjon meg.';
-    if (
-      errors['minlength'] &&
-      typeof errors['minlength'] === 'object' &&
-      'requiredLength' in (errors['minlength'] as Record<string, unknown>)
-    ) {
-      const req = (errors['minlength'] as { requiredLength: number })
-        .requiredLength;
-      return `Legalább ${req} karakter szükséges.`;
-    }
-    return 'Érvénytelen mező.';
-  }
-}
-
-class NoSubmitErrorStateMatcher implements ErrorStateMatcher {
-  isErrorState(control: FormControl | null): boolean {
-    return !!(control && control.invalid && (control.dirty || control.touched));
   }
 }

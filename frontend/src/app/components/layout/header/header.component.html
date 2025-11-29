@@ -1,20 +1,19 @@
 <div class="header-bg">
   <div class="topnav" [class.responsive]="isMenuOpen()" id="myTopnav" aria-label="Main navigation">
-    <a class="logo-link" routerLink="/" routerLinkActive="active" #rlaLogo="routerLinkActive" aria-label="Home"
-      [attr.aria-current]="rlaLogo.isActive ? 'page' : null">
+    <a class="logo-link" routerLink="/" [class.active]="isItemActive({id: 'logo'})" aria-label="Home"
+      (click)="onNavItemClick({id: 'logo'})">
       <img class="logo-img" [src]="headerConfig().logoUrl" alt="Elek Design Logo" loading="lazy" decoding="async" />
     </a>
 
     @for (item of headerConfig().items; track trackByNavItem($index, item)) {
-    <a [routerLink]="item.routerLink" [routerLinkActiveOptions]="{ exact: true }" [fragment]="item.fragment"
-      class="options" routerLinkActive="active" #rla="routerLinkActive" [ngClass]="item.class"
-      [attr.aria-current]="rla.isActive ? 'page' : null">
+    <a [routerLink]="item.routerLink" [fragment]="item.fragment" class="options" [class.active]="isItemActive(item)"
+      [ngClass]="item.class" (click)="onNavItemClick(item)">
       {{ item.label }}
     </a>
     }
 
-    <a class="options cta" routerLink="/webshop" routerLinkActive="active" #rlaCta="routerLinkActive"
-      aria-label="Árajánlatot Kérek" [attr.aria-current]="rlaCta.isActive ? 'page' : null">
+    <a class="options cta" routerLink="/webshop" [class.active]="isItemActive({id: 'webshop'})"
+      aria-label="Árajánlatot Kérek" (click)="onNavItemClick({id: 'webshop'})">
       <span class="cta-lines">Árajánlatot<br>Kérek!</span>
     </a>
 

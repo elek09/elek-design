@@ -4,11 +4,11 @@
 }
 
 .category-manager-container {
-  max-width: 1400px; /* visszavett szélesség kompaktabb nézethez */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 30px 20px;
   display: grid;
-  grid-template-columns: 1fr 2fr; /* kiegyensúlyozottabb arány */
+  grid-template-columns: 1fr 2fr;
   gap: 2rem;
 
   h3 {

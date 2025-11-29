@@ -14,10 +14,11 @@
 
 .about p {
   text-align: left;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 300;
+  line-height: 1.7;
   padding: 6px 12px;
-  color: #b5b5b5;
+  color: #d5d5d5;
 }
 
 .pictures {
@@ -42,16 +43,16 @@
 
 /* Form section */
 .form {
-  margin-top: 2rem;
-  padding: 1rem 0;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
 }
 
 .form-intro {
   text-align: center;
-  color: #b5b5b5;
-  font-size: 1.4rem; /* enlarged for prominence */
-  font-weight: 400;
-  margin-bottom: 1rem;
+  color: #333333;
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0 0 1rem 0;
 }
 
 @media screen and (max-width: 600px) {

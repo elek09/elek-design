@@ -31,9 +31,11 @@ export interface SubcategoryEditDialogData {
   styleUrls: ['./subcategory-edit-dialog.component.scss'],
 })
 export class SubcategoryEditDialogComponent implements OnInit {
-  private dialogRef = inject(MatDialogRef<SubcategoryEditDialogComponent>);
-  private adminApiService = inject(AdminApiService);
-  private data = inject(MAT_DIALOG_DATA) as SubcategoryEditDialogData;
+  private readonly dialogRef = inject(
+    MatDialogRef<SubcategoryEditDialogComponent>,
+  );
+  private readonly adminApiService = inject(AdminApiService);
+  private readonly data = inject(MAT_DIALOG_DATA) as SubcategoryEditDialogData;
 
   loading = true;
   error = '';
@@ -41,11 +43,12 @@ export class SubcategoryEditDialogComponent implements OnInit {
   nameInput = '';
 
   ngOnInit(): void {
-    if (!this.data || this.data.id == null) {
+    if (!this.data?.id) {
       this.error = 'Hiányzó azonosító';
       this.loading = false;
       return;
     }
+
     this.adminApiService.getSubcategory(this.data.id).subscribe({
       next: (sub: Subcategory) => {
         this.model = sub;
@@ -61,14 +64,15 @@ export class SubcategoryEditDialogComponent implements OnInit {
 
   save(): void {
     if (!this.model?.id) return;
+
     const newName = this.nameInput.trim();
     if (!newName) return;
+
     this.error = '';
     this.loading = true;
+
     this.adminApiService
-      .updateSubcategory(this.model.id, {
-        name: newName,
-      })
+      .updateSubcategory(this.model.id, { name: newName })
       .subscribe({
         next: (updated: Subcategory) => {
           this.loading = false;

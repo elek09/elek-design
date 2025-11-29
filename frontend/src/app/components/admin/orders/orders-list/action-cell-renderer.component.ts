@@ -88,89 +88,101 @@ export class ActionCellRendererComponent implements ICellRendererAngularComp {
 
   private reloadGrid(): void {
     const ctx = this.params.context as { reload?: () => void } | undefined;
-    if (ctx?.reload) ctx.reload();
-    else this.params.api?.refreshCells({ force: true });
+    if (ctx?.reload) {
+      ctx.reload();
+    } else {
+      this.params.api?.refreshCells({ force: true });
+    }
   }
 
   onEdit(): void {
     const ctx = this.params.context as
       | { onEdit?: (id: number) => void }
       | undefined;
-    if (ctx?.onEdit) ctx.onEdit(this.orderId);
-    else window.location.hash = `#/admin/orders/${this.orderId}`;
+    if (ctx?.onEdit) {
+      ctx.onEdit(this.orderId);
+    } else {
+      window.location.hash = `#/admin/orders/${this.orderId}`;
+    }
   }
 
-  onAccept() {
+  private updateStatus(
+    status: OrderStatus,
+    successMsg: string,
+    errorMsg: string,
+  ): void {
     if (!this.orderId) return;
+
     this.saving = true;
-    this.apiSvc.updateStatus(this.orderId, 'accepted').subscribe({
+    this.apiSvc.updateStatus(this.orderId, status).subscribe({
       next: () => {
         this.saving = false;
-        this.snack.open('Elfogadva', 'OK', { duration: 1500 });
+        this.snack.open(successMsg, 'OK', { duration: 1500 });
         this.reloadGrid();
       },
       error: () => {
         this.saving = false;
-        this.snack.open('Hiba: nem sikerült elfogadni', 'Bezár', {
-          duration: 2000,
-        });
+        this.snack.open(errorMsg, 'Bezár', { duration: 2000 });
       },
     });
   }
 
-  onReject() {
+  private executeAction(
+    action: () => void,
+    successMsg: string,
+    errorMsg: string,
+    reloadAfter = false,
+  ): void {
     if (!this.orderId) return;
+
     this.saving = true;
-    this.apiSvc.updateStatus(this.orderId, 'rejected').subscribe({
+    const observable = action();
+    (observable as any).subscribe({
       next: () => {
         this.saving = false;
-        this.snack.open('Elutasítva', 'OK', { duration: 1500 });
-        this.reloadGrid();
+        this.snack.open(successMsg, 'OK', { duration: 1500 });
+        if (reloadAfter) this.reloadGrid();
       },
       error: () => {
         this.saving = false;
-        this.snack.open('Hiba: nem sikerült elutasítani', 'Bezár', {
-          duration: 2000,
-        });
+        this.snack.open(errorMsg, 'Bezár', { duration: 2000 });
       },
     });
   }
 
-  onMail() {
-    if (!this.orderId) return;
-    this.saving = true;
-    this.apiSvc.sendConfirmation(this.orderId).subscribe({
-      next: () => {
-        this.saving = false;
-        this.snack.open('Email elküldve', 'OK', { duration: 1500 });
-      },
-      error: () => {
-        this.saving = false;
-        this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
-          duration: 2000,
-        });
-      },
-    });
+  onAccept(): void {
+    this.updateStatus('accepted', 'Elfogadva', 'Hiba: nem sikerült elfogadni');
   }
 
-  onDelete() {
-    if (!this.orderId) return;
-    if (!confirm('Biztosan törölni szeretnéd ezt a rendelést?')) {
+  onReject(): void {
+    this.updateStatus(
+      'rejected',
+      'Elutasítva',
+      'Hiba: nem sikerült elutasítani',
+    );
+  }
+
+  onMail(): void {
+    this.executeAction(
+      () => this.apiSvc.sendConfirmation(this.orderId),
+      'Email elküldve',
+      'Hiba: email küldése sikertelen',
+    );
+  }
+
+  onDelete(): void {
+    if (
+      !this.orderId ||
+      !confirm('Biztosan törölni szeretnéd ezt a rendelést?')
+    ) {
       return;
     }
-    this.saving = true;
-    this.apiSvc.deleteOrder(this.orderId).subscribe({
-      next: () => {
-        this.saving = false;
-        this.snack.open('Törölve', 'OK', { duration: 1500 });
-        this.reloadGrid();
-      },
-      error: () => {
-        this.saving = false;
-        this.snack.open('Hiba: törlés sikertelen', 'Bezár', {
-          duration: 2000,
-        });
-      },
-    });
+
+    this.executeAction(
+      () => this.apiSvc.deleteOrder(this.orderId),
+      'Törölve',
+      'Hiba: törlés sikertelen',
+      true,
+    );
   }
 }

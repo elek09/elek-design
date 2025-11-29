@@ -38,20 +38,19 @@ import { SubcategoryEditDialogComponent } from './subcategory-edit-dialog/subcat
   styleUrls: ['./category-manager.component.scss'],
 })
 export class CategoryManagerComponent implements OnInit {
-  private adminApiService = inject(AdminApiService);
-  private router = inject(Router);
-  private dialog = inject(MatDialog);
+  private readonly adminApiService = inject(AdminApiService);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   categories: Category[] = [];
   selectedCategory: Category | null = null;
   newCategory: Category = { name: '', type: '', subcategories: [] };
-  // Subcategories külön listában (backend rekordok)
   selectedSubcategories: Subcategory[] = [];
   newSubcategoryName = '';
   lastError = '';
   orderDirty = false;
   subOrderDirty = false;
-  // Eredeti kategória adatok a type változás detektálásához
+
   private originalCategoryType: string | null = null;
   private originalCategoryId: number | string | null = null;
   private originalCategoryName: string | null = null;
@@ -62,22 +61,21 @@ export class CategoryManagerComponent implements OnInit {
 
   loadCategories(): void {
     this.adminApiService.getCategories(true).subscribe((data: Category[]) => {
-      // Backend already returns categories ordered by nav_order
       this.categories = data || [];
       this.orderDirty = false;
     });
   }
 
-  goBack(): void {
-    this.router.navigate(['/admin/dashboard']);
-  }
-
   selectCategory(category: Category): void {
     this.selectedCategory = JSON.parse(JSON.stringify(category));
     this.originalCategoryType = category.type;
-    this.originalCategoryId = category.id ?? category._id ?? null;
+    this.originalCategoryId = this.getCategoryId(category);
     this.originalCategoryName = category.name;
     this.loadSubcategoriesForSelected();
+  }
+
+  private getCategoryId(category: Category): number | string | null {
+    return category.id ?? category._id ?? null;
   }
 
   private loadSubcategoriesForSelected(): void {
@@ -85,14 +83,13 @@ export class CategoryManagerComponent implements OnInit {
       this.selectedSubcategories = [];
       return;
     }
-    const catId = this.selectedCategory._id || this.selectedCategory.id;
+
+    const catId = this.getCategoryId(this.selectedCategory);
     if (!catId) {
       this.selectedSubcategories = [];
       return;
     }
 
-    // Use optimized backend endpoint to fetch only subcategories for this category
-    // Backend already returns them ordered by nav_order
     this.adminApiService.getSubcategoriesByCategory(catId).subscribe({
       next: (subs: Subcategory[]) => {
         this.selectedSubcategories = subs;
@@ -108,8 +105,9 @@ export class CategoryManagerComponent implements OnInit {
   saveCategory(category: Category): void {
     this.lastError = '';
     const isCreate = !category._id && !category.id;
+
     if (isCreate) {
-      if (category.type) category.type = slugify(category.type)!; // slug only on create
+      if (category.type) category.type = slugify(category.type)!;
       const subs = normalizeSubcategories(category.subcategories).map(
         (s, idx) => ({
           id: s.id,
@@ -128,16 +126,17 @@ export class CategoryManagerComponent implements OnInit {
           this.resetForm();
         },
         error: (err: any) => {
-          const msg = err?.error?.message || err?.message || 'Save failed';
-          this.lastError = msg;
+          this.lastError =
+            err?.error?.message || err?.message || 'Mentés sikertelen';
         },
       });
       return;
     }
-    // PATCH only changed fields
+
     const patch: Partial<Category> = {};
     const currentName = String(category.name || '').trim();
     const currentType = String(category.type || '').trim();
+
     if (
       this.originalCategoryName !== null &&
       currentName !== this.originalCategoryName
@@ -150,22 +149,23 @@ export class CategoryManagerComponent implements OnInit {
     ) {
       patch.type = currentType;
     }
-    if (!Object.keys(patch).length) {
-      return; // nothing changed
-    }
-    const id = category.id ?? category._id;
-    if (id == null) {
+
+    if (!Object.keys(patch).length) return;
+
+    const id = this.getCategoryId(category);
+    if (!id) {
       this.lastError = 'Hiányzó kategória azonosító';
       return;
     }
+
     this.adminApiService.patchCategory(id, patch).subscribe({
       next: () => {
         this.loadCategories();
         this.resetForm();
       },
       error: (err) => {
-        const msg = err?.error?.message || err?.message || 'Patch failed';
-        this.lastError = msg;
+        this.lastError =
+          err?.error?.message || err?.message || 'Mentés sikertelen';
       },
     });
   }
@@ -193,10 +193,13 @@ export class CategoryManagerComponent implements OnInit {
 
   addSubcategory(): void {
     if (!this.selectedCategory) return;
+
     const name = this.newSubcategoryName.trim();
     if (!name) return;
-    const catId = this.selectedCategory._id || this.selectedCategory.id;
+
+    const catId = this.getCategoryId(this.selectedCategory);
     if (!catId) return;
+
     this.adminApiService
       .createSubcategory({ category_id: catId, name, slug: slugify(name)! })
       .subscribe({
@@ -221,7 +224,6 @@ export class CategoryManagerComponent implements OnInit {
     });
   }
 
-  // Editing subcategory fields
   openEditSubNameDialog(index: number): void {
     const sub = this.selectedSubcategories[index];
     if (!sub?.id) return;
@@ -236,11 +238,6 @@ export class CategoryManagerComponent implements OnInit {
     });
   }
 
-  updateSubSlug(index: number, value: string): void {
-    // Slug editing disabled
-  }
-
-  // Drag & Drop reordering for subcategories
   dropSubcategory(
     event: CdkDragDrop<
       {
@@ -260,41 +257,36 @@ export class CategoryManagerComponent implements OnInit {
     this.subOrderDirty = true;
   }
 
-  // Drag & Drop reordering for categories (controls header order)
   dropCategory(event: CdkDragDrop<Category[]>): void {
     moveItemInArray(this.categories, event.previousIndex, event.currentIndex);
-    // Update nav_order locally to reflect new order (1-based)
     this.categories.forEach((c, idx) => (c.nav_order = idx + 1));
     this.orderDirty = true;
   }
 
   saveCategoryOrder(): void {
     if (!this.orderDirty) return;
-    // Ensure nav_order is sequential before save
     this.categories.forEach((c, idx) => (c.nav_order = idx + 1));
     this.adminApiService.reorderCategories(this.categories).subscribe({
       next: (updated: Category[]) => {
-        // Backend already returns categories ordered by nav_order
         this.categories = updated || [];
         this.orderDirty = false;
       },
       error: (err) => {
-        const msg = err?.error?.message || err?.message || 'Reorder failed';
-        this.lastError = msg;
+        this.lastError =
+          err?.error?.message || err?.message || 'Sorrend mentés sikertelen';
       },
     });
   }
 
-  // TrackBy helpers to reduce DOM churn
-  trackByCategory = (_: number, c: Category) => c._id ?? c.id ?? c.type;
-  trackBySub = (
-    _: number,
-    s: { id?: number | string; slug?: string; name: string },
-  ) => s.slug ?? s.id ?? s.name ?? _;
+  trackByCategory(index: number, category: Category): string | number {
+    return category._id ?? category.id ?? category.type;
+  }
 
-  // Validation helpers
-  get hasDuplicateSubSlugs(): boolean {
-    return false; // Not relevant – slug not editable
+  trackBySub(
+    index: number,
+    subcategory: { id?: number | string; slug?: string; name: string },
+  ): string | number {
+    return subcategory.slug ?? subcategory.id ?? subcategory.name ?? index;
   }
 
   get isSaveDisabled(): boolean {
@@ -304,7 +296,6 @@ export class CategoryManagerComponent implements OnInit {
     return !hasName || !hasType || this.isEditTypeTaken;
   }
 
-  // UI helpers
   onNewTypeInput(): void {
     if (this.newCategory?.type) {
       this.newCategory.type = slugify(String(this.newCategory.type))!;
@@ -312,7 +303,6 @@ export class CategoryManagerComponent implements OnInit {
   }
 
   onEditTypeInput(value: string): void {
-    // Ne slug-oljunk automatikusan szerkesztéskor, csak nyers érték mentése
     if (this.selectedCategory) {
       this.selectedCategory.type = value;
     }
@@ -328,59 +318,51 @@ export class CategoryManagerComponent implements OnInit {
     if (!this.selectedCategory) return false;
     const t = String(this.selectedCategory.type || '').trim();
     if (!t) return false;
-    // Ha a type nem változott az eredetihez képest, nincs ütközés
     if (this.originalCategoryType !== null && t === this.originalCategoryType) {
       return false;
     }
     const currentId = this.originalCategoryId;
     return this.categories.some((c) => {
-      const cid = c.id ?? c._id;
+      const cid = this.getCategoryId(c);
       return String(c.type) === t && cid != currentId;
     });
   }
 
-  get selectedSubcategoriesView(): Subcategory[] {
-    return this.selectedSubcategories;
-  }
-
-  // Save current category edits (including new subcategory) then go to gallery with params
   addItemToSubcategory(sub: Subcategory): void {
     if (!this.selectedCategory) return;
+
     this.lastError = '';
     const mainId =
-      this.selectedCategory.id ??
-      this.selectedCategory._id ??
-      this.selectedCategory.type;
+      this.getCategoryId(this.selectedCategory) ?? this.selectedCategory.type;
+
     if (!sub.id) {
-      // Fallback: refresh subcategories to obtain id before navigating
       this.loadSubcategoriesForSelected();
       const refreshed = this.selectedSubcategories.find(
         (s) => s.slug === (sub as any).slug || s.name === sub.name,
       );
       if (!refreshed?.id) {
         this.lastError =
-          'Az alkategória azonosító még nem érhető el. Próbáld újra egy pillanat múlva.';
+          'Az alkategória azonosító még nem érhető el. Próbáld újra.';
         return;
       }
       sub = refreshed as any;
     }
-    const subId = sub.id;
+
     this.router.navigate(['/admin/gallery'], {
       queryParams: {
         mainCategory: mainId,
-        subCategory: subId,
+        subCategory: sub.id,
       },
     });
   }
 
-  // Save current category edits then navigate to add item for the main category
   addItemToCategory(): void {
     if (!this.selectedCategory) return;
+
     this.lastError = '';
     const mainId =
-      this.selectedCategory.id ??
-      this.selectedCategory._id ??
-      this.selectedCategory.type;
+      this.getCategoryId(this.selectedCategory) ?? this.selectedCategory.type;
+
     this.router.navigate(['/admin/gallery'], {
       queryParams: { mainCategory: mainId },
     });
@@ -389,10 +371,8 @@ export class CategoryManagerComponent implements OnInit {
   saveSubcategoryOrder(): void {
     if (!this.subOrderDirty || this.selectedSubcategories.length === 0) return;
 
-    // Ensure current local order indices are set
     this.selectedSubcategories.forEach((s, idx) => (s.nav_order = idx + 1));
 
-    // Update all subcategory nav_order values in parallel
     const updates = this.selectedSubcategories.map((s) =>
       this.adminApiService.updateSubcategory(s.id!, { nav_order: s.nav_order }),
     );
@@ -404,7 +384,7 @@ export class CategoryManagerComponent implements OnInit {
       },
       error: (err: any) => {
         this.lastError =
-          err?.error?.message || 'Alkategória sorrend mentés hiba';
+          err?.error?.message || 'Alkategória sorrend mentés sikertelen';
       },
     });
   }

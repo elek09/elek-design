@@ -42,7 +42,7 @@ export class AdminApiService {
   getGalleryItemsFiltered(
     filters: GalleryFilterParams,
   ): Observable<PaginatedResponse<GalleryItem>> {
-    let params: any = {};
+    const params: any = {};
     if (filters.status && filters.status !== 'all') {
       params.status = filters.status;
     }

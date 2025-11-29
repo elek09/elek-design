@@ -23,14 +23,13 @@ export class CategorySectionComponent {
 
   onMenuClick(key: string) {
     this.selectedSubId = key;
-    // Megkeressük azt a carousel-t, amelyik tartalmazza ezt az alkategóriát
     const carouselsArray = this.carousels?.toArray() ?? [];
     for (const carousel of carouselsArray) {
       const slides = carousel.slides();
-      // Összehasonlítás id vagy category (slug) alapján
       const found = slides.some(
-        (s) =>
-          String(s.id) === String(key) || String(s.category) === String(key),
+        (slide) =>
+          String(slide.id) === String(key) ||
+          String(slide.category) === String(key),
       );
       if (found) {
         carousel.goToById(key);
@@ -44,6 +43,5 @@ export class CategorySectionComponent {
     this.selectedSubId = slideId;
   }
 
-  // Közös segédfüggvény használata
   readonly normalizeSubcategories = normalizeSubcategories;
 }

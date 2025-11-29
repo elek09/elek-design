@@ -20,8 +20,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminHeaderComponent } from '../admin-header/admin-header.component';
+import { LoadingOverlayComponent } from '../../shared/loading-overlay/loading-overlay.component';
 import { formatDateTime } from '../../../utils/date.utils';
-import { normalizeSubcategories } from '../../../utils/category.utils';
+import { parseBackendErrors } from '../../../utils/api.utils';
+import {
+  buildGalleryConfig,
+  getCategoryLabel,
+} from '../../../utils/category.utils';
 import {
   GalleryConfig,
   GallerySubCategory,
@@ -41,6 +46,7 @@ import {
     MatCheckboxModule,
     MatProgressSpinnerModule,
     AdminHeaderComponent,
+    LoadingOverlayComponent,
   ],
   templateUrl: './admin-gallery.component.html',
   styleUrls: ['./admin-gallery.component.scss'],
@@ -55,7 +61,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   showUploadForm = false;
   uploadForm = {
     title: '',
-    mainCategoryId: '' as string, // store as string for binding; convert to number on submit
+    mainCategoryId: '' as string,
     subCategoryId: '' as string,
     description: '',
     image: null as File | null,
@@ -69,7 +75,6 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
 
   galleryItems: GalleryItem[] = [];
 
-  // Pagination state
   currentPage = 1;
   lastPage = 1;
   totalItems = 0;
@@ -95,70 +100,32 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     this.adminApiService
       .getCategories(true)
       .pipe(
-        map((categories: Category[]) => this.buildGalleryConfig(categories)),
+        map((categories: Category[]) => buildGalleryConfig(categories)),
         takeUntil(this.destroy$),
       )
       .subscribe({
         next: (config: GalleryConfig) => {
           this.galleryConfig = config;
-          const qp = this.route.snapshot.queryParamMap;
-          const main = qp.get('mainCategory') || qp.get('main') || '';
-          const sub = qp.get('subCategory') || qp.get('sub') || '';
-
-          const mainExists = !!this.galleryConfig?.categories.find(
-            (c) => c.value === main,
-          );
-          this.uploadForm.mainCategoryId = mainExists
-            ? main!
-            : this.galleryConfig?.categories[0]?.value || '';
-
-          this.onMainCategoryChange();
-
-          const subExists = !!this.availableSubcategories.find(
-            (s: any) => s.value === sub,
-          );
-          if (sub && !subExists) {
-            const slugMatch = this.availableSubcategories.find(
-              (s: any) => s.slug && s.slug.toLowerCase() === sub.toLowerCase(),
-            );
-            if (slugMatch) {
-              this.uploadForm.subCategoryId = slugMatch.value;
-            }
-          } else if (sub && subExists) {
-            this.uploadForm.subCategoryId = sub;
-          }
-
-          if (mainExists || subExists) {
-            this.showUploadForm = true;
-          }
-
+          this.initializeFormFromQueryParams();
           this.loadGalleryItems();
         },
         error: (error: any) => {
-          console.error('Error loading categories for config:', error);
-          this.error = 'Failed to load gallery configuration.';
+          console.error('Kategóriák betöltési hiba:', error);
+          this.error = 'Galéria konfiguráció betöltése sikertelen.';
           this.isLoading = false;
         },
       });
   }
 
-  private buildGalleryConfig(categories: Category[]): GalleryConfig {
-    const mapped = (categories || []).map((c) => ({
-      label: c.name,
-      value: String(c.id ?? c.type), // prefer numeric id if available
-      subcategories: normalizeSubcategories(c.subcategories).map((s) => ({
-        label: s.name,
-        value: s.id != null ? String(s.id) : String(s.slug), // ensure string for comparison
-        slug: s.slug,
-      })),
-    }));
-    return { categories: mapped };
+  // Feltöltő form inicializálása: első kategória kiválasztása alapértelmezettként
+  private initializeFormFromQueryParams(): void {
+    if (!this.galleryConfig?.categories.length) return;
+
+    this.uploadForm.mainCategoryId = this.galleryConfig.categories[0].value;
+    this.onMainCategoryChange();
   }
 
-  objectKeys<T extends object>(obj: T): (keyof T)[] {
-    return Object.keys(obj) as (keyof T)[];
-  }
-
+  // Kiválasztott főkategóriához tartozó alkategoriák listája
   get availableSubcategories(): GallerySubCategory[] {
     if (!this.galleryConfig) return [];
     const selectedMain = this.galleryConfig.categories.find(
@@ -173,47 +140,10 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       subcategories.length > 0 ? subcategories[0].value : '';
   }
 
-  getCategoryLabel(categoryValue: string): string {
-    if (!this.galleryConfig) return categoryValue;
-    for (const category of this.galleryConfig.categories) {
-      if (category.value === categoryValue) {
-        return category.label;
-      }
-      if (category.subcategories) {
-        for (const sub of category.subcategories) {
-          if (sub.value === categoryValue) {
-            return sub.label;
-          }
-        }
-      }
-    }
-    return categoryValue;
-  }
-
+  // Galéria elemek betöltése szűrőkkel
   loadGalleryItems(): void {
     this.isLoading = true;
-
-    const filters: GalleryFilterParams = { page: this.currentPage };
-
-    if (this.selectedStatus !== 'all') {
-      filters.status = this.selectedStatus;
-    }
-
-    if (this.selectedCategory !== 'all') {
-      const isMain = this.selectedCategory.startsWith('cat-');
-      const isSub = this.selectedCategory.startsWith('sub-');
-      const rawId = this.selectedCategory.replace(/^(cat-|sub-)/, '');
-
-      if (isMain) {
-        filters.category_id = rawId;
-      } else if (isSub) {
-        filters.subcategory_id = rawId;
-      }
-    }
-
-    if (this.searchTerm.trim()) {
-      filters.search = this.searchTerm.trim();
-    }
+    const filters = this.buildFilters();
 
     this.adminApiService.getGalleryItemsFiltered(filters).subscribe({
       next: (resp) => {
@@ -229,11 +159,35 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (err) => {
-        console.error('Error loading gallery items:', err);
-        this.error = 'Failed to load gallery items';
+        console.error('Galéria elemek betöltési hiba:', err);
+        this.error = 'Galéria elemek betöltése sikertelen';
         this.isLoading = false;
       },
     });
+  }
+
+  // Szűrő paraméterek összeállítása az aktuális kiválasztások alapján
+  private buildFilters(): GalleryFilterParams {
+    const filters: GalleryFilterParams = { page: this.currentPage };
+
+    if (this.selectedStatus !== 'all') {
+      filters.status = this.selectedStatus;
+    }
+
+    if (this.selectedCategory !== 'all') {
+      const isMain = this.selectedCategory.startsWith('cat-');
+      const isSub = this.selectedCategory.startsWith('sub-');
+      const rawId = this.selectedCategory.replace(/^(cat-|sub-)/, '');
+
+      if (isMain) filters.category_id = rawId;
+      else if (isSub) filters.subcategory_id = rawId;
+    }
+
+    if (this.searchTerm.trim()) {
+      filters.search = this.searchTerm.trim();
+    }
+
+    return filters;
   }
 
   goToPage(page: number): void {
@@ -265,38 +219,16 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Kép feltöltés validációval és hibakezeléssel
   onUpload(): void {
-    if (!this.uploadForm.title.trim()) {
-      this.uploadError = 'Please enter a title.';
-      return;
-    }
-    const subs = this.availableSubcategories;
-    if (!this.uploadForm.mainCategoryId) {
-      this.uploadError = 'Please select a main category.';
-      return;
-    }
-    if (subs.length > 0 && !this.uploadForm.subCategoryId) {
-      this.uploadError =
-        'Please select a subcategory under the chosen main category.';
-      return;
-    }
-    if (
-      this.uploadForm.subCategoryId &&
-      subs.length > 0 &&
-      !subs.some((s) => s.value === this.uploadForm.subCategoryId)
-    ) {
-      this.uploadError =
-        'The selected subcategory is not valid for the chosen main category.';
-      return;
-    }
-    if (!this.uploadForm.image) {
-      this.uploadError = 'Please select an image to upload.';
+    const validationError = this.validateUploadForm();
+    if (validationError) {
+      this.uploadError = validationError;
       return;
     }
 
     this.isUploading = true;
     this.uploadError = null;
-    // Close the form immediately after starting a valid upload action
     const wasFormVisible = this.showUploadForm;
     this.showUploadForm = false;
 
@@ -320,39 +252,42 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         if (response.success) {
           this.loadGalleryItems();
           this.resetUploadForm();
-          this.showUploadForm = false; // ensure it stays closed after success
+          this.showUploadForm = false;
         }
         this.isUploading = false;
       },
       error: (error) => {
-        console.error('Upload error:', error);
-        if (error?.error) {
-          console.error('Upload error details:', error.error);
-        }
-        const backendErrors = error?.error?.errors;
-        if (backendErrors && typeof backendErrors === 'object') {
-          const messages = Object.entries(backendErrors)
-            .flatMap(([field, errs]) =>
-              Array.isArray(errs)
-                ? errs.map((e) => `${field}: ${e}`)
-                : [`${field}: ${String(errs)}`],
-            )
-            .join('\n');
-          this.uploadError =
-            messages ||
-            error.error?.message ||
-            'Failed to upload image. Please try again.';
-        } else {
-          this.uploadError =
-            error.error?.message || 'Failed to upload image. Please try again.';
-        }
+        console.error('Kép feltöltési hiba:', error);
+        this.uploadError = parseBackendErrors(error);
         this.isUploading = false;
-        // Reopen the form so the user can correct issues
         if (wasFormVisible) {
           this.showUploadForm = true;
         }
       },
     });
+  }
+
+  // Feltöltő form validációja: kötelező mezők és kategória konzisztencia ellenőrzése
+  private validateUploadForm(): string | null {
+    if (!this.uploadForm.title.trim()) return 'Kérlek adj meg egy címet.';
+    if (!this.uploadForm.mainCategoryId)
+      return 'Kérlek válassz ki egy főkategóriát.';
+
+    const subs = this.availableSubcategories;
+    if (subs.length > 0 && !this.uploadForm.subCategoryId) {
+      return 'Kérlek válassz ki egy alkategóriát a kiválasztott főkategóriában.';
+    }
+    if (
+      this.uploadForm.subCategoryId &&
+      subs.length > 0 &&
+      !subs.some((s) => s.value === this.uploadForm.subCategoryId)
+    ) {
+      return 'A kiválasztott alkategória nem érvényes a választott főkategóriához.';
+    }
+    if (!this.uploadForm.image)
+      return 'Kérlek válassz ki egy képet a feltöltéshez.';
+
+    return null;
   }
 
   resetUploadForm(): void {
@@ -379,16 +314,16 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         } else {
           this.handleUpdateError(
             item,
-            'Status update response did not contain gallery item data.',
+            'A státusz frissítési válasz nem tartalmazta a galéria elem adatokat.',
           );
         }
       },
       error: (err) => {
         this.handleUpdateError(
           item,
-          `Failed to update status for item "${item.title}". Please try again.`,
+          `A(z) "${item.title}" elem státuszának frissítése sikertelen. Kérlek próbáld újra.`,
         );
-        console.error('Failed to update item status', err);
+        console.error('Elem státusz frissítési hiba:', err);
       },
     });
   }
@@ -403,16 +338,16 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
         } else {
           this.handleUpdateError(
             item,
-            'Featured status update response did not contain gallery item data.',
+            'A kiemelt státusz frissítési válasz nem tartalmazta a galéria elem adatokat.',
           );
         }
       },
       error: (err) => {
         this.handleUpdateError(
           item,
-          `Failed to update featured status for item "${item.title}". Please try again.`,
+          `A(z) "${item.title}" elem kiemelt státuszának frissítése sikertelen. Kérlek próbáld újra.`,
         );
-        console.error('Failed to update item featured status', err);
+        console.error('Elem kiemelt státusz frissítési hiba:', err);
       },
     });
   }
@@ -432,7 +367,7 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
   deleteItem(id: number): void {
     if (
       confirm(
-        'Are you sure you want to delete this item? This action cannot be undone.',
+        'Biztosan törölni szeretnéd ezt az elemet? Ez a művelet nem vonható vissza.',
       )
     ) {
       this.adminApiService.deleteGalleryItem(id).subscribe({
@@ -442,19 +377,20 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error deleting item:', error);
-          alert('Failed to delete item. Please try again.');
+          console.error('Elem törlési hiba:', error);
+          alert('Az elem törlése sikertelen. Kérlek próbáld újra.');
         },
       });
     }
   }
 
-  // Deprecated image path helper removed; backend now provides full URLs
   getThumbOrImage(item: GalleryItem): string {
     return item.thumb_url || item.url || '';
   }
 
   readonly formatDateTime = formatDateTime;
+  readonly getCategoryLabel = (value: string) =>
+    getCategoryLabel(this.galleryConfig, value);
 
   goBack(): void {
     this.router.navigate(['/admin/dashboard']);

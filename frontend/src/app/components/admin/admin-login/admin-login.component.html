@@ -32,8 +32,10 @@
 
             <button mat-flat-button color="primary" type="submit" class="submit-btn"
                 [disabled]="isLoading || !loginForm.valid">
-                @if (isLoading) {<mat-progress-spinner [diameter]="20" mode="indeterminate"></mat-progress-spinner>}
-                <span>{{ isLoading ? 'Bejelentkezés…' : 'Bejelentkezés' }}</span>
+                @if (isLoading) {
+                <mat-progress-spinner class="btn-spinner" [diameter]="20" mode="indeterminate"></mat-progress-spinner>
+                }
+                <span [class.loading]="isLoading">Bejelentkezés</span>
             </button>
         </form>
     </mat-card>
