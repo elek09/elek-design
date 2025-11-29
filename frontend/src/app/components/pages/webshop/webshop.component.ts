@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { CommonModule } from '@angular/common';
 import {
@@ -16,13 +16,10 @@ import { MatCardModule } from '@angular/material/card';
 import { Product } from '../../../models/product.model';
 import { ProductService } from '../../../services/product.service';
 import { OrdersService } from '../../../services/orders.service';
-import { AuthService } from '../../../services/auth.service';
-import { BootstrapService } from '../../../services/bootstrap.service';
-import { GalleryDataService } from '../../../services/gallery-data.service';
-import { Slide } from '../../../models/slide.model';
 import { LocalCartService } from '../../../services/local-cart.service';
 import { SubmitOrderRequest } from '../../../models/shop.model';
 import { LoadingOverlayComponent } from '../../../components/shared/loading-overlay/loading-overlay.component';
+import { API_BASE_URL } from '../../../app.tokens';
 
 @Component({
   selector: 'app-webshop',
@@ -44,13 +41,12 @@ export class WebshopComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly productsApi = inject(ProductService);
   private readonly ordersApi = inject(OrdersService);
-  protected readonly auth = inject(AuthService);
-  private readonly gallery = inject(GalleryDataService);
   private readonly localCart = inject(LocalCartService);
   private readonly toastr = inject(ToastrService);
+  protected readonly baseUrl = inject(API_BASE_URL);
 
   protected products = signal<Product[]>([]);
-  // Messages now handled via toastr notifications.
+  protected loading = signal(true);
 
   checkoutForm = this.fb.group({
     customer_name: ['', Validators.required],
@@ -71,28 +67,15 @@ export class WebshopComponent implements OnInit {
     >
   >({});
 
-  protected productImages = signal<Record<number, string[]>>({});
-
-  // Cart items directly from LocalCartService - no need to duplicate
   protected readonly cartItems = this.localCart.items;
-
-  private slidesCache: Slide[] | null = null;
-  protected imagesLoading = signal(true);
 
   ngOnInit(): void {
     this.productsApi.getProducts$().subscribe({
       next: (list) => {
         const active = list.filter((p) => p.is_active !== false);
         this.products.set(active);
-        const defaults: Record<
-          number,
-          {
-            quantity: number;
-            hardware_type?: string | null;
-            color_scheme?: string | null;
-            extra?: Record<string, string | null>;
-          }
-        > = {};
+
+        const defaults: Record<number, any> = {};
         for (const p of active) {
           defaults[p.id] = {
             quantity: 1,
@@ -102,58 +85,13 @@ export class WebshopComponent implements OnInit {
           };
         }
         this.selections.set(defaults);
-
-        this.computeProductImages();
+        this.loading.set(false);
       },
       error: () => {
         this.toastr.error('Nem sikerült betölteni a termékeket.', 'Hiba');
-        this.imagesLoading.set(false);
+        this.loading.set(false);
       },
     });
-
-    this.gallery.getSlidesByCategory$('eletter').subscribe({
-      next: (slides: Slide[]) => {
-        this.slidesCache = slides || [];
-        this.computeProductImages();
-      },
-      error: () => {
-        this.slidesCache = [];
-        this.imagesLoading.set(false);
-      },
-    });
-  }
-
-  private computeProductImages(): void {
-    const slides = this.slidesCache;
-    const prods = this.products();
-    if (slides === null || !prods?.length) return;
-
-    const imgs: Record<number, string[]> = {};
-    if (slides.length) {
-      for (const p of prods) {
-        const subcats = this.inferSubcategoriesForProduct(p);
-        const urls = subcats
-          .map((sc) => slides.find((s) => String(s.category) === sc))
-          .filter((s): s is Slide => !!s)
-          .map((s) => s.imageUrl);
-        if (urls.length) imgs[p.id] = urls;
-      }
-    }
-    this.productImages.set(imgs);
-    this.imagesLoading.set(false);
-  }
-
-  private inferSubcategoriesForProduct(product: Product): string[] {
-    const name = (product.name || '').toLowerCase();
-    const slug = (product.slug || '').toLowerCase();
-    const hay = `${name} ${slug}`;
-    const hits: string[] = [];
-    if (/(konyha|konyhab|konyha-b|konyhabútor|konyhabutor)/.test(hay))
-      hits.push('konyha');
-    if (/(hálószoba|haloszoba)/.test(hay)) hits.push('haloszoba');
-    if (/(gardrób|gardrob)/.test(hay)) hits.push('gardrob');
-    if (/(nappali)/.test(hay)) hits.push('nappali');
-    return Array.from(new Set(hits));
   }
 
   updateSelection(

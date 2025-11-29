@@ -9,6 +9,7 @@ class Product extends Model
     protected $fillable = [
         'name',
         'slug',
+        'primary_image_url',
         'description',
         'price',
         'options', // JSON: termék opciók (pl. méretek, színek)

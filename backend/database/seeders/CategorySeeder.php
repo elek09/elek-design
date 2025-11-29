@@ -3,14 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Subcategory;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $categories = [
@@ -52,27 +49,26 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $categoryData) {
-            $subs = $categoryData['subcategories'] ?? [];
-            $record = Category::updateOrCreate(
+            $category = Category::updateOrCreate(
                 ['type' => $categoryData['type']],
                 [
                     'name' => $categoryData['name'],
-                    'type' => $categoryData['type'],
                     'nav_order' => $categoryData['nav_order'],
                 ]
             );
 
-            // Create normalized subcategory rows
-            foreach ($subs as $s) {
-                \App\Models\Subcategory::updateOrCreate(
-                    ['slug' => $s['slug']],
+            foreach ($categoryData['subcategories'] as $sub) {
+                Subcategory::updateOrCreate(
+                    ['slug' => $sub['slug']],
                     [
-                        'category_id' => $record->id,
-                        'name' => $s['name'] ?? $s['slug'],
-                        'nav_order' => $s['nav_order'] ?? null,
+                        'category_id' => $category->id,
+                        'name' => $sub['name'],
+                        'nav_order' => $sub['nav_order'],
                     ]
                 );
             }
         }
+
+        $this->command->info('✓ ' . count($categories) . ' kategória és alkategóriák létrehozva');
     }
 }

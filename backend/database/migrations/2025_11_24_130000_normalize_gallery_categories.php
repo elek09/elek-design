@@ -8,12 +8,11 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration {
     public function up(): void
     {
-        // 1. Create subcategories table
         if (!Schema::hasTable('category_subcategories')) {
             Schema::create('category_subcategories', function (Blueprint $t) {
                 $t->id();
                 $t->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
-                $t->string('slug')->unique(); // former JSON id
+                $t->string('slug')->unique();
                 $t->string('name');
                 $t->integer('nav_order')->nullable();
                 $t->timestamps();
@@ -21,7 +20,6 @@ return new class extends Migration {
             });
         }
 
-        // 2. Backfill subcategories from categories.subcategories JSON
         $categories = DB::table('categories')->select('id','subcategories')->get();
         foreach ($categories as $cat) {
             if (empty($cat->subcategories)) continue;
@@ -44,7 +42,6 @@ return new class extends Migration {
             }
         }
 
-        // 3. Add subcategory_id to gallery_items
         if (!Schema::hasColumn('gallery_items', 'subcategory_id')) {
             Schema::table('gallery_items', function (Blueprint $t) {
                 $t->foreignId('subcategory_id')->nullable()->after('category_id')->constrained('category_subcategories')->nullOnDelete();
@@ -52,7 +49,6 @@ return new class extends Migration {
             });
         }
 
-        // 4. Backfill gallery_items subcategory_id from legacy 'category' string if matches subcategory slug
         if (Schema::hasColumn('gallery_items','category') && Schema::hasColumn('gallery_items','subcategory_id')) {
             $subMap = DB::table('category_subcategories')->select('id','slug')->get()->keyBy('slug');
             DB::table('gallery_items')->orderBy('id')->chunk(500, function ($chunk) use ($subMap) {
@@ -66,7 +62,6 @@ return new class extends Migration {
             });
         }
 
-        // 5. For rows with category_id NULL but legacy category matching a categories.type fill category_id
         if (Schema::hasColumn('gallery_items','category') && Schema::hasColumn('gallery_items','category_id')) {
             $catTypes = DB::table('categories')->select('id','type')->get()->keyBy('type');
             DB::table('gallery_items')->whereNull('category_id')->orderBy('id')->chunk(500, function ($chunk) use ($catTypes) {
@@ -80,13 +75,11 @@ return new class extends Migration {
             });
         }
 
-        // 6. Deactivate orphaned rows (no category_id & no subcategory_id)
         DB::table('gallery_items')
             ->whereNull('category_id')
             ->whereNull('subcategory_id')
             ->update(['is_active' => false]);
 
-        // 7. Drop legacy 'category' column
         if (Schema::hasColumn('gallery_items','category')) {
             Schema::table('gallery_items', function (Blueprint $t) {
                 $t->dropColumn('category');
@@ -96,13 +89,12 @@ return new class extends Migration {
 
     public function down(): void
     {
-        // Recreate legacy column (minimal) and attempt reverse population
         if (!Schema::hasColumn('gallery_items','category')) {
             Schema::table('gallery_items', function (Blueprint $t) {
                 $t->string('category')->nullable()->after('title');
             });
         }
-        // Attempt to repopulate from subcategory slug or category type
+
         if (Schema::hasColumn('gallery_items','category')) {
             $subMap = DB::table('category_subcategories')->select('id','slug')->get()->keyBy('id');
             $catMap = DB::table('categories')->select('id','type')->get()->keyBy('id');
@@ -120,12 +112,11 @@ return new class extends Migration {
                 }
             });
         }
-        // Drop subcategory_id. On SQLite rebuild table without this column.
+
         if (Schema::hasColumn('gallery_items','subcategory_id')) {
             $connection = config('database.default');
             if ($connection === 'sqlite') {
                 Schema::disableForeignKeyConstraints();
-                // Build temp table without subcategory_id, keep category_id and the re-created legacy category
                 Schema::create('gallery_items_tmp', function (Blueprint $t) {
                     $t->id();
                     $t->string('title');
@@ -134,7 +125,6 @@ return new class extends Migration {
                     $t->string('image_path');
                     $t->boolean('is_active')->default(true);
                     $t->boolean('is_featured')->default(false);
-                    // keep category_id if it exists in current schema
                     if (Schema::hasColumn('gallery_items','category_id')) {
                         $t->unsignedBigInteger('category_id')->nullable();
                         $t->index('category_id');
@@ -142,10 +132,9 @@ return new class extends Migration {
                     $t->timestamps();
                 });
 
-                // Build column list dynamically (exclude subcategory_id)
                 $columns = ['id','title','category','description','image_path','is_active','is_featured','created_at','updated_at'];
                 if (Schema::hasColumn('gallery_items','category_id')) {
-                    array_splice($columns, 6, 0, ['category_id']); // before timestamps
+                    array_splice($columns, 6, 0, ['category_id']);
                 }
                 $cols = implode(',', $columns);
                 DB::statement("INSERT INTO gallery_items_tmp ($cols) SELECT $cols FROM gallery_items");
@@ -159,9 +148,7 @@ return new class extends Migration {
                 });
             }
         }
-        // Leave category_id as-is (was pre-existing)
 
-        // Drop subcategories table
         Schema::dropIfExists('category_subcategories');
     }
 };

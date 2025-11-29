@@ -11,4 +11,5 @@ export interface Product {
   description?: string;
   is_active?: boolean;
   options: ProductOptions;
+  primary_image_url?: string;
 }

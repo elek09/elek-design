@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\Gallery;
+namespace App\Support;
 
 use Symfony\Component\Finder\SplFileInfo;
 
