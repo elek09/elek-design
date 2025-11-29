@@ -7,11 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class CategoryResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+    // kategória adatainak frontend formátumra alakítása
     public function toArray(Request $request): array
     {
         $isAdmin = str_contains($request->path(), '/api/v1/admin/');
@@ -19,7 +15,6 @@ class CategoryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'type' => $this->type,
-            // nav_order only useful for admin/UI ordering; include always for simplicity
             'nav_order' => $this->nav_order,
             'subcategories' => $this->whenLoaded('subcategories', function () use ($isAdmin) {
                 return $this->subcategories->map(function ($sub) use ($isAdmin) {

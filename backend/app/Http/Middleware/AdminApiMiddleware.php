@@ -8,22 +8,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminApiMiddleware
 {
-    /**
-     * Handle an incoming request.
-     */
+    // bejövő kérés feldolgozása - admin API védelem
     public function handle(Request $request, Closure $next): Response
     {
         if (!$request->user()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated'
+                'message' => 'Hitelesítés szükséges'
             ], 401);
         }
 
         if (!$request->user()->admin) {
             return response()->json([
                 'success' => false,
-                'message' => 'Access denied. Admin privileges required.'
+                'message' => 'Hozzáférés megtagadva. Admin jogosultság szükséges.'
             ], 403);
         }
 

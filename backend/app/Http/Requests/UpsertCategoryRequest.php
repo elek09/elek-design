@@ -7,15 +7,9 @@ use Illuminate\Validation\Rule;
 
 class UpsertCategoryRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        // Routes are already protected by admin middleware
-        return true;
-    }
-
     protected function prepareForValidation(): void
     {
-        // Normalize incoming type to slug form (spaces -> dash, lowercase) if provided
+        // type mező normalizálása slug formára (szóköz -> kötőjel, kisbetű)
         if ($this->has('type')) {
             $normalized = str($this->input('type'))
                 ->trim()
@@ -34,14 +28,13 @@ class UpsertCategoryRequest extends FormRequest
         $isUpdate = !is_null($ignoreId);
         $typeRules = [];
         if ($isUpdate) {
-            // If updating and provided type matches existing, skip unique check entirely.
+            // ha a megadott type megegyezik a meglévővel, unique ellenőrzés kihagyása
             if ($this->has('type') && is_object($category) && $this->input('type') === $category->type) {
                 $typeRules = ['sometimes','string','max:255'];
             } else {
                 $typeRules = ['sometimes','string','max:255', Rule::unique('categories','type')->ignore($ignoreId,'id')];
             }
         } else {
-            // Create: enforce unique
             $typeRules = ['required','string','max:255', Rule::unique('categories','type')];
         }
 

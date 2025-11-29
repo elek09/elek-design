@@ -9,11 +9,10 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\SubcategoryController as AdminSubcategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\PageController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Models\Category;
 use App\Http\Resources\CategoryResource as PublicCategoryResource;
-use App\Http\Controllers\NavigationController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SimpleOrderController;
 use App\Http\Controllers\ContactController;
 
@@ -35,8 +34,8 @@ Route::prefix('v1')->group(function () {
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/{slug}', [ProductController::class, 'show']);
 
-    Route::get('categories', [NavigationController::class, 'getCategories']);
-    Route::get('categories/{categoryId}/subcategories', [NavigationController::class, 'getSubcategoriesByCategory']);
+    Route::get('categories', [CategoryController::class, 'getCategories']);
+    Route::get('categories/{categoryId}/subcategories', [CategoryController::class, 'getSubcategoriesByCategory']);
 
     // Bootstrap: consolidated startup payload (header, categories, featured)
     Route::get('bootstrap', \App\Http\Controllers\BootstrapController::class);
@@ -72,11 +71,6 @@ Route::prefix('v1')->group(function () {
             // Dashboard stats
             Route::get('dashboard/stats', [AdminDashboardController::class, 'stats']);
 
-            // Page management
-            Route::post('pages', [PageController::class, 'store']);
-            Route::put('pages/{page}', [PageController::class, 'update']);
-            Route::delete('pages/{page}', [PageController::class, 'destroy']);
-
             // Gallery management
             Route::apiResource('gallery', AdminGalleryController::class)->parameters([
                 'gallery' => 'galleryItem'
@@ -89,6 +83,7 @@ Route::prefix('v1')->group(function () {
             Route::get('orders/{order}', [OrderController::class, 'adminShow']);
             Route::put('orders/{order}/status', [OrderController::class, 'updateStatus']);
             Route::put('orders/{order}', [OrderController::class, 'updateAdmin']);
+            Route::delete('orders/{order}', [OrderController::class, 'destroy']);
             Route::post('orders/{order}/confirm', [OrderController::class, 'sendConfirmation']);
 
             // Category management

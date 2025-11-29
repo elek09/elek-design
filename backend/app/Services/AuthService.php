@@ -3,17 +3,19 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 
 class AuthService
 {
+    /**
+     * Új felhasználó regisztrálása és automatikus bejelentkeztetés
+     */
     public function register(array $data): array
     {
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => $data['password'], // hashed User modelben
         ]);
 
         Auth::login($user);
@@ -22,6 +24,9 @@ class AuthService
         return $this->success(['user' => $this->userPayload($user)], 201);
     }
 
+    /**
+     * admin-nál nincs "remember me", vendégnél van
+     */
     public function login(array $credentials): array
     {
         $rememberRequested = (bool)($credentials['remember'] ?? false);
@@ -30,7 +35,6 @@ class AuthService
             'password' => $credentials['password'] ?? ''
         ];
 
-        // Mindig remember nélkül próbálunk, majd utólag kezeljük, hogy adminnál ne legyen tartós cookie.
         if (!Auth::attempt($attemptCredentials, false)) {
             return $this->error(['credentials' => ['Invalid credentials']], 401);
         }
@@ -38,7 +42,7 @@ class AuthService
         request()->session()->regenerate();
         $user = Auth::user();
 
-        // Ha nem admin és kérte a remember-t, újralogin tartós módban.
+        // Ha nem admin és kérte a remember-t, újralogin tokennel
         if ($user && !$user->admin && $rememberRequested) {
             Auth::login($user, true);
         }
@@ -46,6 +50,9 @@ class AuthService
         return $this->success(['user' => $this->userPayload($user)]);
     }
 
+    /**
+     * Kijelentkezés: session törlése
+     */
     public function logout(): array
     {
         Auth::guard('web')->logout();
@@ -55,6 +62,9 @@ class AuthService
         return $this->success(['message' => 'Logout successful']);
     }
 
+    /**
+     * User adat formázása API válaszhoz
+     */
     private function userPayload(User $user): array
     {
         return [
@@ -65,6 +75,9 @@ class AuthService
         ];
     }
 
+    /**
+     * Sikeres válasz formátum
+     */
     private function success(array $data, int $status = 200): array
     {
         return [
@@ -75,6 +88,9 @@ class AuthService
         ];
     }
 
+    /**
+     * Hiba válasz formátum
+     */
     private function error(array $errors, int $status): array
     {
         return [

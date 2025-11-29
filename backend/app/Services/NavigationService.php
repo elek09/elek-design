@@ -7,8 +7,8 @@ use App\Models\Category;
 class NavigationService
 {
     /**
-     * Build header navigation items from categories.
-     * Returns a simple array as expected by the frontend.
+     * Header navigációs menü összeállítása kategóriákból
+     * Logo + kategóriák + kapcsolat linkek generálása
      */
     public function buildHeaderItems(): array
     {
@@ -16,7 +16,7 @@ class NavigationService
 
         $items = [];
 
-        // Logo first
+        // Logo első elem
         $items[] = [
             'id' => 'logo',
             'label' => 'Logo',
@@ -26,37 +26,37 @@ class NavigationService
             'order' => 0,
         ];
 
-        foreach ($categories as $cat) {
-            $type = (string) $cat->type;   // Hungarian identifier, pl. 'eletter'
-            $label = (string) $cat->name;  // Megjelenített címke, pl. 'Élettér'
-            $hasSubs = $cat->subcategories->count() > 0;
+        foreach ($categories as $category) {
+            $type = (string) $category->type;
+            $label = (string) $category->name;
+            $hasSubcategories = $category->subcategories->count() > 0;
 
-            // Ha vannak alkategóriák, maradjon a főoldali szekció (fragment)
-            if ($hasSubs) {
+            // Ha vannak alkategóriák → főoldali szekció fragment (scroll anchor) hoz (pl. #eletter)
+            if ($hasSubcategories) {
                 $items[] = [
                     'id' => $type,
-                    'category_id' => $cat->id,
+                    'category_id' => $category->id,
                     'label' => $label,
                     'route' => '/',
-                    'fragment' => $label, // a frontend horgonyhoz használja
+                    'fragment' => $label,
                     'section' => $type,
-                    'order' => $cat->nav_order,
+                    'order' => $category->nav_order,
                 ];
                 continue;
             }
 
-            // Egyébként normál, magyar útvonal
+            // Ha nincs alkategória → dedikált route (pl. /3d-fal)
             $items[] = [
                 'id' => $type,
-                'category_id' => $cat->id,
+                'category_id' => $category->id,
                 'label' => $label,
                 'route' => '/' . $type,
                 'section' => $type,
-                'order' => $cat->nav_order,
+                'order' => $category->nav_order,
             ];
         }
 
-        // Kapcsolat last
+        // Kapcsolat utolsó elem
         $items[] = [
             'id' => 'kapcsolat',
             'label' => 'Kapcsolat',

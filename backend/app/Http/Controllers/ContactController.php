@@ -11,11 +11,16 @@ use Illuminate\Http\JsonResponse;
 
 class ContactController extends Controller
 {
+    /**
+     * Kapcsolatfelvételi üzenet küldése
+     * Egyszerű spam szűrés: URL limit + ismétlődő karakterek
+     * Admin és user email küldés (hibák csak logolva, nem blokkol)
+     */
     public function store(StoreContactMessageRequest $request): JsonResponse
     {
         $data = $request->validated();
 
-        // Simple spam heuristic: limit number of URLs + repeated characters
+        // Spam heurisztika: max 3 URL és 10 ismétlődő karakter
         $urlCount = preg_match_all('/https?:\/\//i', $data['message'] ?? '', $m);
         if ($urlCount > 3) {
             return response()->json([
@@ -23,7 +28,7 @@ class ContactController extends Controller
                 'errors' => ['message' => ['Túl sok link az üzenetben.']],
             ], 422);
         }
-        if (preg_match('/(.)\1{9,}/', $data['message'])) { // 10 repeated chars
+        if (preg_match('/(.)\1{9,}/', $data['message'])) {
             return response()->json([
                 'success' => false,
                 'errors' => ['message' => ['Gyanús ismétlődő karakterek.']],
@@ -41,7 +46,7 @@ class ContactController extends Controller
         $mailSent = true;
         $userMailSent = true;
         try {
-            // Resolve admin recipient from config (first admin_recipients) fallback to global from address.
+            // Admin email: config admin_recipients első elem, fallback a globális from address
             $adminTo = config('mail.admin_recipients')[0] ?? config('mail.from.address');
             Mail::to($adminTo)->send(new ContactMessageMail($payload));
         } catch (\Throwable $e) {

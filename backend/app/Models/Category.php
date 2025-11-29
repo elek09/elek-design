@@ -20,7 +20,8 @@ class Category extends Model
     ];
 
     /**
-     * Scope: order categories for navigation
+     * Navigációs rendezés: null nav_order értékek a végére, majd nav_order, majd név szerint
+     * Használat: Category::navOrdered()->get()
      */
     public function scopeNavOrdered($query)
     {
@@ -30,6 +31,9 @@ class Category extends Model
             ->orderBy('name');
     }
 
+    /**
+     * Kapcsolat: egy kategóriának több alkategóriája van (már rendezve)
+     */
     public function subcategories()
     {
         return $this->hasMany(Subcategory::class)->navOrdered();

@@ -7,8 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-// árajánlat elfogadása email a vevőnek
-class QuoteAcceptedMail extends Mailable
+class QuoteRejectedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -24,12 +23,12 @@ class QuoteAcceptedMail extends Mailable
             $payload = $payload->load('items.product');
         }
 
-        return $this->subject('Árajánlat elfogadva')
-            ->view('emails.quote-accepted')
+        return $this->subject('Árajánlat elutasítva')
+            ->view('emails.quote-rejected')
             ->with([
                 'order' => $payload,
                 'adminNote' => $this->adminNote,
-                'showPrices' => true,
+                'showPrices' => false,
             ]);
     }
 }

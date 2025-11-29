@@ -7,9 +7,9 @@
                 <mat-icon>arrow_back</mat-icon>
                 Vissza
             </button>
-            <button mat-stroked-button color="primary" (click)="sendConfirmation()">
-                <mat-icon>mail</mat-icon>
-                Megerősítő email
+            <button mat-stroked-button color="warn" (click)="deleteOrder()">
+                <mat-icon>delete</mat-icon>
+                Törlés
             </button>
         </span>
     </app-admin-header>
@@ -52,8 +52,14 @@
                 </mat-select>
             </mat-form-field>
             <div class="quick">
-                <button mat-button type="button" (click)="setStatus('accepted')">Elfogad</button>
-                <button mat-button type="button" (click)="setStatus('rejected')">Elutasít</button>
+                <button mat-button type="button" (click)="setStatus('accepted')">
+                    <mat-icon>mail</mat-icon>
+                    Elfogad
+                </button>
+                <button mat-button type="button" (click)="setStatus('rejected')">
+                    <mat-icon>mail</mat-icon>
+                    Elutasít
+                </button>
             </div>
         </div>
 

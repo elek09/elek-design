@@ -8,9 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
-    /**
-     * Handle an incoming request.
-     */
+    // bejövő kérés feldolgozása - admin web védelem
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check()) {
@@ -18,7 +16,7 @@ class AdminMiddleware
         }
 
         if (!auth()->user()->admin) {
-            abort(403, 'Access denied. Admin privileges required.');
+            abort(403, 'Hozzáférés megtagadva. Admin jogosultság szükséges.');
         }
 
         return $next($request);

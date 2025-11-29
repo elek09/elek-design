@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\GalleryItem;
+use App\Models\Subcategory;
 use Illuminate\Support\Str;
 
 class GalleryService
 {
+    // GalleryItem -> frontend formátum konverzió
     public function mapItem(GalleryItem $item): array
     {
         $order = $this->parseOrderFromTitleOrPath($item->title, $item->image_path);
@@ -37,12 +39,12 @@ class GalleryService
 
     public function queryActive()
     {
-        return GalleryItem::query()->where('is_active', true)->with(['category','subcategory']);
+        return GalleryItem::active()->with(['category', 'subcategory']);
     }
 
     /**
-     * Build a query for a given section identifier (top-level category type or subcategory slug).
-     * Falls back to empty result if no match.
+     * Galéria elemek szekció alapján (főkategória type vagy alkategória slug)
+     * Ha nincs találat, üres query-t ad vissza
      */
     public function queryBySection(string $section)
     {
@@ -51,64 +53,50 @@ class GalleryService
             return GalleryItem::query()->whereRaw('1=0');
         }
 
-        // Try top-level category by type
+        // Főkategória keresés type alapján
         $category = Category::where('type', $section)->first();
         if ($category) {
-            return GalleryItem::query()
-                ->where('is_active', true)
+            return GalleryItem::active()
                 ->where('category_id', $category->id)
-                ->with(['category','subcategory'])
+                ->with(['category', 'subcategory'])
                 ->orderByRaw('COALESCE((SELECT nav_order FROM category_subcategories WHERE category_subcategories.id = gallery_items.subcategory_id), 100000) ASC')
                 ->orderByDesc('created_at');
         }
 
-        // Try subcategory by slug
-        $subcategory = \App\Models\Subcategory::where('slug', $section)->first();
+        // Alkategória keresés slug alapján
+        $subcategory = Subcategory::where('slug', $section)->first();
         if ($subcategory) {
-            return GalleryItem::query()
-                ->where('is_active', true)
+            return GalleryItem::active()
                 ->where('subcategory_id', $subcategory->id)
-                ->with(['category','subcategory'])
+                ->with(['category', 'subcategory'])
                 ->orderByDesc('created_at');
         }
 
-        // No match -> empty
+        // Nincs találat
         return GalleryItem::query()->whereRaw('1=0');
     }
 
-    /**
-     * Map a collection of GalleryItem models using mapItem.
-     * @param \Illuminate\Support\Collection<int,GalleryItem> $collection
-     * @return array<int,array<string,mixed>>
-     */
-    public function mapItemCollection($collection): array
-    {
-        return $collection->map(fn($item) => $this->mapItem($item))->values()->all();
-    }
-
-    // Title-based slug not returned anymore; keep helper removed for clarity
-
-
+    // Sorrend szám kinyerése címből vagy fájlnévből: pl. "Konyha (3)" vagy "konyha(3)-timestamp.jpg" → 3
     private function parseOrderFromTitleOrPath(?string $title, ?string $path): int
     {
         $title = (string) $title;
-        if (preg_match('/\((\d+)\)\s*$/', $title, $m)) {
-            return (int) $m[1];
+        if (preg_match('/\((\d+)\)\s*$/', $title, $matches)) {
+            return (int) $matches[1];
         }
-        $file = strtolower(pathinfo((string) $path, PATHINFO_FILENAME));
-        // Fájlnévben bárhol előforduló (n), pl. konyha(3)-1699999999.jpg
-        if (preg_match('/\((\d+)\)/', $file, $m)) {
-            return (int) $m[1];
+        
+        $filename = strtolower(pathinfo((string) $path, PATHINFO_FILENAME));
+        if (preg_match('/\((\d+)\)/', $filename, $matches)) {
+            return (int) $matches[1];
         }
+        
         return 0;
     }
 
+    // Kép URL-ek generálása (jelenleg thumb = teljes méret)
     private function buildUrls(string $imagePath): array
     {
         $url = asset('storage/' . ltrim($imagePath, '/'));
-        $thumb = $url;
+        $thumb = $url; // TODO: később thumbnail generálás
         return [$url, $thumb];
     }
-
-    // Legacy mapping helpers removed after normalization
 }

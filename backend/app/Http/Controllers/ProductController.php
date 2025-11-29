@@ -12,7 +12,7 @@ class ProductController extends Controller
      */
     public function index(Request $r)
     {
-        $q = Product::query()->where('is_active', true);
+        $q = Product::query()->active();
         if ($s = $r->query('q'))
             $q->where(fn($x) => $x->where('name', 'like', "%$s%")->orWhere('description', 'like', "%$s%"));
         return $q->latest()->paginate(20);
@@ -31,7 +31,7 @@ class ProductController extends Controller
      */
     public function show($slug)
     {
-        return Product::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        return Product::active()->where('slug', $slug)->firstOrFail();
     }
 
     /**

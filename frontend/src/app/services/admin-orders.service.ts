@@ -61,4 +61,15 @@ export class AdminOrdersService {
       {},
     );
   }
+
+  rejectQuote(orderId: number): Observable<ApiItemResponse<Order>> {
+    return this.http.put<ApiItemResponse<Order>>(
+      `${this.adminApi}/orders/${orderId}/status`,
+      { status: 'rejected' },
+    );
+  }
+
+  deleteOrder(orderId: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminApi}/orders/${orderId}`);
+  }
 }

@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
+// rendelés/árajánlat visszaigazoló email a vevőnek
 class OrderConfirmationMail extends Mailable
 {
     use Queueable, SerializesModels;
@@ -29,7 +30,7 @@ class OrderConfirmationMail extends Mailable
             $payload = $payload->load('items.product');
         }
 
-        // Decide whether to show prices
+        // árak megjelenítése - alapból rendelésnél igen, árajánlatnál nem
         $computedShowPrices = $this->showPrices !== null ? (bool) $this->showPrices : !$this->isQuote;
         if ($this->order instanceof Order) {
             $hasPositivePrice = (float) ($this->order->total ?? 0) > 0;

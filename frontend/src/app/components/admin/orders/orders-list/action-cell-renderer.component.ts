@@ -46,6 +46,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       >
         <mat-icon>mail</mat-icon>
       </button>
+      <button
+        mat-icon-button
+        color="warn"
+        aria-label="Törlés"
+        [disabled]="saving"
+        (click)="onDelete()"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
     </div>
   `,
 })
@@ -138,6 +147,27 @@ export class ActionCellRendererComponent implements ICellRendererAngularComp {
       error: () => {
         this.saving = false;
         this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
+          duration: 2000,
+        });
+      },
+    });
+  }
+
+  onDelete() {
+    if (!this.orderId) return;
+    if (!confirm('Biztosan törölni szeretnéd ezt a rendelést?')) {
+      return;
+    }
+    this.saving = true;
+    this.apiSvc.deleteOrder(this.orderId).subscribe({
+      next: () => {
+        this.saving = false;
+        this.snack.open('Törölve', 'OK', { duration: 1500 });
+        this.reloadGrid();
+      },
+      error: () => {
+        this.saving = false;
+        this.snack.open('Hiba: törlés sikertelen', 'Bezár', {
           duration: 2000,
         });
       },

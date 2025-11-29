@@ -7,11 +7,6 @@ use Illuminate\Validation\Rule;
 
 class UpsertSubcategoryRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true; // Admin middleware already guards routes
-    }
-
     protected function prepareForValidation(): void
     {
         if ($this->has('slug') && $this->filled('slug')) {
@@ -31,8 +26,7 @@ class UpsertSubcategoryRequest extends FormRequest
         $sub = $this->route('subcategory');
         $ignoreId = is_object($sub) ? $sub->id : (is_numeric($sub) ? (int) $sub : null);
         $isUpdate = !is_null($ignoreId);
-        // On create: require category_id + name; slug required unless provided.
-        // On update: allow partial update (only one or more fields). Slug uniqueness still enforced if present.
+        // létrehozásnál category_id + name + slug kötelező; módosításnál részleges frissítés engedélyezett
         return [
             'category_id' => [$isUpdate ? 'sometimes' : 'required','integer','exists:categories,id'],
             'name' => [$isUpdate ? 'sometimes' : 'required','string','max:255'],

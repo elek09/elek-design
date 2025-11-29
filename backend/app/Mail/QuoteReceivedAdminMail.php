@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
+// új árajánlat értesítés adminnak
 class QuoteReceivedAdminMail extends Mailable
 {
     use Queueable, SerializesModels;

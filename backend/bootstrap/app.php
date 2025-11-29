@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Middleware\AdminApiMiddleware;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\ForceJsonEncodingOptions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,13 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \App\Http\Middleware\ForceJsonEncodingOptions::class,
+            EnsureFrontendRequestsAreStateful::class,
+            ForceJsonEncodingOptions::class,
         ]);
 
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'admin.api' => \App\Http\Middleware\AdminApiMiddleware::class,
+            'admin' => AdminMiddleware::class,
+            'admin.api' => AdminApiMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

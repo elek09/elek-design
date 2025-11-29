@@ -145,77 +145,89 @@ export class OrderDetailComponent implements OnInit {
   setStatus(status: OrderStatus): void {
     const o = this.order();
     if (!o) return;
-    this.api.updateStatus(o.id, status).subscribe({
-      next: (resp) => {
-        const updated: Order =
-          (resp as { data?: Order }).data ?? (resp as unknown as Order);
-        this.order.set(updated);
-        this.form.patchValue({ status: updated.status });
-        this.snack.open('Státusz frissítve', 'OK', { duration: 2000 });
-      },
-      error: () =>
-        this.snack.open('Hiba: státusz frissítése sikertelen', 'Bezár', {
-          duration: 3000,
-        }),
-    });
+
+    // Use email-sending endpoints for accept/reject
+    if (status === 'accepted') {
+      this.sendConfirmation();
+    } else if (status === 'rejected') {
+      this.sendRejection();
+    } else {
+      // For other statuses, just update without email
+      this.api.updateStatus(o.id, status).subscribe({
+        next: (resp) => {
+          const updated: Order =
+            (resp as { data?: Order }).data ?? (resp as unknown as Order);
+          this.order.set(updated);
+          this.form.patchValue({ status: updated.status });
+          this.snack.open('Státusz frissítve', 'OK', { duration: 2000 });
+        },
+        error: () =>
+          this.snack.open('Hiba: státusz frissítése sikertelen', 'Bezár', {
+            duration: 3000,
+          }),
+      });
+    }
   }
 
   sendConfirmation(): void {
     const o = this.order();
     if (!o) return;
-    const currentNote = this.form.get('admin_note')?.value || '';
-    const originalNote = o.admin_note ?? o.note ?? '';
+    this.api.sendConfirmation(o.id).subscribe({
+      next: (resp) => {
+        this.snack.open('Megerősítő email elküldve', 'OK', {
+          duration: 2500,
+        });
+      },
+      error: () =>
+        this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
+          duration: 3000,
+        }),
+    });
+  }
 
-    // If note changed, persist it first (without touching items/prices), then send email
-    const saveNote$ =
-      currentNote !== originalNote
-        ? this.api.updateOrder(o.id, { admin_note: currentNote })
-        : null;
+  sendRejection(): void {
+    const o = this.order();
+    if (!o) return;
 
-    if (saveNote$) {
-      this.saving.set(true);
-      saveNote$.subscribe({
-        next: (resp) => {
-          const updated: Order =
-            (resp as { data?: Order }).data ?? (resp as unknown as Order);
-          this.order.set(updated);
-          this.form.patchValue({
-            admin_note: updated.admin_note || updated.note || '',
-          });
-          this.api.sendConfirmation(updated.id).subscribe({
-            next: () => {
-              this.saving.set(false);
-              this.snack.open('Megerősítő email elküldve', 'OK', {
-                duration: 2500,
-              });
-            },
-            error: () => {
-              this.saving.set(false);
-              this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
-                duration: 3000,
-              });
-            },
-          });
-        },
-        error: () => {
-          this.saving.set(false);
-          this.snack.open('Hiba: megjegyzés mentése sikertelen', 'Bezár', {
-            duration: 3000,
-          });
-        },
-      });
-    } else {
-      this.api.sendConfirmation(o.id).subscribe({
-        next: () =>
-          this.snack.open('Megerősítő email elküldve', 'OK', {
-            duration: 2500,
-          }),
-        error: () =>
-          this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
-            duration: 3000,
-          }),
-      });
+    this.api.rejectQuote(o.id).subscribe({
+      next: (resp) => {
+        const rejected: Order =
+          (resp as { data?: Order }).data ?? (resp as unknown as Order);
+        this.order.set(rejected);
+        this.form.patchValue({ status: rejected.status });
+        this.snack.open('Elutasító email elküldve', 'OK', {
+          duration: 2500,
+        });
+      },
+      error: () =>
+        this.snack.open('Hiba: email küldése sikertelen', 'Bezár', {
+          duration: 3000,
+        }),
+    });
+  }
+
+  deleteOrder(): void {
+    const o = this.order();
+    if (!o) return;
+
+    if (
+      !confirm(
+        `Biztosan törölni szeretnéd a ${o.kind === 'quote' ? 'árajánlatot' : 'rendelést'} #${o.id}?`,
+      )
+    ) {
+      return;
     }
+
+    this.api.deleteOrder(o.id).subscribe({
+      next: () => {
+        this.snack.open('Törölve', 'OK', { duration: 2000 });
+        this.router.navigate(['/admin/orders']);
+      },
+      error: () =>
+        this.snack.open('Hiba: törlés sikertelen', 'Bezár', {
+          duration: 3000,
+        }),
+    });
   }
 
   back(): void {
