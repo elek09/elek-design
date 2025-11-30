@@ -58,7 +58,7 @@ export class HomeComponent implements OnInit {
 
   private async whenSlidesReadyAndPreloaded() {
     try {
-      const [top, el, uz] = await firstValueFrom(
+      const [top, eletter, uzletter] = await firstValueFrom(
         combineLatest([
           this.topCarouselSlides$,
           this.eletterSlides$,
@@ -68,8 +68,8 @@ export class HomeComponent implements OnInit {
 
       const urls = this.unique([
         ...this.toUrls(top),
-        ...this.toUrls(el),
-        ...this.toUrls(uz),
+        ...this.toUrls(eletter),
+        ...this.toUrls(uzletter),
       ]);
 
       await this.preloadImages(urls);
