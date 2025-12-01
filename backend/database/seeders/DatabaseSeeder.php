@@ -12,8 +12,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             CategorySeeder::class,        // Product és Gallery függ tőle
-            ProductSeeder::class,
             GalleryImageSeeder::class,
+            ProductSeeder::class,
             OrderDemoSeeder::class,
         ]);
     }
