@@ -9,7 +9,7 @@ import {
   GalleryCreateRequest,
   GalleryFilterParams,
 } from '../../../models/admin.models';
-import { map, takeUntil } from 'rxjs/operators';
+import { map, takeUntil, take } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { Category } from '../../../models/category.model';
 import { MatButtonModule } from '@angular/material/button';
@@ -31,6 +31,7 @@ import {
   GalleryConfig,
   GallerySubCategory,
 } from '../../../models/gallery.model';
+import { initializeGalleryFormFromParams } from '../../../utils/gallery.utils';
 
 @Component({
   selector: 'app-admin-gallery',
@@ -117,12 +118,25 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Feltöltő form inicializálása: első kategória kiválasztása alapértelmezettként
+  // Feltöltő form inicializálása query paraméterek alapján
   private initializeFormFromQueryParams(): void {
     if (!this.galleryConfig?.categories.length) return;
 
-    this.uploadForm.mainCategoryId = this.galleryConfig.categories[0].value;
-    this.onMainCategoryChange();
+    this.route.queryParams.pipe(take(1)).subscribe((params) => {
+      const result = initializeGalleryFormFromParams(
+        {
+          mainCategory: params['mainCategory'],
+          subCategory: params['subCategory'],
+        },
+        this.galleryConfig!,
+        this.galleryConfig!.categories[0]?.value,
+      );
+
+      this.uploadForm.mainCategoryId = result.mainCategoryId;
+      this.showUploadForm = result.shouldShowForm;
+      this.onMainCategoryChange();
+      this.uploadForm.subCategoryId = result.subCategoryId;
+    });
   }
 
   // Kiválasztott főkategóriához tartozó alkategoriák listája

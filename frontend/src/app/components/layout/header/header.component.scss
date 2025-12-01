@@ -14,8 +14,8 @@ $cta-desktop-min-height: 72px;
   max-width: $header-width-max;
   margin: 0 auto;
   padding: 10px 10px;
-  font-size: 1.2rem;
-  font-weight: 400;
+  font-size: 1.3rem;
+  font-weight: 500;
   text-transform: uppercase;
   display: grid;
   grid-template-columns: auto 1fr 56px;
@@ -32,7 +32,7 @@ $cta-desktop-min-height: 72px;
   text-decoration: none;
   text-align: center;
   white-space: nowrap;
-  color: var(--color-text, #757575);
+  color: var(--color-text, #3333);
   transition:
     color 0.15s ease,
     background 0.15s ease;
@@ -84,7 +84,9 @@ $cta-desktop-min-height: 72px;
   transform: translate(-50%, -50%);
   width: 100%;
   text-align: center;
-  line-height: 1.08;
+  line-height: 1.12;
+  font-size: 1.3rem;
+  font-weight: 500;
 }
 .topnav a.cta:hover,
 .topnav a.cta.active {
@@ -137,10 +139,13 @@ $cta-desktop-min-height: 72px;
   display: block;
   grid-column: 1 / span 3;
   width: 100%;
-  line-height: 48px;
+  line-height: 52px;
   padding: 0 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   text-align: left;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #333;
 }
 .topnav.responsive a.options:not(.cta):first-of-type {
   border-top: none;
@@ -171,7 +176,8 @@ $cta-desktop-min-height: 72px;
     display: block;
   }
   .topnav .logo-link {
-    padding-right: 50px;
+    //padding-right: 50px;
+    padding-right: 20px;
   }
   .topnav .logo-img {
     height: $header-height-desktop;

@@ -1,6 +1,66 @@
 import { Slide } from '../models/slide.model';
-import { GalleryItemResource, ApiImageItem } from '../models/gallery.model';
+import {
+  GalleryItemResource,
+  ApiImageItem,
+  GalleryConfig,
+  GallerySubCategory,
+} from '../models/gallery.model';
 import { resolveToAbsolute } from './url.utils';
+
+/**
+ * Galéria feltöltő form inicializálása query paraméterek alapján
+ */
+export function initializeGalleryFormFromParams(
+  params: { mainCategory?: string; subCategory?: string },
+  galleryConfig: GalleryConfig,
+  defaultMainCategory?: string,
+): { mainCategoryId: string; subCategoryId: string; shouldShowForm: boolean } {
+  const { mainCategory, subCategory } = params;
+
+  if (!galleryConfig?.categories?.length) {
+    return {
+      mainCategoryId: defaultMainCategory || '',
+      subCategoryId: '',
+      shouldShowForm: false,
+    };
+  }
+
+  // Főkategória beállítása
+  let mainCategoryId: string;
+  let shouldShowForm = false;
+
+  if (mainCategory) {
+    const matchingCategory = galleryConfig.categories.find(
+      (c) => String(c.value) === String(mainCategory),
+    );
+    mainCategoryId =
+      matchingCategory?.value || galleryConfig.categories[0].value;
+    shouldShowForm = true;
+  } else {
+    mainCategoryId = defaultMainCategory || galleryConfig.categories[0].value;
+  }
+
+  // Alkategória beállítása
+  const selectedMain = galleryConfig.categories.find(
+    (c) => c.value === mainCategoryId,
+  );
+  const availableSubcategories = selectedMain?.subcategories || [];
+
+  let subCategoryId = '';
+  if (availableSubcategories.length > 0) {
+    if (subCategory) {
+      const matchingSubCategory = availableSubcategories.find(
+        (s) => String(s.value) === String(subCategory),
+      );
+      subCategoryId =
+        matchingSubCategory?.value || availableSubcategories[0].value;
+    } else {
+      subCategoryId = availableSubcategories[0].value;
+    }
+  }
+
+  return { mainCategoryId, subCategoryId, shouldShowForm };
+}
 
 /**
  * Galéria elem átalakítása Slide formátumra

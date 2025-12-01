@@ -50,7 +50,8 @@ export class SubcategoryEditDialogComponent implements OnInit {
     }
 
     this.adminApiService.getSubcategory(this.data.id).subscribe({
-      next: (sub: Subcategory) => {
+      next: (response: any) => {
+        const sub = response.data || response;
         this.model = sub;
         this.nameInput = sub.name;
         this.loading = false;
@@ -63,16 +64,21 @@ export class SubcategoryEditDialogComponent implements OnInit {
   }
 
   save(): void {
-    if (!this.model?.id) return;
+    const modelId = (this.model as any)?.data?.id || this.model?.id;
+    if (!modelId) {
+      return;
+    }
 
-    const newName = this.nameInput.trim();
-    if (!newName) return;
+    const newName = this.nameInput?.trim();
+    if (!newName) {
+      return;
+    }
 
     this.error = '';
     this.loading = true;
 
     this.adminApiService
-      .updateSubcategory(this.model.id, { name: newName })
+      .updateSubcategory(modelId, { name: newName })
       .subscribe({
         next: (updated: Subcategory) => {
           this.loading = false;
