@@ -2,16 +2,13 @@
 
 namespace App\Services;
 
-use App\Support\Gallery\ImportEntry;
+use App\Support\ImportEntry;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 class GalleryImportService
 {
-    /**
-     * Collect files from a source directory.
-     * @return \Symfony\Component\Finder\SplFileInfo[]
-     */
+    // Fájlok gyűjtése forrás könyvtárból
     public function collect(string $sourcePath): array
     {
         if (!File::exists($sourcePath)) {
@@ -21,68 +18,78 @@ class GalleryImportService
     }
 
     /**
-     * Build ImportEntry list from files.
-     * - Detect featured prefix
-     * - Infer category from keyword map
-     * - Extract order from (n) suffix inside the base filename
-     * - Title is humanized from base name (without (n))
-     *
-     * @param \Symfony\Component\Finder\SplFileInfo[] $files
-     * @return ImportEntry[]
+     * Fájlok elemzése és ImportEntry objektumok létrehozása
+     * - featured_ prefix → kiemelt kép
+     * - (n) suffix → sorrend szám
+     * - Fájlnév alapján kategória meghatározás config-ból
      */
     public function parseEntries(array $files): array
     {
         $entries = [];
+        
         foreach ($files as $file) {
-            $base = Str::lower($file->getFilenameWithoutExtension());
+            $baseName = Str::lower($file->getFilenameWithoutExtension());
 
-            $is_featured = str_starts_with($base, 'featured_');
-            if ($is_featured) {
-                $base = substr($base, 9);
+            // Featured prefix detektálás és levágás
+            $isFeatured = str_starts_with($baseName, 'featured_');
+            if ($isFeatured) {
+                $baseName = substr($baseName, 9);
             }
 
+            // Sorrend szám kinyerése: pl. konyha(3).jpg → 3
             $order = 0;
-            if (preg_match('/\((\d+)\)/', $base, $m)) {
-                $order = (int) $m[1];
+            if (preg_match('/\((\d+)\)/', $baseName, $matches)) {
+                $order = (int) $matches[1];
             }
 
-            $category = $this->resolveCategoryFromFilenameBase($base) ?? 'egyeb';
-            $title = Str::headline(preg_replace('/\(\d+\)/', '', $base));
+            // Kategória meghatározás fájlnévből
+            $category = $this->resolveCategoryFromFilenameBase($baseName) ?? 'egyeb';
+            
+            // Cím készítés: konyha(3) → Konyha
+            $title = Str::headline(preg_replace('/\(\d+\)/', '', $baseName));
 
-            $entries[] = new ImportEntry($file, $category, $title, $order, $is_featured);
+            $entries[] = new ImportEntry($file, $category, $title, $order, $isFeatured);
         }
+        
         return $entries;
     }
 
     /**
-     * Dedupe entries by category+title; prefer featured variant.
-     * @param ImportEntry[] $entries
-     * @return ImportEntry[]
+     * Duplikátumok szűrése kategória+cím alapján
+     * Featured változat elsőbbséget élvez
      */
     public function dedupe(array $entries): array
     {
         $result = [];
-        foreach ($entries as $e) {
-            $key = $e->key();
+        
+        foreach ($entries as $entry) {
+            $key = $entry->key();
+            
             if (!isset($result[$key])) {
-                $result[$key] = $e;
+                $result[$key] = $entry;
                 continue;
             }
-            if ($e->is_featured && !$result[$key]->is_featured) {
-                $result[$key] = $e;
+            
+            // Featured változat felülírja a sima verziót
+            if ($entry->is_featured && !$result[$key]->is_featured) {
+                $result[$key] = $entry;
             }
         }
+        
         return array_values($result);
     }
 
+    // Kategória meghatározás fájlnév alapján config-ból
     private function resolveCategoryFromFilenameBase(string $filename): ?string
     {
         $map = (array) config('gallery.keyword_category_map', []);
+        
         foreach ($map as $keyword => $category) {
             if (str_starts_with($filename, $keyword)) {
                 return $category;
             }
         }
+        
         return null;
     }
 }

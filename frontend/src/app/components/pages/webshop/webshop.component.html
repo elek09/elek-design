@@ -1,25 +1,18 @@
 <div class="webshop-page">
-    @if (imagesLoading()) {
+    @if (loading()) {
     <app-loading-overlay [logoUrl]="'assets/images/elek-design-logo.png'"></app-loading-overlay>
     }
     <div class="cards-grid">
         @for (p of products(); track p.id) {
         <mat-card class="product-card">
-            @if (productImages()[p.id] && productImages()[p.id].length) {
-            <img mat-card-image [src]="productImages()[p.id][0]" [alt]="p.name" />
+            @if (p.primary_image_url) {
+            <img mat-card-image [src]="baseUrl + p.primary_image_url" [alt]="p.name" loading="lazy" decoding="async" />
             }
             <mat-card-header>
                 <mat-card-title>{{ p.name }}</mat-card-title>
             </mat-card-header>
             <mat-card-content>
                 @if (p.description) {<p class="desc">{{ p.description }}</p>}
-                @if (productImages()[p.id] && productImages()[p.id].length > 1) {
-                <div class="thumbs">
-                    @for (t of (productImages()[p.id] | slice:1); track $index) {
-                    <img class="thumb" [src]="t" [alt]="p.name + ' kép'" loading="lazy" decoding="async" />
-                    }
-                </div>
-                }
                 <div class="row">
                     @if (p.options.hardware_types.length) {
                     <mat-form-field appearance="fill" class="field">

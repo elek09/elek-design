@@ -3,25 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GalleryItemResource;
+use App\Http\Resources\OrderResource;
 use App\Models\GalleryItem;
 use App\Models\Order;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
     /**
-     * Get dashboard statistics for admin overview
-     * 
-     * GET /api/v1/admin/dashboard/stats
+     * Admin dashboard statisztikák
+     * Galéria és rendelés adatok összegzése
      */
-    public function stats()
+    public function stats(): JsonResponse
     {
-        // Gallery stats
+        // Galéria statisztikák
         $totalGallery = GalleryItem::count();
-        $activeGallery = GalleryItem::where('is_active', true)->count();
-        $featuredGallery = GalleryItem::where('is_featured', true)->count();
+        $activeGallery = GalleryItem::active()->count();
+        $featuredGallery = GalleryItem::featured()->count();
 
-        // Gallery by category
+        // Galéria elemek kategóriánként
         $byCategory = GalleryItem::selectRaw('category_id, COUNT(*) as count')
             ->whereNotNull('category_id')
             ->groupBy('category_id')
@@ -31,7 +32,7 @@ class DashboardController extends Controller
                 return [$item->category->name ?? 'Unknown' => $item->count];
             });
 
-        // Gallery by subcategory
+        // Galéria elemek alkategóriánként
         $bySubcategory = GalleryItem::selectRaw('subcategory_id, COUNT(*) as count')
             ->whereNotNull('subcategory_id')
             ->groupBy('subcategory_id')
@@ -41,13 +42,13 @@ class DashboardController extends Controller
                 return [$item->subcategory->name ?? 'Unknown' => $item->count];
             });
 
-        // Recent gallery items
+        // Legújabb galéria elemek
         $recentGallery = GalleryItem::with(['category:id,name,type', 'subcategory:id,name,slug'])
             ->latest()
             ->take(5)
             ->get();
 
-        // Order stats
+        // Rendelés statisztikák
         $totalOrders = Order::count();
         $ordersByStatus = Order::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
@@ -67,12 +68,12 @@ class DashboardController extends Controller
                     'inactive' => $totalGallery - $activeGallery,
                     'featured' => $featuredGallery,
                     'byCategory' => $byCategory->merge($bySubcategory)->toArray(),
-                    'recent' => \App\Http\Resources\GalleryItemResource::collection($recentGallery),
+                    'recent' => GalleryItemResource::collection($recentGallery),
                 ],
                 'orders' => [
                     'total' => $totalOrders,
                     'byStatus' => $ordersByStatus,
-                    'recent' => \App\Http\Resources\OrderResource::collection($recentOrders),
+                    'recent' => OrderResource::collection($recentOrders),
                 ],
             ],
         ]);

@@ -6,11 +6,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactMessageRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true; // Public endpoint
-    }
-
     public function rules(): array
     {
         return [
@@ -23,7 +18,7 @@ class StoreContactMessageRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Basic HTML stripping & trim to mitigate spam / unnecessary markup.
+        // HTML tagek eltávolítása és whitespace tisztítás spam/markup megelőzésére
         $input = $this->all();
         foreach (['name','email','subject','message'] as $field) {
             if (isset($input[$field]) && is_string($input[$field])) {

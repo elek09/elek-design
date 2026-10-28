@@ -1,8 +1,16 @@
 <?php
 
 return [
-    // Keyword -> category id mapping used by the gallery import seeder
+    /**
+     * Fájlnév prefix → kategória/alkategória slug mapping
+     * 
+     * A GalleryImportService használja a seeder során:
+     * - Ha fájlnév 'konyha'-val kezdődik → 'konyha' kategória
+     * - Ha 'iroda'-val → 'iroda-berendezes' alkategória
+     * - Ha nincs találat → 'egyeb'
+     */
     'keyword_category_map' => [
+        // Főkategóriák (type)
         'konyha' => 'konyha',
         'nappali' => 'nappali',
         'furdoszoba' => 'furdoszoba',
@@ -16,7 +24,8 @@ return [
         '3dfal' => '3d-falboritas',
         'ivesbutorok' => 'ives-butorok',
         'ives' => 'ives-butorok',
-        // Common utility or branding assets -> 'egyeb'
+        
+        // Egyéb (logo, brand asset)
         'elekdesign_logo' => 'egyeb',
         'elekdesign-logo' => 'egyeb',
         'logo' => 'egyeb',

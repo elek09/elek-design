@@ -75,7 +75,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0; /* allow ellipsis */
+  min-width: 0;
 }
 .item .opt {
   display: inline-flex;
@@ -103,14 +103,13 @@
   text-overflow: ellipsis;
 }
 
-/* Type-specific accent colors */
 .item .opt.hw {
-  background: #e3f2fd; /* light blue */
+  background: #e3f2fd;
   border-color: #bbdefb;
   color: #1565c0;
 }
 .item .opt.cs {
-  background: #f3e5f5; /* light purple */
+  background: #f3e5f5;
   border-color: #e1bee7;
   color: #6a1b9a;
 }
@@ -125,7 +124,6 @@
   justify-content: flex-end;
 }
 
-/* Make the entire form look like a card for consistency */
 form[formGroup] {
   background: #fff;
   border-radius: 8px;
@@ -133,7 +131,6 @@ form[formGroup] {
   padding: 1rem;
 }
 
-/* Responsive tweaks */
 @media (max-width: 900px) {
   .order-meta {
     grid-template-columns: 1fr;

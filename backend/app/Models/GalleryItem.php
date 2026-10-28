@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class GalleryItem extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'title',
         'category_id',
@@ -16,35 +19,50 @@ class GalleryItem extends Model
         'is_featured',
     ];
 
-    protected $appends = [
-        // No virtual category slug needed; category/subcategory embedded in resources
-    ];
-
     protected $casts = [
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime'
     ];
 
-    // Scopes for common filters
+    // aktív galéria elemek szűrése
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
+    // inaktív galéria elemek szűrése
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
+
+    // kiemelt galéria elemek szűrése
     public function scopeFeatured($query)
     {
         return $query->where('is_featured', true);
     }
 
+    // kategória szerinti szűrés
+    public function scopeByCategory($query, $categoryId)
+    {
+        return $query->where('category_id', $categoryId);
+    }
+
+    // alkategória szerinti szűrés
+    public function scopeBySubcategory($query, $subcategoryId)
+    {
+        return $query->where('subcategory_id', $subcategoryId);
+    }
+
+    // egy galéria elem egy kategóriához tartozik
     public function category()
     {
-        return $this->belongsTo(Category::class, 'category_id');
+        return $this->belongsTo(Category::class);
     }
+
+    // egy galéria elem egy alkategóriához tartozik
     public function subcategory()
     {
-        return $this->belongsTo(Subcategory::class, 'subcategory_id');
+        return $this->belongsTo(Subcategory::class);
     }
-    // Accessor removed (legacy); slug derivation handled where needed via relations.
 }

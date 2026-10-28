@@ -49,7 +49,7 @@ export class AdminLoginComponent {
       remember: [false],
     });
 
-    // Redirect if already authenticated
+    // Átirányítás ha már be van jelentkezve
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/admin/dashboard']);
     }
@@ -60,14 +60,12 @@ export class AdminLoginComponent {
       this.isLoading = true;
       this.errorMessage = '';
 
-      const credentials = this.loginForm.value; // includes optional remember
-
-      this.authService.login(credentials).subscribe({
+      this.authService.login(this.loginForm.value).subscribe({
         next: (user) => {
           if (user) {
             this.router.navigate(['/admin/dashboard']).then((success) => {
               if (!success) {
-                console.error('Navigation failed');
+                console.error('Navigáció sikertelen');
                 this.errorMessage =
                   'Belépés sikeres, de az átirányítás nem sikerült.';
               }
@@ -78,7 +76,7 @@ export class AdminLoginComponent {
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Login error:', error);
+          console.error('Bejelentkezési hiba:', error);
           this.errorMessage =
             error.error?.message || 'Belépés sikertelen. Próbáld újra.';
           this.isLoading = false;

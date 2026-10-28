@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
+// árajánlat elfogadása email a vevőnek
 class QuoteAcceptedMail extends Mailable
 {
     use Queueable, SerializesModels;

@@ -2,173 +2,171 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Order;
-use App\Models\Product;
-use App\Http\Resources\OrderResource;
-use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\AdminUpdateOrderRequest;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Resources\OrderResource;
+use App\Mail\QuoteRejectedMail;
+use App\Models\Order;
 use App\Services\OrderService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
     public function __construct(private OrderService $orders) {}
+
     /**
-     * Display a listing of the resource.
+     * Rendelések listázása (admin)
+     * ?status=new|accepted|rejected - szűrés állapot szerint
      */
-    public function index(Request $r)
+    public function index(Request $request)
     {
-        $q = Order::query()->with('items.product');
-        if ($st = $r->query('status'))
-            $q->where('status', $st);
-        return OrderResource::collection($q->latest()->paginate(20));
+        $query = Order::with('items.product');
+        
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+        
+        return OrderResource::collection($query->latest()->paginate(20));
     }
 
-    public function updateStatus(Request $r, Order $order)
+    /**
+     * Rendelés státusz frissítése (admin)
+     * new|accepted|rejected
+     */
+    public function updateStatus(Request $request, Order $order)
     {
-        $r->validate(['status' => ['required', 'in:new,accepted,rejected']]);
-        $order->update(['status' => $r->status]);
+        $request->validate(['status' => ['required', 'in:new,accepted,rejected']]);
+        $oldStatus = $order->status;
+        $order->update(['status' => $request->status]);
+        
+        // Elutasított árajánlat email küldése
+        if ($request->status === 'rejected' && $order->kind === 'quote' && $oldStatus !== 'rejected') {
+            try {
+                Mail::to($order->customer_email)->send(
+                    new QuoteRejectedMail($order, $order->admin_note)
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Quote rejected email failed: ' . $e->getMessage());
+            }
+        }
+        
         return new OrderResource($order->fresh('items.product'));
     }
 
     /**
-     * Admin: update order details (items price/qty, total override, admin note, optional status).
+     * Rendelés részletes szerkesztése (admin)
+     * Tételek mennyisége/ára, admin megjegyzés, státusz, végösszeg felülírás
      */
-    public function updateAdmin(AdminUpdateOrderRequest $r, Order $order)
+    public function updateAdmin(AdminUpdateOrderRequest $request, Order $order)
     {
-        $data = $r->validated();
+        $data = $request->validated();
 
-        // Update items
+        // Tételek frissítése
         if (!empty($data['items'])) {
-            $itemsById = $order->items()->get()->keyBy('id');
-            foreach ($data['items'] as $row) {
-                $id = (int) $row['id'];
-                if (!$itemsById->has($id)) continue; // ensure belongs to this order
-                $update = [];
-                if (array_key_exists('quantity', $row)) $update['quantity'] = (int) $row['quantity'];
-                if (array_key_exists('unit_price', $row)) $update['unit_price'] = (float) $row['unit_price'];
-                if (!empty($update)) {
-                    $itemsById[$id]->update($update);
-                }
-            }
+            $this->orders->updateOrderItems($order, $data['items']);
         }
 
-        // Admin note
+        // Admin megjegyzés
         if (array_key_exists('admin_note', $data)) {
             $order->admin_note = $data['admin_note'];
         }
 
-        // Status
+        // Státusz
+        $oldStatus = $order->status;
         if (array_key_exists('status', $data)) {
             $order->status = $data['status'];
         }
 
-        // Total: override or recalc via service
+        // Végösszeg: felülírás vagy újraszámolás
         $this->orders->recalcTotal($order, array_key_exists('total', $data) ? (float) $data['total'] : null);
+        
+        // Elutasított árajánlat email küldése
+        if (isset($data['status']) && $data['status'] === 'rejected' && $order->kind === 'quote' && $oldStatus !== 'rejected') {
+            try {
+                Mail::to($order->customer_email)->send(
+                    new QuoteRejectedMail($order, $order->admin_note)
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Quote rejected email failed: ' . $e->getMessage());
+            }
+        }
 
         return new OrderResource($order->fresh('items.product'));
     }
 
     /**
-     * Admin: send confirmation email reflecting current order state and admin note.
+     * Megerősítő email küldése (admin)
+     * Jelenlegi rendelés állapot és admin megjegyzés alapján
      */
-    public function sendConfirmation(Request $r, Order $order)
+    public function sendConfirmation(Request $request, Order $order)
     {
-        $isQuote = $order->kind === 'quote';
         try {
-            // Admin manuálisan küldi: jelöljük a szolgáltatásnak
             $this->orders->sendConfirmation($order, $order->admin_note, true);
         } catch (\Throwable $e) {
-            \Log::warning('Admin send confirmation failed: ' . $e->getMessage());
+            Log::warning('Admin send confirmation failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Email sending failed'], 500);
         }
+        
         return response()->json(['success' => true]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Új rendelés/árajánlat létrehozása (bejelentkezett felhasználó)
      */
-    public function store(StoreOrderRequest $req)
+    public function store(StoreOrderRequest $request)
     {
-        $data = $req->validated();
-        $isQuote = (bool)($data['is_quote'] ?? false);
-        $order = Order::create([
-            'user_id' => optional($req->user())->id,
-            'kind' => $isQuote ? 'quote' : 'order',
-            'status' => 'new',
-            'customer_name' => $data['customer_name'],
-            'customer_email' => $data['customer_email'],
-            'customer_phone' => $data['customer_phone'] ?? null,
-            'total' => $isQuote ? null : 0,
-        ]);
-        $total = 0;
-        foreach ($data['items'] as $it) {
-            $p = Product::find($it['product_id']);
-            $order->items()->create([
-                'product_id' => $p->id,
-                'quantity' => $it['quantity'],
-                'unit_price' => $p->price,
-                'options' => $it['options'] ?? [],
-            ]);
-            if (!$isQuote) {
-                $total += ((float) ($p->price ?? 0)) * (int) $it['quantity'];
-            }
-        }
-        if (!$isQuote) $order->update(['total' => $total]);
-        // Send confirmation email (quote-style if requested)
+        $data = $request->validated();
+        $order = $this->orders->createFromData($data, $request->user()?->id);
+        
+        // Megerősítő email küldése
         try {
             $this->orders->sendConfirmation($order);
         } catch (\Throwable $e) {
-            // Swallow mail errors to not break API; logs will capture
-            \Log::warning('Order confirmation email failed: ' . $e->getMessage());
+            Log::warning('Order confirmation email failed: ' . $e->getMessage());
         }
 
-        return new OrderResource($order->load('items.product'));
+        return new OrderResource($order);
     }
 
-        /**
-         * Public submission endpoint (no session, no auth required).
-         * Accepts same payload as StoreOrderRequest; uses is_quote to determine kind.
-         */
-        public function storePublic(StoreOrderRequest $req)
-        {
-            return $this->store($req);
-        }
+    /**
+     * Publikus rendelés leadás (nem kötelező bejelentkezés)
+     * Ugyanaz mint a store(), de nincs user_id
+     */
+    public function storePublic(StoreOrderRequest $request)
+    {
+        return $this->store($request);
+    }
 
-    public function my(Request $r)
+    /**
+     * Saját rendelések listázása (bejelentkezett felhasználó)
+     */
+    public function my(Request $request)
     {
         return OrderResource::collection(
-            Order::where('user_id', $r->user()->id)->latest()->paginate(20)
+            Order::where('user_id', $request->user()->id)->latest()->paginate(20)
         );
     }
 
-    // Admin: get a single order with items
+    /**
+     * Egy rendelés részletes megtekintése (admin)
+     */
     public function adminShow(Order $order)
     {
         return new OrderResource($order->load('items.product'));
     }
 
     /**
-     * Display the specified resource.
+     * Rendelés/árajánlat törlése (admin)
+     * Cascade-del törli a kapcsolódó order_items tételeket is
      */
-    public function show(string $id)
+    public function destroy(Order $order)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $order->delete();
+        
+        return response()->json([
+            'message' => 'Rendelés sikeresen törölve'
+        ]);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 
 class CategoryObserver
 {
+    // kategória mentésekor cache invalidálás ha releváns mező változott
     public function saved(Category $category): void
     {
         $relevant = ['name', 'type', 'subcategories', 'nav_order'];
@@ -19,6 +20,7 @@ class CategoryObserver
         }
     }
 
+    // kategória törlésekor cache invalidálás
     public function deleted(Category $category): void
     {
         Cache::forget(BootstrapController::CACHE_KEY);

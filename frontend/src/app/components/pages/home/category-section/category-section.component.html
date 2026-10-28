@@ -8,8 +8,8 @@
         <ul>
             @for (subCategory of normalizeSubcategories(category.subcategories); track subCategory.id) {
             <li>
-                <a href="#" (click)="$event.preventDefault(); onMenuClick(subCategory.id)"
-                    [class.active]="selectedSubId === subCategory.id">
+                <a href="#" (click)="$event.preventDefault(); onMenuClick(subCategory.slug)"
+                    [class.active]="selectedSubId === subCategory.slug">
                     {{ subCategory.name }} »
                 </a>
             </li>

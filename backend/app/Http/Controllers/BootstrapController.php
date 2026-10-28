@@ -19,7 +19,8 @@ class BootstrapController extends Controller
     ) {}
 
     /**
-     * Return initial payload combining header, categories and featured gallery.
+     * Alkalmazás induló adatok: header menü, kategóriák, kiemelt galéria
+     * Cache-elt válasz, admin ?fresh=1 paraméterrel újratöltheti
      */
     public function __invoke(Request $request)
     {
@@ -36,7 +37,7 @@ class BootstrapController extends Controller
             $headerItems = $this->nav->buildHeaderItems();
             $categories = Category::navOrdered()->with('subcategories')->get();
             $featured = $this->gallery->queryActive()
-                ->where('is_featured', true)
+                ->featured()
                 ->latest()
                 ->limit(12)
                 ->get()

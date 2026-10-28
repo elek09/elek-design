@@ -1,7 +1,6 @@
-// Category domain models
 export interface Subcategory {
   id?: number | string;
-  category_id?: number; // backend kapcsolódás a fő kategóriához
+  category_id?: number;
   slug: string;
   name: string;
   nav_order?: number;

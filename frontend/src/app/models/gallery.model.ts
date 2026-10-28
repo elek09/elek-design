@@ -1,8 +1,7 @@
-// Gallery & media related domain models
 export interface GallerySubCategory {
   label: string;
-  value: string; // id as string
-  slug?: string; // backend slug fallback for new subcategory navigation
+  value: string;
+  slug?: string;
 }
 
 export interface GalleryCategory {

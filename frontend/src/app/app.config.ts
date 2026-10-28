@@ -1,8 +1,9 @@
 import {
   ApplicationConfig,
-  APP_INITIALIZER,
   provideZoneChangeDetection,
   LOCALE_ID,
+  provideAppInitializer,
+  inject,
 } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideToastr } from 'ngx-toastr';
@@ -39,25 +40,20 @@ export const appConfig: ApplicationConfig = {
       }),
       withInterceptors([authInterceptor]),
     ),
-    // Fetch CSRF cookie once at app startup for Sanctum
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      deps: [HttpClient, API_BASE_URL],
-      useFactory: (http: HttpClient, base: string) => () =>
-        firstValueFrom(
-          http
-            .get(`${base}/sanctum/csrf-cookie`, { withCredentials: true })
-            .pipe(catchError(() => of(null))),
-        ),
-    },
-    {
-      provide: APP_INITIALIZER,
-      multi: true,
-      deps: [BootstrapService],
-      useFactory: (bootstrap: BootstrapService) => () =>
-        firstValueFrom(bootstrap.getBootstrap$().pipe(take(1))),
-    },
+    // CSRF cookie betöltése az alkalmazás indításakor (Laravel Sanctum)
+    provideAppInitializer(() => {
+      const http = inject(HttpClient);
+      const base = inject(API_BASE_URL);
+      return firstValueFrom(
+        http
+          .get(`${base}/sanctum/csrf-cookie`, { withCredentials: true })
+          .pipe(catchError(() => of(null))),
+      );
+    }),
+    provideAppInitializer(() => {
+      const bootstrap = inject(BootstrapService);
+      return firstValueFrom(bootstrap.getBootstrap$().pipe(take(1)));
+    }),
     { provide: API_BASE_URL, useValue: 'http://localhost:8000' },
     { provide: LOCALE_ID, useValue: 'hu-HU' },
     provideAnimations(),

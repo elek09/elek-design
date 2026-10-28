@@ -1,9 +1,10 @@
 import { Category } from '../models/category.model';
+import { GalleryConfig } from '../models/gallery.model';
 
 export interface NormalizedSubcategory {
-  id: string; // backend id as string or fallback
+  id: string;
   name: string;
-  slug: string; // backend slug or derived slugified name
+  slug: string;
   nav_order?: number;
 }
 
@@ -51,4 +52,34 @@ export function slugify(value: string): string {
     .replace(/--+/g, '-')
     .replace(/^-+/, '')
     .replace(/-+$/, '');
+}
+
+export function buildGalleryConfig(categories: Category[]): GalleryConfig {
+  const mapped = (categories || []).map((c) => ({
+    label: c.name,
+    value: String(c.id ?? c.type),
+    subcategories: normalizeSubcategories(c.subcategories).map((s) => ({
+      label: s.name,
+      value: s.id != null ? String(s.id) : String(s.slug),
+      slug: s.slug,
+    })),
+  }));
+  return { categories: mapped };
+}
+
+// Kategória érték alapján címkét keres (fő- és alkategoriákban is)
+export function getCategoryLabel(
+  config: GalleryConfig | null,
+  categoryValue: string,
+): string {
+  if (!config) return categoryValue;
+  for (const category of config.categories) {
+    if (category.value === categoryValue) return category.label;
+    if (category.subcategories) {
+      for (const sub of category.subcategories) {
+        if (sub.value === categoryValue) return sub.label;
+      }
+    }
+  }
+  return categoryValue;
 }

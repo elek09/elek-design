@@ -6,7 +6,9 @@ import { ApiImageItem } from '../models/gallery.model';
 import { PaginatedResponse } from '../models/api.model';
 import { API_BASE_URL } from '../app.tokens';
 import { BootstrapService } from './bootstrap.service';
-import { getOrigin, resolveToAbsolute, joinUrl } from '../utils/url.utils';
+import { getOrigin, joinUrl } from '../utils/url.utils';
+import { convertToSlide } from '../utils/gallery.utils';
+import { unwrapResponse } from '../utils/api.utils';
 
 @Injectable({ providedIn: 'root' })
 export class GalleryDataService {
@@ -15,63 +17,31 @@ export class GalleryDataService {
   private readonly galleryApiUrl = `${this.baseUrl}/api/v1/gallery`;
   private readonly apiOrigin = getOrigin(this.baseUrl);
   private readonly bootstrap = inject(BootstrapService);
-  private sectionCache = new Map<string, Observable<Slide[]>>();
+  private readonly sectionCache = new Map<string, Observable<Slide[]>>();
 
   getFeaturedSlides$() {
     return this.bootstrap.getFeaturedSlides$();
   }
 
   getSlidesByCategory$(section: string) {
-    // Cache per-section HTTP to align with backend endpoint /section/{section}
     const key = section.toLowerCase();
     if (!this.sectionCache.has(key)) {
       const url = joinUrl(this.galleryApiUrl, `/section/${key}`);
-      const section$ = this.http
+      const sectionSlides$ = this.http
         .get<ApiImageItem[] | PaginatedResponse<ApiImageItem>>(url)
         .pipe(
-          map((resp) =>
-            this.unwrap(resp)
-              .map((i) => this.toSlide(i, key))
-              .filter((s): s is Slide => !!s)
-              .filter((slide) => slide.is_active),
+          map((response) =>
+            unwrapResponse(response)
+              .map((item) => convertToSlide(item, this.apiOrigin, key))
+              .filter(
+                (slide): slide is Slide => !!slide && (slide.is_active ?? true),
+              ),
           ),
           catchError(() => of<Slide[]>([])),
           shareReplay(1),
         );
-      this.sectionCache.set(key, section$);
+      this.sectionCache.set(key, sectionSlides$);
     }
     return this.sectionCache.get(key)!;
-  }
-
-  private unwrap(
-    resp: ApiImageItem[] | PaginatedResponse<ApiImageItem>,
-  ): ApiImageItem[] {
-    if (Array.isArray(resp)) return resp;
-    return resp.data ?? [];
-  }
-
-  private toSlide(item: ApiImageItem, sectionKey?: string): Slide | null {
-    const imageUrl = this.absoluteUrl(
-      item.url || (item as any).imageUrl || item.image || '',
-    );
-    if (!imageUrl) return null;
-    const id = item.id != null ? String(item.id) : undefined;
-    const subcategorySlug = item.subcategory?.slug?.toString().trim();
-    const section = item.category?.type?.toString().trim() || sectionKey;
-    return {
-      id,
-      imageUrl,
-      thumbUrl: this.absoluteUrl((item as any).thumb_url || undefined),
-      title: item.title,
-      category: subcategorySlug, // slug used for stable matching
-      section,
-      is_active: item.is_active,
-      is_featured: item.is_featured,
-    };
-  }
-
-  private absoluteUrl(raw: string | undefined): string | undefined {
-    if (!raw) return undefined;
-    return resolveToAbsolute(this.apiOrigin, raw);
   }
 }

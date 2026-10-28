@@ -17,7 +17,7 @@ export class OrdersService {
     return this.http.post<ApiResponse>(url, payload);
   }
 
-  // Public endpoint for both order and quote (recommended)
+  // Publikus végpont rendeléshez és ajánlatkéréshez (ajánlott)
   submitPublicOrder(payload: SubmitOrderRequest): Observable<ApiResponse> {
     const url = joinUrl(this.apiV1, '/orders/submit');
     return this.http.post<ApiResponse>(url, payload);

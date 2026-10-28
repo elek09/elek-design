@@ -1,6 +1,5 @@
 @use "../../../../styles/tokens" as *;
-// Simplified, mobile-first header styles
-// Variables
+
 $header-width-max: $container-max;
 $header-height-mobile: 64px;
 $header-height-desktop: 88px;
@@ -9,14 +8,14 @@ $cta-bg-hover: $color-accent-hover;
 $cta-text: #fff;
 $cta-desktop-min-height: 72px;
 
-// Base (mobile-first)
+// Mobil-first alap stílusok
 .topnav {
   width: 100%;
   max-width: $header-width-max;
   margin: 0 auto;
   padding: 10px 10px;
-  font-size: 1.2rem;
-  font-weight: 400;
+  font-size: 1.3rem;
+  font-weight: 500;
   text-transform: uppercase;
   display: grid;
   grid-template-columns: auto 1fr 56px;
@@ -28,25 +27,25 @@ $cta-desktop-min-height: 72px;
   overflow: hidden;
 }
 
-// Generic anchors
 .topnav a {
   display: block;
   text-decoration: none;
   text-align: center;
   white-space: nowrap;
-  color: var(--color-text, #757575);
-  transition: color 0.15s ease, background 0.15s ease;
+  color: var(--color-text, #3333);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
 .topnav a:hover {
   color: var(--color-accent, #b8cb70);
 }
 
-// Hide non-CTA nav items until expanded (mobile)
 .topnav a.options:not(.cta) {
   display: none;
 }
 
-// Logo
+// Logó
 .topnav .logo-link {
   grid-column: 1;
   grid-row: 1;
@@ -59,7 +58,7 @@ $cta-desktop-min-height: 72px;
   display: block;
 }
 
-// CTA (mobile two-line enforced)
+// CTA gomb (mobil: két soros)
 .topnav a.cta {
   grid-column: 2;
   grid-row: 1;
@@ -73,7 +72,7 @@ $cta-desktop-min-height: 72px;
   border-radius: 6px;
   font-weight: 600;
   white-space: normal;
-  max-width: 170px; /* force wrap on mobile */
+  max-width: 170px;
   word-break: normal;
   overflow-wrap: normal;
   line-height: 1.08;
@@ -85,7 +84,9 @@ $cta-desktop-min-height: 72px;
   transform: translate(-50%, -50%);
   width: 100%;
   text-align: center;
-  line-height: 1.08;
+  line-height: 1.12;
+  font-size: 1.3rem;
+  font-weight: 500;
 }
 .topnav a.cta:hover,
 .topnav a.cta.active {
@@ -96,7 +97,7 @@ $cta-desktop-min-height: 72px;
   padding: 0 16px;
 }
 
-// Hamburger button (mobile only)
+// Hamburger menü gomb (csak mobil)
 .topnav .icon {
   grid-column: 3;
   grid-row: 1;
@@ -130,7 +131,7 @@ $cta-desktop-min-height: 72px;
   color: $cta-bg;
 }
 
-// Expanded mobile state
+// Kinyitott mobil menü
 .topnav.responsive {
   display: grid;
 }
@@ -138,16 +139,18 @@ $cta-desktop-min-height: 72px;
   display: block;
   grid-column: 1 / span 3;
   width: 100%;
-  line-height: 48px;
+  line-height: 52px;
   padding: 0 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   text-align: left;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #333;
 }
 .topnav.responsive a.options:not(.cta):first-of-type {
   border-top: none;
 }
 
-// Ultra narrow adjustments
 @media (max-width: $bp-mobile-narrow) {
   .topnav a.cta {
     font-size: 0.85rem;
@@ -156,7 +159,7 @@ $cta-desktop-min-height: 72px;
   }
 }
 
-// Desktop overrides
+// Asztali nézet
 @media (min-width: $bp-desktop) {
   .topnav {
     display: flex;
@@ -173,7 +176,8 @@ $cta-desktop-min-height: 72px;
     display: block;
   }
   .topnav .logo-link {
-    padding-right: 50px;
+    //padding-right: 50px;
+    padding-right: 20px;
   }
   .topnav .logo-img {
     height: $header-height-desktop;
@@ -186,7 +190,7 @@ $cta-desktop-min-height: 72px;
     min-height: $cta-desktop-min-height;
     height: auto;
     padding: 14px 16px;
-    max-width: 260px; /* ensure only two lines with explicit <br> */
+    max-width: 260px;
     display: flex;
     align-items: center;
     justify-content: center;

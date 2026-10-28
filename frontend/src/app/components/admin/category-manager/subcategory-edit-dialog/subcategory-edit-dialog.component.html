@@ -15,5 +15,6 @@
 </div>
 <div mat-dialog-actions align="end">
     <button mat-button (click)="cancel()">Mégse</button>
-    <button mat-raised-button color="primary" (click)="save()" [disabled]="loading || !nameInput.trim()">Mentés</button>
+    <button mat-raised-button color="primary" (click)="save()"
+        [disabled]="loading || !nameInput || !nameInput.trim()">Mentés</button>
 </div>

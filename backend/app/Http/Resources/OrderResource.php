@@ -7,15 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderResource extends JsonResource
 {
-    public function toArray($req)
+    public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'kind' => $this->kind,
-            'is_quote' => $this->kind === 'quote',
             'status' => $this->status,
             'total' => $this->total,
-            // Admin megjegyzés (frontend: "note")
             'note' => $this->admin_note,
             'customer' => [
                 'name' => $this->customer_name,

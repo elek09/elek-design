@@ -40,12 +40,24 @@
 
 .submit-btn {
   width: 100%;
-  display: inline-grid;
-  grid-auto-flow: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  position: relative;
   padding: 10px 0;
+  height: 48px;
+
+  span {
+    transition: opacity 0.2s;
+
+    &.loading {
+      opacity: 0.3;
+    }
+  }
+}
+
+.btn-spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .error-row {

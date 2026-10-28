@@ -1,4 +1,3 @@
-// Public shop/cart models
 export interface CartItemOptions {
   hardware_type?: string;
   color_scheme?: string;

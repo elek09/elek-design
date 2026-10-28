@@ -10,9 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   styleUrls: ['./loading-overlay.component.scss'],
 })
 export class LoadingOverlayComponent {
-  // Optional label under the spinner
   readonly label = input<string | null>(null);
-  // Optional logo above the spinner
   readonly logoUrl = input<string | null | undefined>(null);
   readonly logoAlt = input('Elek Design');
 }

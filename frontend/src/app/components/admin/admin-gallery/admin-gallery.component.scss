@@ -3,8 +3,6 @@
   background: #f8f9fa;
 }
 
-// Header rules removed; AdminHeader component provides its own styling
-
 .upload-section {
   background: white;
   border-bottom: 1px solid #e9ecef;
@@ -264,7 +262,7 @@
 
             &.toggle-btn {
               &.active {
-                background: #dc3545; // Red for "Deactivate"
+                background: #dc3545;
                 color: white;
                 &:hover {
                   background: #c82333;
@@ -272,7 +270,7 @@
                 }
               }
               &.inactive {
-                background: #28a745; // Green for "Activate"
+                background: #28a745;
                 color: white;
                 &:hover {
                   background: #218838;
@@ -343,22 +341,20 @@
 
         .toggle-btn {
           &.active {
-            background-color: #ffc107; // Yellow
+            background-color: #ffc107;
             color: #333;
             &:hover {
               background-color: #e0a800;
             }
           }
           &.inactive {
-            background-color: #28a745; // Green
+            background-color: #28a745;
             color: white;
             &:hover {
               background-color: #218838;
             }
           }
         }
-
-        // Material variants handle colors; hooks removed to satisfy lint rules
       }
 
       .item-category {
@@ -449,7 +445,6 @@
   }
 }
 
-// Responsive design (aligned breakpoints)
 @media (max-width: 960px) {
   .gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -482,10 +477,9 @@
   }
 
   .gallery-item .item-actions .action-btn span {
-    display: none; // Show icon-only buttons on narrow screens
+    display: none;
   }
 }
 
 @media (max-width: 576px) {
-  // Header rules removed; AdminHeader handles its own responsive layout
 }

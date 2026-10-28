@@ -4,38 +4,46 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGalleryItemRequest;
+use App\Http\Requests\UpdateGalleryItemRequest;
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\GalleryItemResource;
+use App\Models\Category;
 use App\Models\GalleryItem;
+use App\Models\Subcategory;
+use App\Services\GalleryService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
-use App\Models\Category;
 
 class GalleryController extends Controller
 {
+    public function __construct(private GalleryService $gallery) {}
+
+    /**
+     * Galéria elemek listázása szűréssel (admin)
+     * ?status=active|inactive, ?subcategory_id, ?search
+     */
     public function index(Request $request)
     {
+        // Admin láthatja az inaktívakat is
         $query = GalleryItem::with(['category', 'subcategory']);
-
-        // Filter by active/inactive status
+        
         if ($request->has('status')) {
-            $isActive = $request->status === 'active';
-            $query->where('is_active', $isActive);
+            if ($request->status === 'active') {
+                $query->active();
+            } else {
+                $query->inactive();
+            }
         }
 
-        // Filter by category_id
         if ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
+            $query->byCategory($request->category_id);
         }
 
-        // Filter by subcategory_id
         if ($request->has('subcategory_id')) {
-            $query->where('subcategory_id', $request->subcategory_id);
+            $query->bySubcategory($request->subcategory_id);
         }
 
-        // Search in title or description
         if ($request->has('search') && $search = $request->search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'LIKE', "%{$search}%")
@@ -45,7 +53,7 @@ class GalleryController extends Controller
 
         $items = $query->latest()->paginate($request->input('per_page', 20));
 
-        return \App\Http\Resources\GalleryItemResource::collection($items)
+        return GalleryItemResource::collection($items)
             ->additional([
                 'success' => true,
                 'pagination' => [
@@ -57,218 +65,122 @@ class GalleryController extends Controller
             ]);
     }
 
+    /**
+     * Új galéria elem létrehozása
+     */
     public function store(StoreGalleryItemRequest $request)
     {
-        try {
-            $validated = $request->validated();
-            $cat = isset($validated['category_id']) ? Category::find($validated['category_id']) : null;
-            $sub = isset($validated['subcategory_id']) ? \App\Models\Subcategory::find($validated['subcategory_id']) : null;
-
-            // Accept either 'image' or 'file' input name
-            $hasUpload = $request->hasFile('image') || $request->hasFile('file');
-            if ($hasUpload) {
-                $image = $request->file('image') ?? $request->file('file');
-                $categorySlug = Str::slug($sub?->slug ?? $cat?->type ?? 'uncategorized');
-                $titleSlug = Str::slug($validated['title']);
-                $timestamp = now()->timestamp;
-                $extension = $image->getClientOriginalExtension();
-
-                $filename = "{$titleSlug}-{$timestamp}.{$extension}";
-                $directory = "gallery/{$categorySlug}";
-
-                $path = $image->storeAs($directory, $filename, 'public');
-                $validated['image_path'] = $path;
-            }
-
-            $galleryItem = new GalleryItem($validated);
-            $galleryItem->save();
-
-            // Invalidate bootstrap cache as featured list might change
-            Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-
-            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category', 'subcategory']));
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create gallery item',
-                'error' => $e->getMessage()
-            ], 500);
+        $validated = $request->validated();
+        
+        if ($request->hasFile('image') || $request->hasFile('file')) {
+            $validated['image_path'] = $this->handleImageUpload($request, $validated);
         }
-    }
 
-    public function show(GalleryItem $galleryItem)
-    {
-        return response()->json([
-            'success' => true,
-            'data' => $galleryItem
-        ]);
-    }
-
-    public function edit(GalleryItem $galleryItem)
-    {
-        return response()->json([
-            'success' => true,
-            'data' => $galleryItem,
-            'categories' => ['featured', 'work', 'ui', 'misc']
-        ]);
+        $galleryItem = GalleryItem::create($validated);
+        return (new GalleryItemResource($galleryItem->load(['category', 'subcategory'])))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
-     * Update the specified gallery item
+     * Galéria elem módosítása
      */
-    public function update(Request $request, GalleryItem $galleryItem)
+    public function update(UpdateGalleryItemRequest $request, GalleryItem $galleryItem)
     {
-        try {
-            // Build dynamic category list from DB
-            $types = Category::query()->pluck('type')->all();
-            $subs = Category::query()
-                ->pluck('subcategories')
-                ->filter()
-                ->flatMap(function ($arr) {
-                    return collect($arr)->pluck('id'); })
-                ->filter()->unique()->values()->all();
-            $validCategories = array_values(array_unique(array_merge($types, $subs, ['featured', 'egyeb'])));
+        $validated = $request->validated();
 
-            $validated = $request->validate([
-                'title' => 'sometimes|required|string|max:255',
-                'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id', 'required_without:subcategory_id'],
-                'subcategory_id' => ['sometimes', 'nullable', 'integer', 'exists:category_subcategories,id', 'required_without:category_id'],
-                'description' => 'nullable|string|max:1000',
-                'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'file' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-                'is_active' => 'sometimes|required|boolean',
-                'is_featured' => 'sometimes|required|boolean',
-            ]);
-
-            if ($request->hasFile('image') || $request->hasFile('file')) {
-                if ($galleryItem->image_path && Storage::disk('public')->exists($galleryItem->image_path)) {
-                    Storage::disk('public')->delete($galleryItem->image_path);
-                }
-
-                $image = $request->file('image') ?? $request->file('file');
-                $cat = isset($validated['category_id']) ? Category::find($validated['category_id']) : null;
-                $sub = isset($validated['subcategory_id']) ? \App\Models\Subcategory::find($validated['subcategory_id']) : null;
-                $categorySlug = Str::slug($sub?->slug ?? $cat?->type ?? ($galleryItem->subcategory?->slug ?? $galleryItem->category?->type) ?? 'uncategorized');
-                $title = $validated['title'] ?? $galleryItem->title;
-
-                $titleSlug = Str::slug($title);
-                $timestamp = now()->timestamp;
-                $extension = $image->getClientOriginalExtension();
-
-                $filename = "{$titleSlug}-{$timestamp}.{$extension}";
-                $directory = "gallery/{$categorySlug}";
-
-                $path = $image->storeAs($directory, $filename, 'public');
-                $validated['image_path'] = $path;
+        if ($request->hasFile('image') || $request->hasFile('file')) {
+            // Régi kép törlése
+            if ($galleryItem->image_path && Storage::disk('public')->exists($galleryItem->image_path)) {
+                Storage::disk('public')->delete($galleryItem->image_path);
             }
-
-            $galleryItem->update($validated);
-
-            // Invalidate bootstrap cache as featured or active state might affect it
-            Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-
-            return new \App\Http\Resources\GalleryItemResource($galleryItem->load(['category', 'subcategory']));
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->validator->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update gallery item',
-                'error' => $e->getMessage()
-            ], 500);
+            
+            $validated['image_path'] = $this->handleImageUpload($request, $validated, $galleryItem);
         }
+
+        $galleryItem->update($validated);
+        return new GalleryItemResource($galleryItem->load(['category', 'subcategory']));
     }
 
+    /**
+     * Galéria elem törlése
+     */
     public function destroy(GalleryItem $galleryItem)
     {
-        // Delete image file
         if ($galleryItem->image_path && Storage::disk('public')->exists($galleryItem->image_path)) {
             Storage::disk('public')->delete($galleryItem->image_path);
         }
 
         $galleryItem->delete();
-
-        // Invalidate bootstrap cache as featured list might change
-        Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Gallery item deleted successfully.'
-        ]);
+        return response()->json(['success' => true, 'message' => 'Gallery item deleted successfully.']);
     }
 
+    /**
+     * Galéria elem aktív státusz frissítése
+     */
     public function updateStatus(Request $request, GalleryItem $galleryItem)
     {
-        $validated = $request->validate([
-            'is_active' => 'required|boolean',
-        ]);
-
-        $galleryItem->update(['is_active' => $validated['is_active']]);
-        Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-
+        $request->validate(['is_active' => 'required|boolean']);
+        $galleryItem->update(['is_active' => $request->is_active]);
+        
         return response()->json([
             'success' => true,
             'message' => 'Gallery item status updated successfully.',
-            'data' => $galleryItem->fresh()
-        ]);
-    }
-
-    public function updateFeaturedStatus(Request $request, GalleryItem $galleryItem)
-    {
-        $validated = $request->validate([
-            'is_featured' => 'required|boolean',
-        ]);
-
-        $galleryItem->update(['is_featured' => $validated['is_featured']]);
-        Cache::forget(\App\Http\Controllers\BootstrapController::CACHE_KEY);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Gallery item featured status updated successfully.',
-            'data' => $galleryItem->fresh()
+            'data' => $galleryItem->fresh(),
         ]);
     }
 
     /**
-     * Provide configuration data for the gallery admin UI.
+     * Galéria elem kiemelt státusz frissítése
+     */
+    public function updateFeaturedStatus(Request $request, GalleryItem $galleryItem)
+    {
+        $request->validate(['is_featured' => 'required|boolean']);
+        $galleryItem->update(['is_featured' => $request->is_featured]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Gallery item featured status updated successfully.',
+            'data' => $galleryItem->fresh(),
+        ]);
+    }
+
+    /**
+     * Galéria admin felület konfigurációja
+     * Kategóriák és alkategóriák listája dropdown-okhoz
      */
     public function config()
     {
-        // Build categories dynamically from DB for the admin UI
-        $categories = [];
-        $dbCats = Category::with('subcategories')->orderBy('name')->get();
-        foreach ($dbCats as $cat) {
-            $entry = [
-                'label' => $cat->name,
-                'value' => $cat->type,
-            ];
-            if ($cat->subcategories->count()) {
-                $entry['subcategories'] = $cat->subcategories->map(function ($s) {
-                    return [
-                        'label' => $s->name,
-                        'value' => $s->id,
-                    ];
-                })->values()->all();
-            }
-            $categories[] = $entry;
-        }
-        // Add "Egyéb" static option at the end
-        $categories[] = [
-            'label' => 'Egyéb',
-            'value' => 'egyeb'
-        ];
+        $categories = Category::with('subcategories')->navOrdered()->get();
+        return CategoryResource::collection($categories);
+    }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'categories' => $categories
-            ]
-        ]);
+    /**
+     * Kép feltöltés kezelése
+     */
+    private function handleImageUpload(Request $request, array $validated, ?GalleryItem $existingItem = null): string
+    {
+        $image = $request->file('image') ?? $request->file('file');
+        
+        // Kategória/alkategória meghatározása
+        $cat = isset($validated['category_id']) ? Category::find($validated['category_id']) : null;
+        $sub = isset($validated['subcategory_id']) ? Subcategory::find($validated['subcategory_id']) : null;
+        
+        // Fallback meglévő elemre (update esetén)
+        if (!$cat && !$sub && $existingItem) {
+            $cat = $existingItem->category;
+            $sub = $existingItem->subcategory;
+        }
+        
+        $categorySlug = Str::slug($sub?->slug ?? $cat?->type ?? 'uncategorized');
+        $title = $validated['title'] ?? $existingItem?->title ?? 'untitled';
+        $titleSlug = Str::slug($title);
+        $timestamp = now()->timestamp;
+        $extension = $image->getClientOriginalExtension();
+        
+        $filename = "{$titleSlug}-{$timestamp}.{$extension}";
+        $directory = "gallery/{$categorySlug}";
+        
+        return $image->storeAs($directory, $filename, 'public');
     }
 }

@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use App\Models\GalleryItem;
+use App\Models\Subcategory;
 use App\Services\GalleryImportService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -12,9 +14,9 @@ use Illuminate\Support\Str;
 
 class GalleryImageSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        $this->command->info('--- Wiping old gallery data and files ---');
+        $this->command->info('--- Galéria adatok és fájlok törlése ---');
         Storage::disk('public')->deleteDirectory('gallery');
         Storage::disk('public')->makeDirectory('gallery');
         DB::table('gallery_items')->truncate();
@@ -23,44 +25,42 @@ class GalleryImageSeeder extends Seeder
         $this->processImages($service);
     }
 
-    private function processImages(GalleryImportService $service)
+    private function processImages(GalleryImportService $service): void
     {
         $sourcePath = database_path('seeders/_sample/gallery');
 
         if (!File::exists($sourcePath)) {
-            $this->command->error('Source image directory not found: ' . $sourcePath);
+            $this->command->error('❌ Forrásmappa nem található: ' . $sourcePath);
             return;
         }
 
         $allFiles = collect($service->collect($sourcePath));
 
         if ($allFiles->isEmpty()) {
-            $this->command->warn('No source images found in the gallery directory.');
+            $this->command->warn('⚠️  Nincs kép a galéria mappában.');
             return;
         }
 
-    // 1) Parse entries (NO DEDUPE — every file in the folder is unique by input contract)
-    $entries = $service->parseEntries($allFiles->all());
+        // Bejegyzések parse-olása a GalleryImportService által
+        $entries = $service->parseEntries($allFiles->all());
 
-    $this->command->info('--- Found ' . count($entries) . ' images. Copying & seeding... ---' . PHP_EOL);
+        $this->command->info('--- ' . count($entries) . ' kép feldolgozása... ---' . PHP_EOL);
 
-        // 2) Physical copy and DB insertion from the deduplicated list
         $progressBar = $this->command->getOutput()->createProgressBar(count($entries));
         $progressBar->start();
 
         foreach ($entries as $entry) {
-            /** @var \App\Support\Gallery\ImportEntry $entry */
             $file = $entry->file;
-            $legacyCategory = $entry->category; // slug or subcategory slug
+            $legacyCategory = $entry->category;
             $title = $entry->title;
             $order = (int) $entry->order;
-            $is_featured = (bool) $entry->is_featured;
+            $isFeatured = (bool) $entry->is_featured;
 
             $categorySlug = Str::slug($legacyCategory);
             $titleSlug = Str::slug($title);
             $extension = $file->getExtension();
 
-            // Preserve the order number in the filename so the runtime parser can pick it up
+            // Sorrend megőrzése a fájlnévben (runtime parsing miatt)
             $orderSuffix = $order > 0 ? '(' . $order . ')' : '';
             $newFilename = $titleSlug . $orderSuffix . '-' . time() . rand(10, 99) . '.' . $extension;
             $destinationDirectory = 'gallery/' . $categorySlug;
@@ -69,27 +69,33 @@ class GalleryImageSeeder extends Seeder
             Storage::disk('public')->makeDirectory($destinationDirectory);
             File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
 
-            // Resolve normalized category / subcategory IDs
-            $subcategory = \App\Models\Subcategory::where('slug', $legacyCategory)->first();
-            $categoryModel = null;
-            if (!$subcategory) {
-                $categoryModel = \App\Models\Category::where('type', $legacyCategory)->first();
+            // Kategória/alkategória ID feloldása
+            $subcategory = Subcategory::where('slug', $legacyCategory)->first();
+            $categoryId = null;
+            $subcategoryId = null;
+
+            if ($subcategory) {
+                $categoryId = $subcategory->category_id;
+                $subcategoryId = $subcategory->id;
+            } else {
+                $categoryModel = Category::where('type', $legacyCategory)->first();
+                $categoryId = $categoryModel?->id;
             }
 
             GalleryItem::create([
                 'title' => $title,
-                'category_id' => $subcategory ? $subcategory->category_id : ($categoryModel?->id),
-                'subcategory_id' => $subcategory?->id,
+                'category_id' => $categoryId,
+                'subcategory_id' => $subcategoryId,
                 'description' => 'Automatikus leírás: ' . $title,
                 'image_path' => $newPath,
                 'is_active' => true,
-                'is_featured' => $is_featured,
+                'is_featured' => $isFeatured,
             ]);
 
             $progressBar->advance();
         }
 
         $progressBar->finish();
-        $this->command->info(PHP_EOL . '--- Gallery processing complete! ---');
+        $this->command->info(PHP_EOL . '✓ Galéria feldolgozás kész! ' . count($entries) . ' kép importálva.');
     }
 }

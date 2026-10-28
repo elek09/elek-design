@@ -19,3 +19,10 @@ export function joinUrl(base: string, path: string): string {
   const p = path?.startsWith('/') ? path : `/${path}`;
   return `${b}${p}`;
 }
+
+/**
+ * Biztosítja, hogy az útvonal élből perjellel kezdődik
+ */
+export function ensureLeadingSlash(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`;
+}

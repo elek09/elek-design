@@ -6,12 +6,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class AdminUpdateOrderRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        // Route is protected by admin middleware
-        return true;
-    }
-
     public function rules(): array
     {
         return [

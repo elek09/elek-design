@@ -3,8 +3,8 @@ export interface Slide {
   imageUrl: string;
   thumbUrl?: string;
   title?: string;
-  category?: string; // subcategory slug
-  section?: string; // main category type
+  category?: string;
+  section?: string;
   is_active?: boolean;
   is_featured?: boolean;
 }

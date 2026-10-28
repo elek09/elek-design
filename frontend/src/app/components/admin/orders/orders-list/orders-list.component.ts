@@ -9,17 +9,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminHeaderComponent } from '../../admin-header/admin-header.component';
 import { AdminOrdersService } from '../../../../services/admin-orders.service';
 import { Order, OrderStatus } from '../../../../models/order.model';
-import { formatDateTime } from '../../../../utils/date.utils';
 import { AgGridAngular } from 'ag-grid-angular';
-import {
-  ColDef,
-  ValueFormatterParams,
-  ICellRendererParams,
-  Theme,
-  themeQuartz,
-  GridReadyEvent,
-} from 'ag-grid-community';
-import { ActionCellRendererComponent } from './action-cell-renderer.component';
+import { ColDef, Theme, themeQuartz, GridReadyEvent } from 'ag-grid-community';
+import { ordersListColumnDefs } from './orders-list.grid-col-def';
 
 @Component({
   selector: 'app-orders-list',
@@ -58,58 +50,7 @@ export class OrdersListComponent implements OnInit {
     minWidth: 120,
   };
 
-  columnDefs: ColDef[] = [
-    {
-      field: 'created_at',
-      headerName: 'Dátum',
-      minWidth: 180,
-      valueFormatter: (p: ValueFormatterParams) =>
-        p.value ? formatDateTime(p.value as string, 'hu-HU') : '',
-    },
-    {
-      headerName: 'Ügyfél',
-      valueGetter: (p) => p.data?.customer?.name ?? '',
-      minWidth: 160,
-    },
-    {
-      field: 'status',
-      headerName: 'Státusz',
-      minWidth: 130,
-      cellRenderer: (p: ICellRendererParams) => {
-        const span = document.createElement('span');
-        span.className = `status-badge ${p.value ?? ''}`;
-        span.textContent = String(p.value ?? '');
-        return span;
-      },
-    },
-    {
-      field: 'total',
-      headerName: 'Összeg',
-      minWidth: 140,
-      valueFormatter: (p) =>
-        p.value === null || p.value === undefined
-          ? '—'
-          : `${Number(p.value).toLocaleString('hu-HU')}Ft`,
-      type: 'rightAligned',
-    },
-    {
-      field: 'note',
-      headerName: 'Megjegyzés',
-      minWidth: 160,
-      flex: 2,
-      cellClass: 'note-cell',
-    },
-    {
-      headerName: 'Művelet',
-      colId: 'action',
-      width: 200,
-      minWidth: 160,
-      pinned: 'right',
-      suppressSizeToFit: true,
-      cellClass: 'action-cell',
-      cellRenderer: ActionCellRendererComponent as unknown,
-    },
-  ];
+  columnDefs: ColDef[] = ordersListColumnDefs;
 
   ngOnInit(): void {
     this.loadOrders();
@@ -119,7 +60,7 @@ export class OrdersListComponent implements OnInit {
     const status = this.filterStatus();
     this.api.listOrders(status).subscribe((list) => {
       this.orders.set(list);
-      this.rowData = list; // Backend already filtered
+      this.rowData = list;
     });
   }
 
@@ -128,13 +69,11 @@ export class OrdersListComponent implements OnInit {
   }
 
   onGridReady(event: GridReadyEvent): void {
-    // Ensure initial data sizing after grid API available
-    // Optional: fit columns to available width
     event.api.sizeColumnsToFit();
   }
 
   onStatusChange(value: 'all' | OrderStatus) {
     this.filterStatus.set(value);
-    this.loadOrders(); // Reload from backend with new filter
+    this.loadOrders();
   }
 }

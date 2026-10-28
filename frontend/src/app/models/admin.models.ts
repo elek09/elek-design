@@ -1,5 +1,3 @@
-// Admin-specific data models
-
 export interface NavItem {
   route: string;
   icon: string;

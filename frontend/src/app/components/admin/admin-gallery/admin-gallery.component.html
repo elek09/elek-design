@@ -1,5 +1,8 @@
 <div class="admin-gallery">
-    <app-admin-header [backLink]="['/admin/dashboard']" title="Galéria kezelése">
+    @if (isLoading) {
+    <app-loading-overlay [label]="'Galéria betöltése…'"></app-loading-overlay>
+    }
+    <app-admin-header title="Galéria kezelése">
         <span header-actions>
             <button mat-raised-button color="primary" class="btn btn-primary" (click)="toggleUploadForm()">
                 <mat-icon>add</mat-icon>
@@ -7,12 +10,11 @@
             </button>
             <button mat-stroked-button color="primary" class="btn btn-outline" (click)="logout()">
                 <mat-icon>logout</mat-icon>
-                Kijelentkezés
+                Kijelenthezés
             </button>
         </span>
     </app-admin-header>
 
-    <!-- Upload Form -->
     @if (showUploadForm && galleryConfig) {
     <div class="upload-section">
         <div class="upload-form">
@@ -107,7 +109,6 @@
     </div>
     }
 
-    <!-- Filters -->
     @if (galleryConfig) {
     <div class="filters-section">
         <div class="filters">
@@ -152,7 +153,8 @@
         <div class="results-info">
             Megjelenítve {{ galleryItems.length }} kép (oldal {{ currentPage }} / {{ lastPage }})
         </div>
-        <div class="pagination-controls" *ngIf="!error && lastPage > 1">
+        @if (!error && lastPage > 1) {
+        <div class="pagination-controls">
             <div class="pager">
                 <button mat-stroked-button color="primary" (click)="goToPage(currentPage - 1)"
                     [disabled]="currentPage === 1">Előző</button>
@@ -161,10 +163,10 @@
                     [disabled]="currentPage === lastPage">Következő</button>
             </div>
         </div>
+        }
     </div>
     }
 
-    <!-- Error state -->
     @if (error) {
     <div class="error-container">
         <div class="alert alert-danger">
@@ -175,7 +177,6 @@
     </div>
     }
 
-    <!-- Gallery Grid -->
     @if (!error) {
     <div class="gallery-content">
         @if (galleryItems.length > 0) {
@@ -216,17 +217,22 @@
                         '—')) }}
                     </p>
                     <p class="item-description">{{ item.description || 'Nincs leírás.' }}</p>
-                    <div class="item-meta" *ngIf="item.created_at || item.updated_at">
-                        <small *ngIf="item.created_at">Feltöltve: {{ formatDateTime(item.created_at) }}</small>
-                        <small *ngIf="item.updated_at">Frissítve: {{ formatDateTime(item.updated_at) }}</small>
+                    @if (item.created_at || item.updated_at) {
+                    <div class="item-meta">
+                        @if (item.created_at) {
+                        <small>Feltöltve: {{ formatDateTime(item.created_at) }}</small>
+                        }
+                        @if (item.updated_at) {
+                        <small>Frissítve: {{ formatDateTime(item.updated_at) }}</small>
+                        }
                     </div>
+                    }
                 </div>
             </div>
             }
         </div>
         }
 
-        <!-- Empty State -->
         @if (!error && galleryItems.length === 0) {
         <div class="empty-state">
             <mat-icon fontIcon="inbox" style="font-size: 64px; height: 64px; width: 64px; color: #ccc;"></mat-icon>

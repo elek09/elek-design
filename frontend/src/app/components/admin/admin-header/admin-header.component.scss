@@ -43,10 +43,9 @@
 }
 
 .header-spinner {
-  --mdc-circular-progress-active-indicator-color: #3b82f6; /* Tailwind blue-500 */
+  --mdc-circular-progress-active-indicator-color: #3b82f6;
 }
 
-/* Ensure nav borders the header bottom for a clean separation */
 app-admin-nav .admin-nav {
   border-top: 1px solid #e9ecef;
 }

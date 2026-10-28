@@ -61,14 +61,12 @@ export class AdminDashboardComponent implements OnInit {
 
   loadDashboardData(fresh: boolean = false): void {
     this.isLoading = true;
-    // Load categories and backend-calculated stats
     const categories$ = this.adminApiService.getCategories(fresh);
 
     categories$.subscribe({
       next: (cats: Category[]) => {
         this.categories = cats || [];
 
-        // Get pre-calculated stats from backend
         this.adminApiService.getDashboardStats().subscribe({
           next: (stats) => {
             this.stats = stats;
@@ -96,19 +94,14 @@ export class AdminDashboardComponent implements OnInit {
 
   getCategoryKeys(): string[] {
     if (!this.stats?.gallery?.byCategory) return [];
-
-    // Backend uses category names as keys, not type slugs
-    // Return all keys from byCategory that exist
     return Object.keys(this.stats.gallery.byCategory);
   }
 
   getCategoryLabel(key: string): string {
-    // Backend sends category/subcategory names directly as keys
     return key;
   }
 
   isSubCategoryKey(key: string): boolean {
-    // Check if this key is a main category name
     const isMainCategory = this.categories.some((c) => c.name === key);
     return !isMainCategory;
   }

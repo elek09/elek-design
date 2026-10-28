@@ -8,14 +8,9 @@ use App\Services\GalleryService;
 
 class GalleryItemResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+    // galéria elem adatainak frontend formátumra alakítása (GalleryService delegálás)
     public function toArray(Request $request): array
     {
-        // Delegate to the service to keep a single source of truth for mapping
         $svc = app(GalleryService::class);
         return $svc->mapItem($this->resource);
     }

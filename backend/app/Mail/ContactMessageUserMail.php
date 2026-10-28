@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
+// kapcsolatűrlap visszaigazolás a felhasználónak
 class ContactMessageUserMail extends Mailable
 {
     use Queueable, SerializesModels;

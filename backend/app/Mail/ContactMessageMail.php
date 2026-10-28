@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
+// kapcsolatűrlap üzenet küldése adminnak
 class ContactMessageMail extends Mailable
 {
     use Queueable, SerializesModels;
