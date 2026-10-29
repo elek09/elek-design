@@ -22,6 +22,13 @@ import { BootstrapService } from './services/bootstrap.service';
 import { catchError, firstValueFrom, of, take } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
+const apiBaseUrl =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8000'
+    : 'https://api.elekdesign.hu';
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -54,7 +61,7 @@ export const appConfig: ApplicationConfig = {
       const bootstrap = inject(BootstrapService);
       return firstValueFrom(bootstrap.getBootstrap$().pipe(take(1)));
     }),
-    { provide: API_BASE_URL, useValue: 'http://localhost:8000' },
+    { provide: API_BASE_URL, useValue: apiBaseUrl },
     { provide: LOCALE_ID, useValue: 'hu-HU' },
     provideAnimations(),
     provideToastr({

@@ -33,6 +33,12 @@ export class CarouselComponent implements OnDestroy {
   readonly transformValue = computed(
     () => `translateX(-${this.currentSlideIndex() * 100}%)`,
   );
+  private readonly imageRatios = signal<Record<string, number>>({});
+  readonly currentAspectRatio = computed(
+    () =>
+      this.imageRatios()[this.slides()[this.currentSlideIndex()]?.imageUrl] ??
+      16 / 9,
+  );
   private intervalId?: number;
 
   constructor() {
@@ -58,6 +64,16 @@ export class CarouselComponent implements OnDestroy {
   @HostListener('window:resize')
   onResize(): void {
     // A transform automatikusan frissül (computed)
+  }
+
+  onImageLoad(imageUrl: string, event: Event): void {
+    const image = event.target as HTMLImageElement;
+    if (!image.naturalWidth || !image.naturalHeight) return;
+
+    this.imageRatios.update((ratios) => ({
+      ...ratios,
+      [imageUrl]: image.naturalWidth / image.naturalHeight,
+    }));
   }
 
   // --- PUBLIKUS METÓDUSOK ---

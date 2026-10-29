@@ -1,4 +1,4 @@
-<div class="carousel-wrapper">
+<div class="carousel-wrapper" [style.--carousel-aspect-ratio]="currentAspectRatio()">
   <div class="carousel" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
     <div class="carousel__track-container">
       <ul class="carousel__track" [style.transform]="transformValue()">
@@ -7,7 +7,8 @@
           <img class="carousel__images" [src]="slide.imageUrl"
             [attr.srcset]="slide.thumbUrl ? (slide.thumbUrl + ' 480w, ' + slide.imageUrl + ' 1024w') : null"
             [attr.sizes]="slide.thumbUrl ? '(max-width: 600px) 480px, 1024px' : null"
-            [alt]="slide.title || 'slide ' + i" loading="lazy" decoding="async" />
+            [alt]="slide.title || 'slide ' + i" loading="lazy" decoding="async"
+            (load)="onImageLoad(slide.imageUrl, $event)" />
           @if (hasTextOverlay() && slide.title) {
           <div class="text">
             {{ slide.title }}
