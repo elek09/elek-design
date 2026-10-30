@@ -45,6 +45,7 @@ export class HeaderComponent {
 
   onNavItemClick(item: { id?: string }) {
     this.activeItemId.set(item.id || null);
+    this.isMenuOpen.set(false);
   }
 
   isItemActive(item: { id?: string }): boolean {
