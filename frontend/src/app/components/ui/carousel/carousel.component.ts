@@ -5,7 +5,6 @@ import {
   signal,
   computed,
   effect,
-  HostListener,
   OnDestroy,
 } from '@angular/core';
 
@@ -26,18 +25,15 @@ export class CarouselComponent implements OnDestroy {
   readonly autoPlay = input(false);
   readonly autoPlayInterval = input(3000);
   readonly hasTextOverlay = input(false);
+  readonly displayMode = input<'responsive' | 'desktop' | 'mobile'>(
+    'responsive',
+  );
   readonly slideChanged = output<string>();
 
   // --- BELSŐ ÁLLAPOT ---
   readonly currentSlideIndex = signal(0);
   readonly transformValue = computed(
     () => `translateX(-${this.currentSlideIndex() * 100}%)`,
-  );
-  private readonly imageRatios = signal<Record<string, number>>({});
-  readonly currentAspectRatio = computed(
-    () =>
-      this.imageRatios()[this.slides()[this.currentSlideIndex()]?.imageUrl] ??
-      16 / 9,
   );
   private intervalId?: number;
 
@@ -61,21 +57,6 @@ export class CarouselComponent implements OnDestroy {
   }
 
   // --- ESEMÉNYKEZELŐK ---
-  @HostListener('window:resize')
-  onResize(): void {
-    // A transform automatikusan frissül (computed)
-  }
-
-  onImageLoad(imageUrl: string, event: Event): void {
-    const image = event.target as HTMLImageElement;
-    if (!image.naturalWidth || !image.naturalHeight) return;
-
-    this.imageRatios.update((ratios) => ({
-      ...ratios,
-      [imageUrl]: image.naturalWidth / image.naturalHeight,
-    }));
-  }
-
   // --- PUBLIKUS METÓDUSOK ---
   nextSlide(): void {
     const slides = this.slides();
@@ -141,6 +122,14 @@ export class CarouselComponent implements OnDestroy {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+  }
+
+  shouldLoadEagerly(index: number): boolean {
+    const currentIndex = this.currentSlideIndex();
+    return (
+      index === currentIndex ||
+      index === (currentIndex + 1) % this.slides().length
+    );
   }
 
   ngOnDestroy(): void {

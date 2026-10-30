@@ -4,6 +4,7 @@
   aspect-ratio: 16 / 9;
   margin: 0 auto;
   overflow: hidden;
+  background: #f5f5f5;
 }
 
 .carousel__images {
@@ -40,7 +41,15 @@
   flex-shrink: 0;
   position: relative;
   height: 100%;
-  background: transparent;
+  background: #f5f5f5;
+}
+
+.carousel-wrapper.carousel--desktop {
+  aspect-ratio: 16 / 9;
+}
+
+.carousel-wrapper.carousel--mobile {
+  aspect-ratio: 4 / 3;
 }
 
 .text {
@@ -114,6 +123,10 @@
 
 @media (max-width: 600px) {
   .carousel-wrapper {
-    aspect-ratio: var(--carousel-aspect-ratio, 16 / 9);
+    aspect-ratio: 4 / 3;
+  }
+
+  .carousel-wrapper.carousel--desktop {
+    aspect-ratio: 16 / 9;
   }
 }
