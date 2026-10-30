@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Format;
 use Intervention\Image\ImageManager;
 
 class GalleryImageSeeder extends Seeder
@@ -75,8 +76,14 @@ class GalleryImageSeeder extends Seeder
             $manager = new ImageManager(new Driver);
             $source = $manager->decodePath($file->getPathname());
             $thumbnail = $manager->decodePath($file->getPathname())->scaleDown(width: 800);
-            Storage::disk('public')->put($newPath, (string) $source->toWebp(80));
-            Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
+            Storage::disk('public')->put(
+                $newPath,
+                (string) $source->encodeUsingFormat(Format::WEBP, quality: 80),
+            );
+            Storage::disk('public')->put(
+                $thumbnailPath,
+                (string) $thumbnail->encodeUsingFormat(Format::WEBP, quality: 80),
+            );
 
             // Kategória/alkategória ID feloldása
             $subcategory = Subcategory::where('slug', $legacyCategory)->first();

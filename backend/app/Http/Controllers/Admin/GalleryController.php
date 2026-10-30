@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Format;
 use Intervention\Image\ImageManager;
 
 class GalleryController extends Controller
@@ -197,8 +198,14 @@ class GalleryController extends Controller
         $source = $manager->decodePath($image->getRealPath());
         $thumbnail = $manager->decodePath($image->getRealPath())->scaleDown(width: 800);
 
-        Storage::disk('public')->put($mainPath, (string) $source->toWebp(80));
-        Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
+        Storage::disk('public')->put(
+            $mainPath,
+            (string) $source->encodeUsingFormat(Format::WEBP, quality: 80),
+        );
+        Storage::disk('public')->put(
+            $thumbnailPath,
+            (string) $thumbnail->encodeUsingFormat(Format::WEBP, quality: 80),
+        );
 
         return [$mainPath, $thumbnailPath];
     }
