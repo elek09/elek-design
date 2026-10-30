@@ -11,8 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\ImageManager;
+use Intervention\Image\Laravel\Facades\Image;
 
 class GalleryImageSeeder extends Seeder
 {
@@ -72,9 +71,8 @@ class GalleryImageSeeder extends Seeder
             $thumbnailPath = $destinationDirectory.'/'.$thumbnailFilename;
 
             Storage::disk('public')->makeDirectory($destinationDirectory);
-            $manager = new ImageManager(new Driver);
-            $source = $manager->read($file->getPathname());
-            $thumbnail = $manager->read($file->getPathname())->scaleDown(width: 800);
+            $source = Image::read($file->getPathname());
+            $thumbnail = Image::read($file->getPathname())->scaleDown(width: 800);
             Storage::disk('public')->put($newPath, (string) $source->toWebp(80));
             Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
 
