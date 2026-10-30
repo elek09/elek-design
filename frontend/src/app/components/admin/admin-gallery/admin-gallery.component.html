@@ -202,6 +202,14 @@
                                 <mat-icon>{{ item.is_featured ? 'star' : 'star_border' }}</mat-icon>
                                 <span>{{ item.is_featured ? 'Kiemelés visszavonása' : 'Kiemelés' }}</span>
                             </button>
+                            <button mat-icon-button type="button" (click)="moveItem(item, -1)"
+                                [disabled]="galleryItems.indexOf(item) === 0" title="Előrébb">
+                                <mat-icon>arrow_upward</mat-icon>
+                            </button>
+                            <button mat-icon-button type="button" (click)="moveItem(item, 1)"
+                                [disabled]="galleryItems.indexOf(item) === galleryItems.length - 1" title="Hátrébb">
+                                <mat-icon>arrow_downward</mat-icon>
+                            </button>
                             <button mat-stroked-button color="warn" class="action-btn delete-btn"
                                 (click)="deleteItem(item.id)" title="Törlés">
                                 <mat-icon>delete</mat-icon>

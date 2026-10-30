@@ -15,6 +15,7 @@ export interface GalleryItem {
   url?: string;
   thumb_url?: string;
   order?: number;
+  sort_order?: number;
   is_active: boolean;
   is_featured: boolean;
   created_at?: string;

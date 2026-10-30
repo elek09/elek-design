@@ -16,6 +16,7 @@ class GalleryItem extends Model
         'description',
         'image_path',
         'thumb_path',
+        'sort_order',
         'is_active',
         'is_featured',
     ];
@@ -23,6 +24,7 @@ class GalleryItem extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     // aktív galéria elemek szűrése

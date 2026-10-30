@@ -17,11 +17,13 @@ export interface GalleryConfig {
 export interface GalleryItemResource {
   id: string | number;
   title?: string;
+  description?: string | null;
   category?: { id?: number; type?: string; name?: string } | null;
   subcategory?: { id?: number; slug?: string; name?: string } | null;
   url?: string;
   thumb_url?: string | null;
   order?: number | null;
+  sort_order?: number | null;
   is_featured?: boolean;
   is_active?: boolean;
 }

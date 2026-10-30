@@ -68,6 +68,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('gallery', AdminGalleryController::class)->parameters(['gallery' => 'galleryItem']);
         Route::put('gallery/{galleryItem}/status', [AdminGalleryController::class, 'updateStatus']);
         Route::put('gallery/{galleryItem}/featured', [AdminGalleryController::class, 'updateFeaturedStatus']);
+        Route::post('gallery/reorder', [AdminGalleryController::class, 'reorder']);
 
         Route::get('orders', [OrderController::class, 'index']);
         Route::get('orders/{order}', [OrderController::class, 'adminShow']);

@@ -402,6 +402,33 @@ export class AdminGalleryComponent implements OnInit, OnDestroy {
     return item.thumb_url || item.url || '';
   }
 
+  moveItem(item: GalleryItem, direction: -1 | 1): void {
+    const index = this.galleryItems.indexOf(item);
+    const targetIndex = index + direction;
+    if (index < 0 || targetIndex < 0 || targetIndex >= this.galleryItems.length) return;
+
+    const reordered = [...this.galleryItems];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    const payload = reordered.map((galleryItem, order) => ({
+      id: galleryItem.id,
+      sort_order: order,
+    }));
+
+    this.adminApiService.reorderGalleryItems(payload).subscribe({
+      next: () => {
+        this.galleryItems = reordered.map((galleryItem, order) => ({
+          ...galleryItem,
+          sort_order: order,
+          order,
+        }));
+      },
+      error: (err) => {
+        console.error('Galéria sorrend frissítési hiba:', err);
+        this.error = 'A galéria sorrendjének mentése sikertelen.';
+      },
+    });
+  }
+
   readonly formatDateTime = formatDateTime;
   readonly getCategoryLabel = (value: string) =>
     getCategoryLabel(this.galleryConfig, value);

@@ -14,6 +14,7 @@ use App\Services\GalleryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Format;
 use Intervention\Image\ImageManager;
@@ -155,6 +156,39 @@ class GalleryController extends Controller
             'message' => 'Gallery item featured status updated successfully.',
             'data' => $galleryItem->fresh(),
         ]);
+    }
+
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer', 'distinct'],
+            'items.*.sort_order' => ['required', 'integer', 'min:0', 'max:100000'],
+        ]);
+
+        $items = collect($validated['items']);
+        $galleryItems = GalleryItem::whereIn('id', $items->pluck('id'))->get()->keyBy('id');
+        if ($galleryItems->count() !== $items->count()) {
+            return response()->json(['success' => false, 'message' => 'Ismeretlen galéria elem.'], 422);
+        }
+
+        $scope = $galleryItems->first();
+        if ($galleryItems->some(fn (GalleryItem $item) => $item->category_id !== $scope->category_id || $item->subcategory_id !== $scope->subcategory_id)) {
+            return response()->json(['success' => false, 'message' => 'Csak azonos kategóriájú galéria elemek rendezhetők.'], 422);
+        }
+
+        DB::transaction(function () use ($items): void {
+            foreach ($items as $item) {
+                GalleryItem::whereKey($item['id'])->update(['sort_order' => $item['sort_order']]);
+            }
+        });
+
+        $updated = GalleryItem::with(['category', 'subcategory'])
+            ->whereIn('id', $items->pluck('id'))
+            ->orderBy('sort_order')
+            ->get();
+
+        return GalleryItemResource::collection($updated)->additional(['success' => true]);
     }
 
     /**
