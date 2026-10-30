@@ -5,6 +5,7 @@ on:
     branches: [qa]
     paths:
       - "frontend/**"
+  workflow_dispatch:
 
 jobs:
   deploy-qa-frontend:
