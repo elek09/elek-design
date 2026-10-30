@@ -15,27 +15,18 @@
             class="carousel__slide"
             [class.current-slide]="i === currentSlideIndex()"
           >
-            <picture>
-              <source media="(max-width: 600px)" [srcset]="slide.imageUrl" />
-              <img
-                class="carousel__images"
-                [src]="slide.imageUrl"
-                [attr.srcset]="
-                  slide.thumbUrl
-                    ? slide.thumbUrl + ' 480w, ' + slide.imageUrl + ' 1024w'
-                    : null
-                "
-                [attr.sizes]="
-                  slide.thumbUrl ? '(max-width: 600px) 100vw, 1024px' : null
-                "
-                [alt]="slide.title || 'slide ' + i"
-                [attr.loading]="shouldLoadEagerly(i) ? 'eager' : 'lazy'"
-                [attr.fetchpriority]="
-                  i === currentSlideIndex() ? 'high' : 'auto'
-                "
-                decoding="async"
-              />
-            </picture>
+            <img
+              class="carousel__images"
+              [src]="slide.imageUrl"
+              [srcset]="
+                slide.thumbUrl
+                  ? slide.thumbUrl + ' 600w, ' + slide.imageUrl + ' 1024w'
+                  : slide.imageUrl
+              "
+              sizes="(max-width: 600px) 100vw, 100vw"
+              [alt]="slide.title || 'slide ' + i"
+              decoding="async"
+            />
             @if (hasTextOverlay() && slide.title) {
               <div class="text">
                 {{ slide.title }}

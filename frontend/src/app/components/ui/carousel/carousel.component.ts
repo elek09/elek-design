@@ -124,14 +124,6 @@ export class CarouselComponent implements OnDestroy {
     }
   }
 
-  shouldLoadEagerly(index: number): boolean {
-    const currentIndex = this.currentSlideIndex();
-    return (
-      index === currentIndex ||
-      index === (currentIndex + 1) % this.slides().length
-    );
-  }
-
   ngOnDestroy(): void {
     this.stopAutoPlay();
   }
