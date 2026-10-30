@@ -22,7 +22,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "backend"
-          target: "~/domains/elekdesign.hu/"
+          target: "~/domains/elekdesign.hu/backend/"
           strip_components: 1
 
       - name: Run Remote Deployment Commands
