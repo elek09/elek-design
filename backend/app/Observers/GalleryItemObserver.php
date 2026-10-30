@@ -11,7 +11,7 @@ class GalleryItemObserver
     // galéria elem mentésekor cache invalidálás ha releváns mező változott
     public function saved(GalleryItem $item): void
     {
-        $relevant = ['is_featured', 'is_active', 'image_path', 'thumb_path', 'title', 'category'];
+        $relevant = ['is_featured', 'is_active', 'image_path', 'thumb_path', 'sort_order', 'title', 'category_id', 'subcategory_id'];
         foreach ($relevant as $attr) {
             if ($item->wasChanged($attr)) {
                 Cache::forget(BootstrapController::CACHE_KEY);

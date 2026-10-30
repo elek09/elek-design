@@ -11,7 +11,6 @@ class GalleryService
     // GalleryItem -> frontend formátum konverzió
     public function mapItem(GalleryItem $item): array
     {
-        $order = $this->parseOrderFromTitleOrPath($item->title, $item->image_path);
         [$url, $thumbUrl] = $this->buildUrls($item->image_path, $item->thumb_path);
 
         return [
@@ -30,7 +29,8 @@ class GalleryService
             'description' => $item->description,
             'url' => $url,
             'thumb_url' => $thumbUrl,
-            'order' => $order,
+            'order' => $item->sort_order,
+            'sort_order' => $item->sort_order,
             'is_featured' => (bool) $item->is_featured,
             'is_active' => (bool) $item->is_active,
         ];
@@ -38,7 +38,10 @@ class GalleryService
 
     public function queryActive()
     {
-        return GalleryItem::active()->with(['category', 'subcategory']);
+        return GalleryItem::active()
+            ->with(['category', 'subcategory'])
+            ->orderBy('sort_order')
+            ->latest('created_at');
     }
 
     /**
@@ -59,6 +62,7 @@ class GalleryService
                 ->where('category_id', $category->id)
                 ->with(['category', 'subcategory'])
                 ->orderByRaw('COALESCE((SELECT nav_order FROM category_subcategories WHERE category_subcategories.id = gallery_items.subcategory_id), 100000) ASC')
+                ->orderBy('sort_order')
                 ->orderByDesc('created_at');
         }
 
@@ -68,27 +72,12 @@ class GalleryService
             return GalleryItem::active()
                 ->where('subcategory_id', $subcategory->id)
                 ->with(['category', 'subcategory'])
+                ->orderBy('sort_order')
                 ->orderByDesc('created_at');
         }
 
         // Nincs találat
         return GalleryItem::query()->whereRaw('1=0');
-    }
-
-    // Sorrend szám kinyerése címből vagy fájlnévből: pl. "Konyha (3)" vagy "konyha(3)-timestamp.jpg" → 3
-    private function parseOrderFromTitleOrPath(?string $title, ?string $path): int
-    {
-        $title = (string) $title;
-        if (preg_match('/\((\d+)\)\s*$/', $title, $matches)) {
-            return (int) $matches[1];
-        }
-
-        $filename = strtolower(pathinfo((string) $path, PATHINFO_FILENAME));
-        if (preg_match('/\((\d+)\)/', $filename, $matches)) {
-            return (int) $matches[1];
-        }
-
-        return 0;
     }
 
     // Kép URL-ek generálása (jelenleg thumb = teljes méret)

@@ -1,10 +1,7 @@
-@if (loading) {
-<app-loading-overlay [logoUrl]="headerLogoUrl"></app-loading-overlay>
-}
-
-<div class="main" [style.visibility]="loading ? 'hidden' : 'visible'">
-  <app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true" [showManualControls]="false"
-    [hasTextOverlay]="true"></app-carousel>
+<div class="main">
+  <app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true"
+    [showManualControls]="false" [hasTextOverlay]="true"
+    [prioritizeFirstImage]="true"></app-carousel>
   <hr>
 
   <app-category-section [sectionType]="'eletter'" [categories$]="eletterCategories$"
@@ -14,5 +11,4 @@
 
   <app-category-section [sectionType]="'uzletter'" [categories$]="uzletterCategories$"
     [slides$]="uzletterSlides$"></app-category-section>
-
 </div>

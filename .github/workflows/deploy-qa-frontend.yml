@@ -1,0 +1,36 @@
+name: Deploy QA Frontend
+
+on:
+  push:
+    branches: [qa]
+    paths:
+      - "frontend/**"
+
+jobs:
+  deploy-qa-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Frontend Dependencies & Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Copy Frontend Build to QA folder via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "frontend/dist/elek-design/browser/*"
+          target: "~/domains/elekdesign.hu/qa/"
+          strip_components: 4

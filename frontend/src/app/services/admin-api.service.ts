@@ -120,6 +120,14 @@ export class AdminApiService {
       .pipe(catchError(this.handleError));
   }
 
+  reorderGalleryItems(
+    items: Array<{ id: number; sort_order: number }>,
+  ): Observable<ApiResponse<GalleryItem[]>> {
+    return this.http
+      .post<ApiResponse<GalleryItem[]>>(`${this.adminApiUrl}/gallery/reorder`, { items })
+      .pipe(catchError(this.handleError));
+  }
+
   deleteGalleryItem(id: number): Observable<ApiResponse<{ message?: string }>> {
     return this.http
       .delete<

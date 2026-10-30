@@ -1,0 +1,90 @@
+<div
+  class="lightbox"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Galéria"
+  (click)="onBackdropClick($event)"
+  (touchstart)="onTouchStart($event)"
+  (touchend)="onTouchEnd($event)"
+>
+  <div class="lightbox__panel">
+    <header class="lightbox__topbar">
+      <nav class="lightbox__tabs" aria-label="Galéria kategóriák">
+        @for (group of groups; track group.slug) {
+          <button
+            type="button"
+            [class.active]="group.slug === selectedGroupSlug"
+            (click)="selectGroup(group.slug)"
+          >
+            {{ group.name }}
+          </button>
+        }
+      </nav>
+      <span class="lightbox__counter"
+        >{{ currentIndex + 1 }} / {{ activeGroup?.slides?.length ?? 0 }}</span
+      >
+      <button
+        type="button"
+        class="lightbox__close"
+        aria-label="Bezárás"
+        (click)="close()"
+      >
+        ×
+      </button>
+    </header>
+
+    <main class="lightbox__main">
+      <button
+        type="button"
+        class="lightbox__arrow lightbox__arrow--previous"
+        aria-label="Előző kép"
+        (click)="previous()"
+      >
+        ‹
+      </button>
+      @if (currentSlide) {
+        <img
+          class="lightbox__image"
+          [src]="currentSlide.imageUrl"
+          [srcset]="
+            currentSlide.thumbUrl
+              ? currentSlide.thumbUrl +
+                ' 800w, ' +
+                currentSlide.imageUrl +
+                ' 1600w'
+              : currentSlide.imageUrl
+          "
+          sizes="(max-width: 800px) 100vw, 90vw"
+          [alt]="currentSlide.title || activeGroup?.name || 'Galéria kép'"
+        />
+      }
+      <button
+        type="button"
+        class="lightbox__arrow lightbox__arrow--next"
+        aria-label="Következő kép"
+        (click)="next()"
+      >
+        ›
+      </button>
+    </main>
+
+    @if (currentSlide) {
+      <footer class="lightbox__bottom">
+        <div>
+          @if (currentSlide.title) {
+            <h2>{{ currentSlide.title }}</h2>
+          }
+          @if (
+            currentSlide.description &&
+            !currentSlide.description.startsWith("Automatikus leírás:")
+          ) {
+            <p>{{ currentSlide.description }}</p>
+          }
+        </div>
+        <button type="button" class="lightbox__cta" (click)="goToQuote()">
+          Árajánlatot kérek hasonló bútorra
+        </button>
+      </footer>
+    }
+  </div>
+</div>

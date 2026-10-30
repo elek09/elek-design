@@ -26,6 +26,7 @@
               sizes="(max-width: 600px) 100vw, 100vw"
               [alt]="slide.title || 'slide ' + i"
               decoding="async"
+              [attr.fetchpriority]="prioritizeFirstImage() && i === 0 ? 'high' : null"
             />
             @if (hasTextOverlay() && slide.title) {
               <div class="text">

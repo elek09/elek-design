@@ -1,24 +1,44 @@
-@for (category of (categories$ | async) ?? []; track category?.id ?? category?.name ?? $index) {
-<div class="part">
-    <h1 class="sub-head" [id]="category.name">{{ category.name }}</h1>
-</div>
-<hr />
-<div class="category-layout">
-    <aside class="menu-list" [ngClass]="{ second: sectionType === 'uzletter' }">
-        <ul>
-            @for (subCategory of normalizeSubcategories(category.subcategories); track subCategory.id) {
-            <li>
-                <a href="#" (click)="$event.preventDefault(); onMenuClick(subCategory.slug)"
-                    [class.active]="selectedSubId === subCategory.slug">
-                    {{ subCategory.name }} »
-                </a>
-            </li>
-            }
-        </ul>
-    </aside>
-    <div class="content can-be-paged">
-        <app-carousel #carousel [slides]="(slides$ | async) ?? []" [showManualControls]="true" [hasTextOverlay]="false"
-            (slideChanged)="onSlideChanged($event)"></app-carousel>
-    </div>
-</div>
+@for (
+  category of (categories$ | async) ?? [];
+  track category?.id ?? category?.name ?? $index
+) {
+  @let slides = (slides$ | async) ?? [];
+  @let groups = buildGroups(category, slides);
+  @if (groups.length) {
+    <section class="category-section">
+      <h1 class="sub-head" [id]="category.name">{{ category.name }}</h1>
+      <div class="mosaic-grid">
+        @for (group of groups; track group.slug; let i = $index) {
+          @let cover = group.slides[0];
+          <button
+            class="mosaic-card"
+            type="button"
+            (click)="openLightbox(groups, group.slug)"
+            [attr.aria-label]="group.name + ' galéria megnyitása'"
+          >
+            <img
+              [src]="cover.thumbUrl || cover.imageUrl"
+              [alt]="group.name"
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="mosaic-card__overlay">
+              <span class="mosaic-card__name">{{ group.name }}</span>
+              <span class="mosaic-card__count"
+                >{{ group.slides.length }} fotó</span
+              >
+            </span>
+          </button>
+        }
+      </div>
+    </section>
+  }
+}
+
+@if (lightboxOpen) {
+  <app-gallery-lightbox
+    [groups]="lightboxGroups"
+    [activeGroupSlug]="activeGroupSlug"
+    (closed)="closeLightbox()"
+  ></app-gallery-lightbox>
 }

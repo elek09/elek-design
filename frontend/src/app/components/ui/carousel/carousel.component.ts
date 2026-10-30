@@ -25,6 +25,7 @@ export class CarouselComponent implements OnDestroy {
   readonly autoPlay = input(false);
   readonly autoPlayInterval = input(3000);
   readonly hasTextOverlay = input(false);
+  readonly prioritizeFirstImage = input(false);
   readonly displayMode = input<'responsive' | 'desktop' | 'mobile'>(
     'responsive',
   );

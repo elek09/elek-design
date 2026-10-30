@@ -105,6 +105,7 @@ class GalleryImageSeeder extends Seeder
                 'description' => 'Automatikus leírás: '.$title,
                 'image_path' => $newPath,
                 'thumb_path' => $thumbnailPath,
+                'sort_order' => $order,
                 'is_active' => true,
                 'is_featured' => $isFeatured,
             ]);

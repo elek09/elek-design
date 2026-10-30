@@ -1,0 +1,39 @@
+name: Deploy QA Backend
+
+on:
+  push:
+    branches: [qa]
+    paths:
+      - "backend/**"
+
+jobs:
+  deploy-qa-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy Backend Files to QA via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "backend"
+          target: "~/domains/elekdesign.hu/qa-backend/"
+          strip_components: 1
+
+      - name: Run Remote QA Backend Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/domains/elekdesign.hu/qa-backend/backend
+            composer install --no-dev --optimize-autoloader --no-interaction
+            php artisan migrate --force
+            php artisan config:clear
+            php artisan cache:clear
