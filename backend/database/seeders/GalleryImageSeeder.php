@@ -73,8 +73,8 @@ class GalleryImageSeeder extends Seeder
 
             Storage::disk('public')->makeDirectory($destinationDirectory);
             $manager = new ImageManager(new Driver);
-            $source = $manager->read($file->getPathname());
-            $thumbnail = $manager->read($file->getPathname())->scaleDown(width: 800);
+            $source = $manager->decodePath($file->getPathname());
+            $thumbnail = $manager->decodePath($file->getPathname())->scaleDown(width: 800);
             Storage::disk('public')->put($newPath, (string) $source->toWebp(80));
             Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
 

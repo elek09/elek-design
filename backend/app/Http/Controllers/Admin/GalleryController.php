@@ -194,8 +194,8 @@ class GalleryController extends Controller
         $thumbnailPath = "{$directory}/{$thumbnailFilename}";
 
         $manager = new ImageManager(new Driver);
-        $source = $manager->read($image->getRealPath());
-        $thumbnail = $manager->read($image->getRealPath())->scaleDown(width: 800);
+        $source = $manager->decodePath($image->getRealPath());
+        $thumbnail = $manager->decodePath($image->getRealPath())->scaleDown(width: 800);
 
         Storage::disk('public')->put($mainPath, (string) $source->toWebp(80));
         Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
