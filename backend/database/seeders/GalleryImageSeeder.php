@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class GalleryImageSeeder extends Seeder
 {
@@ -29,8 +31,9 @@ class GalleryImageSeeder extends Seeder
     {
         $sourcePath = database_path('seeders/_sample/gallery');
 
-        if (!File::exists($sourcePath)) {
-            $this->command->error('❌ Forrásmappa nem található: ' . $sourcePath);
+        if (! File::exists($sourcePath)) {
+            $this->command->error('❌ Forrásmappa nem található: '.$sourcePath);
+
             return;
         }
 
@@ -38,13 +41,14 @@ class GalleryImageSeeder extends Seeder
 
         if ($allFiles->isEmpty()) {
             $this->command->warn('⚠️  Nincs kép a galéria mappában.');
+
             return;
         }
 
         // Bejegyzések parse-olása a GalleryImportService által
-        $entries = $service->parseEntries($allFiles->all());
+        $entries = $service->dedupe($service->parseEntries($allFiles->all()));
 
-        $this->command->info('--- ' . count($entries) . ' kép feldolgozása... ---' . PHP_EOL);
+        $this->command->info('--- '.count($entries).' kép feldolgozása... ---'.PHP_EOL);
 
         $progressBar = $this->command->getOutput()->createProgressBar(count($entries));
         $progressBar->start();
@@ -58,16 +62,21 @@ class GalleryImageSeeder extends Seeder
 
             $categorySlug = Str::slug($legacyCategory);
             $titleSlug = Str::slug($title);
-            $extension = $file->getExtension();
-
             // Sorrend megőrzése a fájlnévben (runtime parsing miatt)
-            $orderSuffix = $order > 0 ? '(' . $order . ')' : '';
-            $newFilename = $titleSlug . $orderSuffix . '-' . time() . rand(10, 99) . '.' . $extension;
-            $destinationDirectory = 'gallery/' . $categorySlug;
-            $newPath = $destinationDirectory . '/' . $newFilename;
+            $orderSuffix = $order > 0 ? '('.$order.')' : '';
+            $fileSuffix = time().rand(10, 99);
+            $newFilename = $titleSlug.$orderSuffix.'-'.$fileSuffix.'.webp';
+            $thumbnailFilename = $titleSlug.$orderSuffix.'-'.$fileSuffix.'_thumb.webp';
+            $destinationDirectory = 'gallery/'.$categorySlug;
+            $newPath = $destinationDirectory.'/'.$newFilename;
+            $thumbnailPath = $destinationDirectory.'/'.$thumbnailFilename;
 
             Storage::disk('public')->makeDirectory($destinationDirectory);
-            File::copy($file->getPathname(), Storage::disk('public')->path($newPath));
+            $manager = new ImageManager(new Driver);
+            $source = $manager->read($file->getPathname());
+            $thumbnail = $manager->read($file->getPathname())->scaleDown(width: 800);
+            Storage::disk('public')->put($newPath, (string) $source->toWebp(80));
+            Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
 
             // Kategória/alkategória ID feloldása
             $subcategory = Subcategory::where('slug', $legacyCategory)->first();
@@ -86,8 +95,9 @@ class GalleryImageSeeder extends Seeder
                 'title' => $title,
                 'category_id' => $categoryId,
                 'subcategory_id' => $subcategoryId,
-                'description' => 'Automatikus leírás: ' . $title,
+                'description' => 'Automatikus leírás: '.$title,
                 'image_path' => $newPath,
+                'thumb_path' => $thumbnailPath,
                 'is_active' => true,
                 'is_featured' => $isFeatured,
             ]);
@@ -96,6 +106,6 @@ class GalleryImageSeeder extends Seeder
         }
 
         $progressBar->finish();
-        $this->command->info(PHP_EOL . '✓ Galéria feldolgozás kész! ' . count($entries) . ' kép importálva.');
+        $this->command->info(PHP_EOL.'✓ Galéria feldolgozás kész! '.count($entries).' kép importálva.');
     }
 }

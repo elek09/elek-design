@@ -15,6 +15,7 @@ class GalleryItem extends Model
         'subcategory_id',
         'description',
         'image_path',
+        'thumb_path',
         'is_active',
         'is_featured',
     ];

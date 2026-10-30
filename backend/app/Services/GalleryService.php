@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\GalleryItem;
 use App\Models\Subcategory;
-use Illuminate\Support\Str;
 
 class GalleryService
 {
@@ -13,7 +12,7 @@ class GalleryService
     public function mapItem(GalleryItem $item): array
     {
         $order = $this->parseOrderFromTitleOrPath($item->title, $item->image_path);
-        [$url, $thumbUrl] = $this->buildUrls($item->image_path);
+        [$url, $thumbUrl] = $this->buildUrls($item->image_path, $item->thumb_path);
 
         return [
             'id' => $item->id,
@@ -83,20 +82,21 @@ class GalleryService
         if (preg_match('/\((\d+)\)\s*$/', $title, $matches)) {
             return (int) $matches[1];
         }
-        
+
         $filename = strtolower(pathinfo((string) $path, PATHINFO_FILENAME));
         if (preg_match('/\((\d+)\)/', $filename, $matches)) {
             return (int) $matches[1];
         }
-        
+
         return 0;
     }
 
     // Kép URL-ek generálása (jelenleg thumb = teljes méret)
-    private function buildUrls(string $imagePath): array
+    private function buildUrls(string $imagePath, ?string $thumbPath = null): array
     {
-        $url = asset('storage/' . ltrim($imagePath, '/'));
-        $thumb = $url; // TODO: később thumbnail generálás
+        $url = asset('storage/'.ltrim($imagePath, '/'));
+        $thumb = asset('storage/'.ltrim($thumbPath ?: $imagePath, '/'));
+
         return [$url, $thumb];
     }
 }
