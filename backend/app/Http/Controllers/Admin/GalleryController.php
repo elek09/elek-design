@@ -14,7 +14,8 @@ use App\Services\GalleryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class GalleryController extends Controller
 {
@@ -192,8 +193,9 @@ class GalleryController extends Controller
         $mainPath = "{$directory}/{$filename}";
         $thumbnailPath = "{$directory}/{$thumbnailFilename}";
 
-        $source = Image::read($image->getRealPath());
-        $thumbnail = Image::read($image->getRealPath())->scaleDown(width: 800);
+        $manager = new ImageManager(new Driver);
+        $source = $manager->read($image->getRealPath());
+        $thumbnail = $manager->read($image->getRealPath())->scaleDown(width: 800);
 
         Storage::disk('public')->put($mainPath, (string) $source->toWebp(80));
         Storage::disk('public')->put($thumbnailPath, (string) $thumbnail->toWebp(80));
