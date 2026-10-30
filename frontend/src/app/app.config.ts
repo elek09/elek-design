@@ -22,12 +22,14 @@ import { BootstrapService } from './services/bootstrap.service';
 import { catchError, firstValueFrom, of, take } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
+const hostname =
+  typeof window !== 'undefined' ? window.location.hostname : '';
 const apiBaseUrl =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1')
+  hostname === 'localhost' || hostname === '127.0.0.1'
     ? 'http://localhost:8000'
-    : 'https://api.elekdesign.hu';
+    : hostname === 'qa.elekdesign.hu'
+      ? 'https://qa.elekdesign.hu'
+      : 'https://api.elekdesign.hu';
 
 export const appConfig: ApplicationConfig = {
   providers: [
