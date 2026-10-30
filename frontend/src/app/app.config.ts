@@ -28,7 +28,7 @@ const apiBaseUrl =
   hostname === 'localhost' || hostname === '127.0.0.1'
     ? 'http://localhost:8000'
     : hostname === 'qa.elekdesign.hu'
-      ? 'https://qa-api.elekdesign.hu'
+      ? 'https://api.elekdesign.hu'
       : 'https://api.elekdesign.hu';
 
 export const appConfig: ApplicationConfig = {
