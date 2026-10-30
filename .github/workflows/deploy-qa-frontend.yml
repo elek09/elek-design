@@ -31,6 +31,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "frontend/dist/elek-design/browser/*"
+          source: "frontend/dist/elek-design/browser/"
           target: "~/domains/elekdesign.hu/qa/"
           strip_components: 4
