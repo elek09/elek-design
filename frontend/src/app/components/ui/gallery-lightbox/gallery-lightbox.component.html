@@ -75,9 +75,6 @@
     @if (currentSlide) {
       <footer class="lightbox__bottom">
         <div>
-          @if (currentSlide.title) {
-            <h2>{{ currentSlide.title }}</h2>
-          }
           @if (
             currentSlide.description &&
             !currentSlide.description.startsWith("Automatikus leírás:")

@@ -37,6 +37,8 @@ export class CarouselComponent implements OnDestroy {
     () => `translateX(-${this.currentSlideIndex() * 100}%)`,
   );
   private intervalId?: number;
+  private touchStartX: number | null = null;
+  private touchStartY: number | null = null;
 
   constructor() {
     // Autoplay automatikus indítása amikor engedélyezve van
@@ -64,6 +66,7 @@ export class CarouselComponent implements OnDestroy {
     if (slides.length === 0) return;
     this.currentSlideIndex.update((idx) => (idx + 1) % slides.length);
     this.emitSlideChanged();
+    this.resetAutoPlayTimer();
   }
 
   previousSlide(): void {
@@ -73,6 +76,7 @@ export class CarouselComponent implements OnDestroy {
       (idx) => (idx - 1 + slides.length) % slides.length,
     );
     this.emitSlideChanged();
+    this.resetAutoPlayTimer();
   }
 
   // Szülő komponensből hívható metódus (pl. oldalsó menü)
@@ -85,6 +89,7 @@ export class CarouselComponent implements OnDestroy {
     if (idx >= 0) {
       this.currentSlideIndex.set(idx);
       this.emitSlideChanged();
+      this.resetAutoPlayTimer();
     }
   }
 
@@ -107,6 +112,31 @@ export class CarouselComponent implements OnDestroy {
     this.startAutoPlay();
   }
 
+  onTouchStart(event: TouchEvent): void {
+    this.touchStartX = event.changedTouches[0]?.clientX ?? null;
+    this.touchStartY = event.changedTouches[0]?.clientY ?? null;
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (this.touchStartX === null || this.touchStartY === null) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = (touch?.clientX ?? 0) - this.touchStartX;
+    const deltaY = (touch?.clientY ?? 0) - this.touchStartY;
+    this.touchStartX = null;
+    this.touchStartY = null;
+
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      this.nextSlide();
+    } else {
+      this.previousSlide();
+    }
+  }
+
   // --- PRIVÁT SEGÉDFÜGGVÉNYEK ---
   private startAutoPlay(): void {
     this.stopAutoPlay(); // Meglévő interval törlése
@@ -122,6 +152,12 @@ export class CarouselComponent implements OnDestroy {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
+    }
+
+    private resetAutoPlayTimer(): void {
+      if (this.autoPlay()) {
+        this.startAutoPlay();
+      }
     }
   }
 
