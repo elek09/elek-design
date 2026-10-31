@@ -6,17 +6,20 @@
   [hasTextOverlay]="true"
 ></app-carousel>
 
-<hr>
-<div class="part">
-  <h1 class="sub-head" id="ives-butorok">Íves bútorok</h1>
-</div>
-<hr>
+<section class="extra-page__intro">
+  <p class="extra-page__eyebrow">Formára szabva</p>
+  <h1 id="ives-butorok">Íves bútorok</h1>
+  <p>
+    Lágy vonalak, pontos illesztések és egyedi részletek olyan bútorokhoz,
+    amelyek természetesen illeszkednek a térhez.
+  </p>
+</section>
 
-<div class="container">
-  <div class="row">
-    <div class="col-12">
-  <app-carousel [slides]="(curvedFurnitureSlides$ | async) ?? []"></app-carousel>
-    </div>
-  </div>
+<div class="extra-page__gallery">
+  <app-gallery-mosaic
+    [slides]="(curvedFurnitureSlides$ | async) ?? []"
+    groupName="Íves bútorok"
+    groupSlug="ives-butorok"
+  ></app-gallery-mosaic>
 </div>
 </div>

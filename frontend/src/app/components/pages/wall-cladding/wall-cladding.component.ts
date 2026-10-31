@@ -2,11 +2,12 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GalleryDataService } from '../../../services/gallery-data.service';
 import { CarouselComponent } from '../../ui/carousel/carousel.component';
+import { GalleryMosaicComponent } from '../../ui/gallery-mosaic/gallery-mosaic.component';
 
 @Component({
   selector: 'app-wall-cladding',
   standalone: true,
-  imports: [CommonModule, CarouselComponent],
+  imports: [CommonModule, CarouselComponent, GalleryMosaicComponent],
   templateUrl: './wall-cladding.component.html',
   styleUrls: ['./wall-cladding.component.scss'],
 })

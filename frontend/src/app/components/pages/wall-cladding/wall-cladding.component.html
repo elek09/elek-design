@@ -6,17 +6,20 @@
   [hasTextOverlay]="true"
 ></app-carousel>
 
-<hr>
-<div class="part">
-  <h1 class="sub-head" id="3D-falborítás">3D falborítás</h1>
-</div>
-<hr>
+<section class="extra-page__intro">
+  <p class="extra-page__eyebrow">Egyedi felületek</p>
+  <h1 id="3D-falborítás">3D falborítás</h1>
+  <p>
+    Látványos, karakteres falburkolatok otthonokba és üzlethelyiségekbe,
+    méretre és az enteriőr hangulatához igazítva.
+  </p>
+</section>
 
-<div class="container">
-  <div class="row">
-    <div class="col-12">
-  <app-carousel [slides]="(wallCladdingSlides$ | async) ?? []"></app-carousel>
-    </div>
-  </div>
+<div class="extra-page__gallery">
+  <app-gallery-mosaic
+    [slides]="(wallCladdingSlides$ | async) ?? []"
+    groupName="3D falborítás"
+    groupSlug="3d-falboritas"
+  ></app-gallery-mosaic>
 </div>
 </div>

@@ -1,0 +1,40 @@
+<div class="gallery-mosaic">
+  @for (slide of slides; track slide.id ?? slide.imageUrl; let i = $index) {
+    <article class="gallery-mosaic__item">
+      <button
+        class="gallery-mosaic__image-button"
+        type="button"
+        (click)="openLightbox()"
+        [attr.aria-label]="(slide.title || groupName) + ' megnyitása'"
+      >
+        <img
+          [src]="slide.thumbUrl || slide.imageUrl"
+          [alt]="slide.title || groupName"
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="gallery-mosaic__index">{{ i + 1 }}</span>
+      </button>
+      <div class="gallery-mosaic__caption">
+        <h2>{{ slide.title || groupName }}</h2>
+        @if (hasDescription(slide)) {
+          <p>{{ slide.description }}</p>
+        } @else {
+          <p>{{ groupName }} egyedi megoldása</p>
+        }
+      </div>
+    </article>
+  } @empty {
+    <p class="gallery-mosaic__empty">
+      A galéria képei hamarosan elérhetők.
+    </p>
+  }
+</div>
+
+@if (lightboxOpen) {
+  <app-gallery-lightbox
+    [groups]="[group]"
+    [activeGroupSlug]="groupSlug"
+    (closed)="closeLightbox()"
+  ></app-gallery-lightbox>
+}

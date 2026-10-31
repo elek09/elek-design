@@ -1,0 +1,43 @@
+.extra-page__intro {
+  max-width: 46rem;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0 2rem;
+}
+
+.extra-page__eyebrow {
+  margin: 0 0 0.65rem;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.extra-page__intro h1 {
+  margin: 0;
+  color: #202426;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.extra-page__intro h1::after {
+  content: '';
+  display: block;
+  width: 3.5rem;
+  height: 0.2rem;
+  margin-top: 0.9rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+}
+
+.extra-page__intro p:last-child {
+  max-width: 38rem;
+  margin: 1.25rem 0 0;
+  color: #6d7170;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.extra-page__gallery {
+  padding-bottom: clamp(3rem, 7vw, 6rem);
+}
