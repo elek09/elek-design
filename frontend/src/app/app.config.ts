@@ -30,7 +30,7 @@ const apiBaseUrl =
     : hostname === 'qa-api.elekdesign.hu'
       ? 'https://qa-api.elekdesign.hu'
     : hostname === 'qa.elekdesign.hu'
-      ? 'https://api.elekdesign.hu'
+      ? 'https://qa-api.elekdesign.hu'
       : 'https://api.elekdesign.hu';
 
 export const appConfig: ApplicationConfig = {
