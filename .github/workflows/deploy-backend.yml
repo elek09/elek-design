@@ -36,10 +36,6 @@ jobs:
             cd ~/domains/elekdesign.hu/backend
             composer install --no-dev --optimize-autoloader --no-interaction
             php artisan storage:link
-            chmod 755 storage storage/app storage/app/public
-            find storage/app/public -type d -exec chmod 755 {} \;
-            find storage/app/public -type f -exec chmod 644 {} \;
-            test -L public/storage
             php artisan migrate --force
             php artisan config:clear
             php artisan cache:clear
