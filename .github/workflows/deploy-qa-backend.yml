@@ -36,6 +36,7 @@ jobs:
           script: |
             cd ~/domains/elekdesign.hu/qa-backend
             composer install --no-dev --optimize-autoloader --no-interaction
+            php artisan storage:link
             php artisan migrate --force
             php artisan config:clear
             php artisan cache:clear
