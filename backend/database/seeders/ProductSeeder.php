@@ -60,6 +60,8 @@ class ProductSeeder extends Seeder
                 $galleryItem = GalleryItem::where('subcategory_id', $subcategory->id)
                     ->where('is_active', true)
                     ->orderBy('is_featured', 'desc')
+                    ->orderBy('sort_order')
+                    ->orderByDesc('created_at')
                     ->first();
 
                 if ($galleryItem) {
