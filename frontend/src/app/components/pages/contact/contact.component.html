@@ -2,15 +2,13 @@
   <app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true" [showManualControls]="false"
     [hasTextOverlay]="true"></app-carousel>
 
-  <hr>
-  <div class="part">
-    <h1 class="sub-head" id="Kapcsolat">Kapcsolat</h1>
-  </div>
-  <hr>
-
   <div class="contacts">
     <div class="contact-grid">
+      <div class="pictures">
+        <img src="assets/images/elek_imre.jpg" alt="Elek Imre">
+      </div>
       <div class="about">
+        <h1 class="contact-title" id="Kapcsolat">Kapcsolat</h1>
         <p>
           Elek Imre vagyok, 30 éve foglalkozom egyedi bútorok, design
           bútorok tervezésével és
@@ -30,12 +28,8 @@
           tervezése, szerelése.
         </p>
       </div>
-      <div class="pictures">
-        <img src="assets/images/elek_imre.jpg" alt="Elek Imre">
-      </div>
     </div>
   </div>
-  <hr>
 
   <section class="form">
     <p class="form-intro">Van kérdése? Lépjen kapcsolatba velünk!</p>

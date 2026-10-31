@@ -34,14 +34,16 @@
     </header>
 
     <main class="lightbox__main">
-      <button
-        type="button"
-        class="lightbox__arrow lightbox__arrow--previous"
-        aria-label="Előző kép"
-        (click)="previous()"
-      >
-        ‹
-      </button>
+      @if ((activeGroup?.slides?.length ?? 0) > 1) {
+        <button
+          type="button"
+          class="lightbox__arrow lightbox__arrow--previous"
+          aria-label="Előző kép"
+          (click)="previous()"
+        >
+          ‹
+        </button>
+      }
       @if (currentSlide) {
         <img
           class="lightbox__image"
@@ -58,14 +60,16 @@
           [alt]="currentSlide.title || activeGroup?.name || 'Galéria kép'"
         />
       }
-      <button
-        type="button"
-        class="lightbox__arrow lightbox__arrow--next"
-        aria-label="Következő kép"
-        (click)="next()"
-      >
-        ›
-      </button>
+      @if ((activeGroup?.slides?.length ?? 0) > 1) {
+        <button
+          type="button"
+          class="lightbox__arrow lightbox__arrow--next"
+          aria-label="Következő kép"
+          (click)="next()"
+        >
+          ›
+        </button>
+      }
     </main>
 
     @if (currentSlide) {

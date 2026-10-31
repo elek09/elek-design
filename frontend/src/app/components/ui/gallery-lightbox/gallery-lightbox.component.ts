@@ -93,6 +93,7 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
     if (this.touchStartX === null) return;
     const deltaX = (event.changedTouches[0]?.screenX ?? 0) - this.touchStartX;
     this.touchStartX = null;
+    if ((this.activeGroup?.slides.length ?? 0) < 2) return;
     if (Math.abs(deltaX) > 50) {
       if (deltaX < 0) {
         this.next();

@@ -2,14 +2,36 @@
 .contacts {
   background-color: #323538;
   width: 100%;
+  margin-top: 1.5rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
 /* Layout for top section (about + pictures) */
 .contact-grid {
   display: grid;
-  grid-template-columns: 1fr 1.2fr; /* give pictures a bit more space */
+  grid-template-columns: minmax(15rem, 0.85fr) minmax(0, 1.15fr);
   gap: 16px;
   align-items: start;
+}
+
+.contact-title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.contact-title::after {
+  content: '';
+  display: block;
+  width: 3.25rem;
+  height: 0.2rem;
+  margin-top: 0.65rem;
+  border-radius: 999px;
+  background: var(--color-accent);
 }
 
 .about p {
@@ -17,14 +39,14 @@
   font-size: 1.05rem;
   font-weight: 300;
   line-height: 1.7;
-  padding: 6px 12px;
+  padding: 0;
   color: #d5d5d5;
 }
 
 .pictures {
   max-width: 100%;
   text-align: center;
-  padding: 15px 0;
+  padding: 1.25rem;
 }
 
 .pictures img {
@@ -32,12 +54,24 @@
   max-width: 560px; /* make pics a bit bigger, but keep reasonable cap */
   height: auto;
   display: block;
-  margin: 0 auto 8px;
+  margin: 0 auto;
+  border-radius: 0.5rem;
 }
 
 @media screen and (max-width: 770px) {
   .contact-grid {
     grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .pictures {
+    order: 0;
+    padding: 1rem 1rem 0;
+  }
+
+  .about {
+    order: 1;
+    padding: 1rem;
   }
 }
 
