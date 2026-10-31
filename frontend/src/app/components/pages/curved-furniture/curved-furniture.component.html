@@ -1,4 +1,7 @@
 <div class="main">
+<app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true"
+  [showManualControls]="false" [hasTextOverlay]="true"></app-carousel>
+
 <section class="extra-page__intro">
   <p class="extra-page__eyebrow">Formára szabva</p>
   <h1 id="ives-butorok">Íves bútorok</h1>
