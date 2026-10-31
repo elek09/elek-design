@@ -92,6 +92,27 @@
   touch-action: pan-y;
 }
 
+.lightbox__track-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.lightbox__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 900ms ease-in-out;
+}
+
+.lightbox__slide {
+  display: grid;
+  flex: 0 0 100%;
+  min-width: 100%;
+  height: 100%;
+  place-items: center;
+}
+
 .lightbox__image {
   width: 100%;
   height: 100%;
@@ -105,7 +126,18 @@
   height: 4rem;
   font-size: 3.5rem;
   line-height: 1;
-  background: rgb(0 0 0 / 35%);
+  background: transparent;
+  opacity: 0;
+  transition: opacity 180ms ease, color 180ms ease;
+}
+
+.lightbox__main:hover .lightbox__arrow,
+.lightbox__arrow:focus-visible {
+  opacity: 1;
+}
+
+.lightbox__arrow:hover {
+  color: var(--color-accent);
 }
 
 .lightbox__arrow--previous {
@@ -178,6 +210,10 @@
 
   .lightbox__main {
     flex: 1 1 auto;
+  }
+
+  .lightbox__arrow {
+    display: none;
   }
 
   .lightbox__image {

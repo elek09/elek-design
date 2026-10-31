@@ -57,6 +57,10 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
     return this.activeGroup?.slides[this.currentIndex];
   }
 
+  get trackTransform(): string {
+    return `translateX(-${this.currentIndex * 100}%)`;
+  }
+
   selectGroup(slug: string): void {
     this.selectedGroupSlug = slug;
     this.currentIndex = 0;

@@ -44,22 +44,31 @@
           ‹
         </button>
       }
-      @if (currentSlide) {
-        <img
-          class="lightbox__image"
-          [src]="currentSlide.imageUrl"
-          [srcset]="
-            currentSlide.thumbUrl
-              ? currentSlide.thumbUrl +
-                ' 800w, ' +
-                currentSlide.imageUrl +
-                ' 1600w'
-              : currentSlide.imageUrl
-          "
-          sizes="(max-width: 800px) 100vw, 90vw"
-          [alt]="currentSlide.title || activeGroup?.name || 'Galéria kép'"
-        />
-      }
+      <div class="lightbox__track-container">
+        <div class="lightbox__track" [style.transform]="trackTransform">
+          @for (
+            slide of activeGroup?.slides ?? [];
+            track slide.id ?? slide.imageUrl
+          ) {
+            <div class="lightbox__slide">
+              <img
+                class="lightbox__image"
+                [src]="slide.imageUrl"
+                [srcset]="
+                  slide.thumbUrl
+                    ? slide.thumbUrl +
+                      ' 800w, ' +
+                      slide.imageUrl +
+                      ' 1600w'
+                    : slide.imageUrl
+                "
+                sizes="(max-width: 800px) 100vw, 90vw"
+                [alt]="slide.title || activeGroup?.name || 'Galéria kép'"
+              />
+            </div>
+          }
+        </div>
+      </div>
       @if ((activeGroup?.slides?.length ?? 0) > 1) {
         <button
           type="button"

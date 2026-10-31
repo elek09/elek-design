@@ -17,6 +17,7 @@ export class GalleryMosaicComponent {
   @Input({ required: true }) slides: Slide[] = [];
   @Input() groupName = 'Galéria';
   @Input() groupSlug = 'gallery';
+  @Input() showCardTitle = true;
 
   lightboxOpen = false;
 

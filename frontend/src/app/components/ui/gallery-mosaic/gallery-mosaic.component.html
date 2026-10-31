@@ -16,7 +16,9 @@
         <span class="gallery-mosaic__index">{{ i + 1 }}</span>
       </button>
       <div class="gallery-mosaic__caption">
-        <h2>{{ slide.title || groupName }}</h2>
+        @if (showCardTitle) {
+          <h2>{{ slide.title || groupName }}</h2>
+        }
         @if (hasDescription(slide)) {
           <p>{{ slide.description }}</p>
         } @else {

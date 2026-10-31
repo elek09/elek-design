@@ -82,13 +82,15 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 40px;
-  height: 48px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border: 0;
   background: transparent;
   cursor: pointer;
   z-index: 10;
-  color: #fff;
+  color: rgb(255 255 255 / 82%);
   outline: none;
   box-shadow: none;
   appearance: none;
@@ -122,18 +124,18 @@
 }
 
 .carousel__button--left {
-  left: +15px;
+  left: 0.75rem;
 }
 
 .carousel__button--right {
-  right: +15px;
+  right: 0.75rem;
 }
 
 /* Style Material icon inside the buttons */
 .carousel_button .mat-icon {
-  font-size: 40px;
-  width: 40px;
-  height: 40px;
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
   line-height: 1;
 }
 
@@ -147,6 +149,6 @@
   }
 
   .carousel_button {
-    opacity: 0.85;
+    display: none;
   }
 }

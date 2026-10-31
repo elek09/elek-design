@@ -66,27 +66,17 @@ button {
   font-size: 1.05rem !important;
 }
 
-.qty {
-  width: 140px;
-}
-
-.qty-add {
-  display: flex;
-  gap: 0.7rem;
-  align-items: flex-end;
-}
-.qty-add .qty {
-  width: 120px;
-}
-.qty-add .add-btn {
-  align-self: stretch;
-  padding: 0 1.15rem;
-  font-weight: 500;
-  letter-spacing: 0.4px;
+.quote-add-btn {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  font-size: 1.1rem !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 56px; /* match Material fill field height */
   background: linear-gradient(135deg, #3e6ad8, #2e55b0);
   box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.4);
   transition:
@@ -94,16 +84,16 @@ button {
     transform 0.15s,
     box-shadow 0.25s;
 }
-.qty-add .add-btn:hover {
+.quote-add-btn:hover {
   background: linear-gradient(135deg, #4a79ee, #3562c7);
   transform: translateY(-2px);
   box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
 }
-.qty-add .add-btn:active {
+.quote-add-btn:active {
   transform: translateY(0);
   box-shadow: 0 3px 10px -4px rgba(0, 0, 0, 0.5);
 }
-.qty-add .add-btn[disabled] {
+.quote-add-btn[disabled] {
   background: #3a3d40 !important;
   color: #8d9093 !important;
   box-shadow: none;
@@ -112,11 +102,8 @@ button {
 }
 
 @media (max-width: 520px) {
-  .qty-add {
-    flex-direction: row;
-  }
-  .qty-add .add-btn {
-    flex: 1;
+  .quote-add-btn {
+    min-height: 48px;
   }
 }
 

@@ -6,12 +6,7 @@ import {
   NoSubmitErrorStateMatcher,
   getCheckoutErrorMessage,
 } from '../../../utils/form.utils';
-import {
-  composeProductOptions,
-  extractExtraOptionGroups,
-} from '../../../utils/product.utils';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -30,7 +25,6 @@ import { API_BASE_URL } from '../../../app.tokens';
     CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatSelectModule,
     MatInputModule,
     MatButtonModule,
     MatCardModule,
@@ -57,18 +51,6 @@ export class WebshopComponent implements OnInit {
   });
   protected readonly errorMatcher = new NoSubmitErrorStateMatcher();
 
-  protected selections = signal<
-    Record<
-      number,
-      {
-        quantity: number;
-        hardware_type?: string | null;
-        color_scheme?: string | null;
-        extra?: Record<string, string | null>;
-      }
-    >
-  >({});
-
   protected readonly cartItems = this.localCart.items;
 
   ngOnInit(): void {
@@ -76,17 +58,6 @@ export class WebshopComponent implements OnInit {
       next: (list) => {
         const active = list.filter((product) => product.is_active !== false);
         this.products.set(active);
-
-        const defaults: Record<number, any> = {};
-        for (const product of active) {
-          defaults[product.id] = {
-            quantity: 1,
-            hardware_type: null,
-            color_scheme: null,
-            extra: {},
-          };
-        }
-        this.selections.set(defaults);
         this.loading.set(false);
       },
       error: () => {
@@ -96,43 +67,13 @@ export class WebshopComponent implements OnInit {
     });
   }
 
-  updateSelection(
-    id: number,
-    patch: Partial<{
-      quantity: number;
-      hardware_type?: string | null;
-      color_scheme?: string | null;
-    }>,
-  ) {
-    this.selections.update((curr) => ({
-      ...curr,
-      [id]: { ...curr[id], ...patch },
-    }));
-  }
-
-  updateExtraOption(id: number, key: string, value: string | null) {
-    this.selections.update((curr) => {
-      const prev = curr[id] || {
-        quantity: 1,
-        extra: {} as Record<string, string | null>,
-      };
-      const extra = { ...(prev.extra || {}), [key]: value } as Record<
-        string,
-        string | null
-      >;
-      return { ...curr, [id]: { ...prev, extra } };
-    });
-  }
-
   addToCart(product: Product): void {
-    const sel = this.selections()[product.id] ?? { quantity: 1 };
-
     this.localCart.add({
       product,
-      quantity: sel.quantity || 1,
-      hardware_type: sel.hardware_type || null,
-      color_scheme: sel.color_scheme || null,
-      extra: sel.extra || {},
+      quantity: 1,
+      hardware_type: null,
+      color_scheme: null,
+      extra: {},
     });
 
     this.toastr.success('Termék hozzáadva a kosárhoz', 'Siker');
@@ -163,11 +104,10 @@ export class WebshopComponent implements OnInit {
       items: this.cartItems().map((ci) => ({
         product_id: ci.product.id,
         quantity: ci.quantity,
-        options: composeProductOptions({
-          hardware_type: ci.hardware_type ?? null,
-          color_scheme: ci.color_scheme ?? null,
-          extra: ci.extra || {},
-        }),
+        options: {
+          hardware_type: ci.hardware_type ?? '',
+          color_scheme: ci.color_scheme ?? '',
+        },
       })),
     };
     this.ordersApi.submitPublicOrder(payload).subscribe({
@@ -197,9 +137,4 @@ export class WebshopComponent implements OnInit {
     }
   }
 
-  protected extraOptionGroups(
-    product: Product,
-  ): { key: string; label: string; values: string[] }[] {
-    return extractExtraOptionGroups(product);
-  }
 }
