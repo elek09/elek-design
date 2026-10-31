@@ -153,11 +153,11 @@ export class CarouselComponent implements OnDestroy {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+  }
 
-    private resetAutoPlayTimer(): void {
-      if (this.autoPlay()) {
-        this.startAutoPlay();
-      }
+  private resetAutoPlayTimer(): void {
+    if (this.autoPlay()) {
+      this.startAutoPlay();
     }
   }
 
