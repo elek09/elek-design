@@ -4,14 +4,15 @@
   aspect-ratio: 16 / 9;
   margin: 0 auto;
   overflow: hidden;
-  background: transparent;
+  border-radius: 0 0 1rem 1rem;
+  background: #e9e9e7;
 }
 
 .carousel__images {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
   position: relative;
   z-index: 1;
 }
@@ -65,12 +66,13 @@
   text-transform: uppercase;
   font-weight: 400;
   letter-spacing: 0.08em;
-  bottom: 18px;
-  left: 18px;
+  bottom: clamp(1rem, 3vw, 2rem);
+  left: clamp(1rem, 3vw, 2rem);
   width: auto;
   text-align: left;
-  background: rgb(0 0 0 / 55%);
+  background: rgb(12 18 18 / 68%);
   backdrop-filter: blur(4px);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 18%);
   border-radius: 999px;
   z-index: 5;
 }
@@ -85,7 +87,7 @@
   background: transparent;
   cursor: pointer;
   z-index: 10;
-  color: var(--color-text); /* match site text color */
+  color: #fff;
   outline: none;
   box-shadow: none;
   appearance: none;
@@ -103,7 +105,7 @@
   outline: none !important;
   box-shadow: none !important;
   border-color: transparent !important;
-  color: var(--color-accent); /* match hover color of text */
+  color: var(--color-accent);
 }
 
 /* Remove Firefox inner focus ring */
