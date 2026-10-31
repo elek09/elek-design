@@ -32,6 +32,8 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
   selectedGroupSlug = '';
   currentIndex = 0;
   private touchStartX: number | null = null;
+  private touchStartY: number | null = null;
+  private touchStartedOnBackdrop = false;
 
   constructor(private readonly router: Router) {}
 
@@ -90,13 +92,36 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
   }
 
   onTouchStart(event: TouchEvent): void {
+    if (event.touches.length !== 1) {
+      this.touchStartX = null;
+      this.touchStartY = null;
+      this.touchStartedOnBackdrop = false;
+      return;
+    }
+
     this.touchStartX = event.changedTouches[0]?.screenX ?? null;
+    this.touchStartY = event.changedTouches[0]?.screenY ?? null;
+    this.touchStartedOnBackdrop = event.target === event.currentTarget;
   }
 
   onTouchEnd(event: TouchEvent): void {
-    if (this.touchStartX === null) return;
+    if (this.touchStartX === null || this.touchStartY === null) return;
     const deltaX = (event.changedTouches[0]?.screenX ?? 0) - this.touchStartX;
+    const deltaY = (event.changedTouches[0]?.screenY ?? 0) - this.touchStartY;
     this.touchStartX = null;
+    this.touchStartY = null;
+
+    if (
+      this.touchStartedOnBackdrop &&
+      event.target === event.currentTarget &&
+      Math.abs(deltaX) < 12 &&
+      Math.abs(deltaY) < 12
+    ) {
+      this.close();
+      return;
+    }
+    this.touchStartedOnBackdrop = false;
+
     if ((this.activeGroup?.slides.length ?? 0) < 2) return;
     if (Math.abs(deltaX) > 50) {
       if (deltaX < 0) {
