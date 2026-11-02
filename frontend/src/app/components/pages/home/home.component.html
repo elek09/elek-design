@@ -1,13 +1,10 @@
 <div class="main">
   <app-carousel [slides]="(topCarouselSlides$ | async) ?? []" [autoPlay]="true"
-    [showManualControls]="false" [hasTextOverlay]="true"
+    [showManualControls]="true" [hasTextOverlay]="true"
     [prioritizeFirstImage]="true"></app-carousel>
-  <hr>
 
   <app-category-section [sectionType]="'eletter'" [categories$]="eletterCategories$"
     [slides$]="eletterSlides$"></app-category-section>
-
-  <hr>
 
   <app-category-section [sectionType]="'uzletter'" [categories$]="uzletterCategories$"
     [slides$]="uzletterSlides$"></app-category-section>

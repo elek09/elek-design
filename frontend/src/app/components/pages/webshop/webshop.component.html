@@ -13,56 +13,8 @@
             </mat-card-header>
             <mat-card-content>
                 @if (p.description) {<p class="desc">{{ p.description }}</p>}
-                <div class="row">
-                    @if (p.options.hardware_types.length) {
-                    <mat-form-field appearance="fill" class="field">
-                        <mat-label>Vasalat típusa</mat-label>
-                        <mat-select [value]="selections()[p.id].hardware_type || ''"
-                            (selectionChange)="updateSelection(p.id, { hardware_type: $event.value || null })">
-                            <mat-option value="">Nincs megadva</mat-option>
-                            @for (h of p.options.hardware_types; track h) {
-                            <mat-option [value]="h">{{ h }}</mat-option>
-                            }
-                        </mat-select>
-                    </mat-form-field>
-                    }
-
-                    @if (p.options.color_schemes.length) {
-                    <mat-form-field appearance="fill" class="field">
-                        <mat-label>Színösszeállítás</mat-label>
-                        <mat-select [value]="selections()[p.id].color_scheme || ''"
-                            (selectionChange)="updateSelection(p.id, { color_scheme: $event.value || null })">
-                            <mat-option value="">Nincs megadva</mat-option>
-                            @for (c of p.options.color_schemes; track c) {
-                            <mat-option [value]="c">{{ c }}</mat-option>
-                            }
-                        </mat-select>
-                    </mat-form-field>
-                    }
-
-                    @for (g of extraOptionGroups(p); track g.key) {
-                    <mat-form-field appearance="fill" class="field">
-                        <mat-label>{{ g.label }}</mat-label>
-                        <mat-select [value]="selections()[p.id].extra?.[g.key] || ''"
-                            (selectionChange)="updateExtraOption(p.id, g.key, $event.value || null)">
-                            <mat-option value="">Nincs megadva</mat-option>
-                            @for (v of g.values; track v) {
-                            <mat-option [value]="v">{{ v }}</mat-option>
-                            }
-                        </mat-select>
-                    </mat-form-field>
-                    }
-
-                    <div class="qty-add">
-                        <mat-form-field appearance="fill" class="qty">
-                            <mat-label>Mennyiség</mat-label>
-                            <input matInput type="number" min="1" [value]="selections()[p.id].quantity || 1"
-                                (input)="updateSelection(p.id, { quantity: ($any($event.target).valueAsNumber || 1) })" />
-                        </mat-form-field>
-                        <button mat-raised-button color="primary" (click)="addToCart(p)"
-                            class="add-btn">Kosárba</button>
-                    </div>
-                </div>
+                <button mat-raised-button color="primary" (click)="addToCart(p)" class="quote-add-btn">Ajánlatkéréshez
+                    adom</button>
             </mat-card-content>
         </mat-card>
         }
@@ -80,12 +32,6 @@
             <div class="cart-item">
                 <div class="cart-info">
                     <div class="title">{{ item.product.name }} <span class="mult">× {{ item.quantity }}</span></div>
-                    <div class="opts">
-                        @if (item.hardware_type) {<span class="opt">Vasalat: <strong>{{ item.hardware_type
-                                }}</strong></span>}
-                        @if (item.color_scheme) {<span class="opt">Szín: <strong>{{ item.color_scheme
-                                }}</strong></span>}
-                    </div>
                 </div>
                 <button mat-stroked-button color="warn" class="remove-btn" (click)="removeItem(i)">Eltávolítás</button>
             </div>

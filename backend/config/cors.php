@@ -23,7 +23,7 @@ return [
         'trim',
         explode(',', (string) env(
             'CORS_ALLOWED_ORIGINS',
-            'https://elekdesign.hu,https://www.elekdesign.hu'
+            'https://elekdesign.hu,https://www.elekdesign.hu,https://qa.elekdesign.hu'
         ))
     ))),
 

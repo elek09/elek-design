@@ -31,7 +31,7 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
 
   selectedGroupSlug = '';
   currentIndex = 0;
-  private touchStartX: number | null = null;
+  private touchStartX = 0;
 
   constructor(private readonly router: Router) {}
 
@@ -55,6 +55,10 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
 
   get currentSlide(): Slide | undefined {
     return this.activeGroup?.slides[this.currentIndex];
+  }
+
+  get trackTransform(): string {
+    return `translateX(-${this.currentIndex * 100}%)`;
   }
 
   selectGroup(slug: string): void {
@@ -85,20 +89,15 @@ export class GalleryLightboxComponent implements OnChanges, OnDestroy {
     if (event.target === event.currentTarget) this.close();
   }
 
+  // Csak a tiszta swipe logikát tartjuk meg a lapozáshoz
   onTouchStart(event: TouchEvent): void {
-    this.touchStartX = event.changedTouches[0]?.screenX ?? null;
+    this.touchStartX = event.changedTouches[0].screenX;
   }
 
   onTouchEnd(event: TouchEvent): void {
-    if (this.touchStartX === null) return;
-    const deltaX = (event.changedTouches[0]?.screenX ?? 0) - this.touchStartX;
-    this.touchStartX = null;
-    if (Math.abs(deltaX) > 50) {
-      if (deltaX < 0) {
-        this.next();
-      } else {
-        this.previous();
-      }
+    const deltaX = event.changedTouches[0].screenX - this.touchStartX;
+    if (Math.abs(deltaX) > 50 && (this.activeGroup?.slides.length ?? 0) > 1) {
+      deltaX < 0 ? this.next() : this.previous();
     }
   }
 

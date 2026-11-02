@@ -5,6 +5,7 @@ on:
     branches: [qa]
     paths:
       - "frontend/**"
+      - ".github/workflows/deploy-qa-frontend.yml"
   workflow_dispatch:
 
 jobs:
