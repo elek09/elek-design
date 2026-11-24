@@ -6,6 +6,7 @@ import {
   OnDestroy,
   Output,
   EventEmitter,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -27,22 +28,36 @@ export interface GalleryLightboxGroup {
 export class GalleryLightboxComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) groups: GalleryLightboxGroup[] = [];
   @Input() activeGroupSlug = '';
+  @Input() initialIndex = 0;
   @Output() closed = new EventEmitter<void>();
 
   selectedGroupSlug = '';
   currentIndex = 0;
   private touchStartX = 0;
+  private initialized = false;
 
   constructor(private readonly router: Router) {}
 
-  ngOnChanges(): void {
+  ngOnChanges(changes: SimpleChanges): void {
     if (!this.groups.length) return;
-    const active = this.groups.find(
-      (group) => group.slug === this.activeGroupSlug,
-    );
-    this.selectedGroupSlug = active?.slug ?? this.groups[0].slug;
-    this.currentIndex = 0;
-    document.body.style.overflow = 'hidden';
+
+    const isOpening = !this.initialized;
+    const groupChanged = changes['activeGroupSlug'] !== undefined;
+    const indexChanged = changes['initialIndex'] !== undefined;
+
+    if (isOpening || groupChanged) {
+      const active = this.groups.find(
+        (group) => group.slug === this.activeGroupSlug,
+      );
+      this.selectedGroupSlug = active?.slug ?? this.groups[0].slug;
+    }
+
+    if (isOpening || groupChanged || indexChanged) {
+      this.currentIndex = this.initialIndex;
+    }
+
+    if (isOpening) document.body.style.overflow = 'hidden';
+    this.initialized = true;
   }
 
   ngOnDestroy(): void {

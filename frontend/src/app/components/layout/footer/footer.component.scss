@@ -46,4 +46,9 @@
 #name {
   font-weight: 600;
   color: var(--color-accent);
+  text-decoration: none;
+}
+
+#name:hover {
+  text-decoration: underline;
 }

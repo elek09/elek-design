@@ -4,7 +4,7 @@
       <button
         class="gallery-mosaic__image-button"
         type="button"
-        (click)="openLightbox()"
+        (click)="openLightbox(i)"
         [attr.aria-label]="(slide.title || groupName) + ' megnyitása'"
       >
         <img
@@ -35,8 +35,9 @@
 
 @if (lightboxOpen) {
   <app-gallery-lightbox
-    [groups]="[group]"
+    [groups]="groups"
     [activeGroupSlug]="groupSlug"
+    [initialIndex]="initialIndex"
     (closed)="closeLightbox()"
   ></app-gallery-lightbox>
 }
